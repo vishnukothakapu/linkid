@@ -1,65 +1,199 @@
-import Image from "next/image";
+import { Navbar } from "@/app/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import Link from "next/link";
+import {
+  Link2,
+  Route,
+  Zap,
+  Github,
+  Linkedin,
+  Code2,
+  ArrowUpRight,
+} from "lucide-react";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (session) redirect("/dashboard");
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      <Navbar />
+
+     
+      <section className="relative overflow-hidden">
+        
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-0 h-[420px] w-[900px] -translate-x-1/2 bg-gradient-to-b from-primary/10 to-transparent blur-3xl" />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-6 py-32 text-center">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground">
+            One identity.
+            <br />
+            <span className="text-muted-foreground">
+              Infinite professional links.
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+            Stop pasting long URLs everywhere.
+            <br />
+            Share clean, predictable links like:
           </p>
+
+          <div className="mt-4 inline-block rounded-lg border bg-muted px-4 py-2 font-mono text-sm text-muted-foreground">
+            linkid.me/username/github
+          </div>
+
+          <div className="mt-12 flex justify-center gap-4">
+            <Button size="lg" asChild>
+              <Link href="/login">Create your LinkID</Link>
+            </Button>
+
+            <Button size="lg" variant="outline">
+              View Demo
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </section>
+
+      <section className="py-28 bg-muted/40" id="features">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-20 max-w-2xl mx-auto text-center">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground">
+              Why developers love LinkID
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Built for resumes, forms, and professional workflows.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3" >
+            <FeatureCard
+              icon={<Link2 className="h-6 w-6" />}
+              title="Resume-friendly links"
+              desc="Short, readable URLs that look clean and professional on resumes."
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <FeatureCard
+              icon={<Route className="h-6 w-6" />}
+              title="Platform-specific routing"
+              desc="Predictable links like /github, /linkedin, /leetcode."
+            />
+
+            <FeatureCard
+              icon={<Zap className="h-6 w-6" />}
+              title="One-time setup"
+              desc="Add links once. Share everywhere. Update anytime."
+            />
+          </div>
         </div>
-      </main>
+      </section>
+
+   
+      <section className="py-28" id="demo">
+        <div className="mx-auto max-w-4xl px-6">
+          <h2 className="text-3xl font-bold text-center text-foreground">
+            Clean links. Everywhere.
+          </h2>
+          <p className="mt-3 text-muted-foreground text-center">
+            One username. Predictable links for every platform.
+          </p>
+
+          <div className="mt-12 space-y-4">
+            <DemoRow
+              icon={<Github className="h-5 w-5" />}
+              label="GitHub"
+              url="linkid.me/vishnu/github"
+            />
+            <DemoRow
+              icon={<Linkedin className="h-5 w-5" />}
+              label="LinkedIn"
+              url="linkid.me/vishnu/linkedin"
+            />
+            <DemoRow
+              icon={<Code2 className="h-5 w-5" />}
+              label="LeetCode"
+              url="linkid.me/vishnu/leetcode"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 text-center bg-muted/40" id="how">
+        <h2 className="text-3xl font-bold text-foreground">
+          Your professional identity, simplified.
+        </h2>
+        <p className="mt-4 text-muted-foreground">
+          Create your LinkID in under a minute.
+        </p>
+        <div className="mt-8">
+          <Button size="lg" asChild>
+            <Link href="/login">Get Started</Link>
+          </Button>
+        </div>
+      </section>
+
+      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} LinkID — Built for developers & job seekers
+      </footer>
+    </>
+  );
+}
+
+// components
+
+function FeatureCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="rounded-2xl border bg-card p-8 transition-all hover:-translate-y-1 hover:shadow-lg">
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-foreground">
+        {icon}
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2 text-foreground">
+        {title}
+      </h3>
+
+      <p className="text-muted-foreground leading-relaxed">
+        {desc}
+      </p>
+    </div>
+  );
+}
+
+function DemoRow({
+  icon,
+  label,
+  url,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  url: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border bg-card px-5 py-4 transition hover:bg-muted">
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-muted p-2 text-foreground">
+          {icon}
+        </div>
+        <span className="font-medium text-foreground">{label}</span>
+      </div>
+
+      <div className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
+        {url}
+        <ArrowUpRight className="h-4 w-4 opacity-50" />
+      </div>
     </div>
   );
 }
