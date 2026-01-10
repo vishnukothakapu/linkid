@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔗 LinkID  
+### Your professional identity, simplified.
 
-## Getting Started
+LinkID lets you share **clean, predictable, platform-specific links** using a single username.
 
-First, run the development server:
+Stop pasting long URLs everywhere.  
+Share links like:
+
+https://linkid.me/username/github  
+https://linkid.me/username/linkedin  
+https://linkid.me/username/portfolio  
+
+Perfect for resumes, forms, and professional workflows.
+
+---
+
+## What is LinkID?
+
+LinkID is a **professional link router**.
+
+You create one username.  
+You map it to your platforms.  
+You share short, readable URLs that never change.
+
+Update links anytime — your public URLs stay the same.
+
+---
+
+## Features
+
+- **Single professional identity**  
+  One username for all your platforms
+
+- **Platform-specific routing**  
+  `/github`, `/linkedin`, `/leetcode`, `/portfolio`, `/youtube`, etc.
+
+- **Auto platform detection**  
+  Paste a URL → platform detected automatically
+
+- **Dashboard**  
+  Add, edit, and delete links instantly
+
+- **Public profile page**  
+  https://linkid.me/username
+
+- **Dark mode**  
+  Fully supported
+
+- **Resume-friendly URLs**  
+  Clean, readable, professional
+
+---
+
+## Why LinkID?
+
+Most “link-in-bio” tools are built for creators.
+
+**LinkID is built for developers and professionals.**
+
+No clutter.  
+No gimmicks.  
+Just identity → routing → clarity.
+
+---
+
+## Example
+
+Instead of sharing:
+
+https://www.linkedin.com/in/some-long-username-928374/
+
+You share:
+
+https://linkid.me/vishnu/linkedin
+
+Clean. Predictable. Professional.
+
+---
+
+## Tech Stack
+
+- Next.js (App Router)
+- TypeScript
+- NextAuth
+- Prisma
+- PostgreSQL
+- Tailwind CSS
+- shadcn/ui
+
+---
+
+## Local Setup
+
+### 1. Clone the repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/linkid
+cd linkid
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a .env file in the root directory:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```DATABASE_URL=postgresql://username:password@localhost:5432/linkid
+NEXTAUTH_SECRET=your_secret
+NEXTAUTH_URL=http://localhost:3000
+```
 
-## Learn More
+### 3. Database setup
 
-To learn more about Next.js, take a look at the following resources:
+```
+npx prisma migrate dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run the app
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+npm run dev
+```
 
-## Deploy on Vercel
+## Project Status
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Actively under development.
