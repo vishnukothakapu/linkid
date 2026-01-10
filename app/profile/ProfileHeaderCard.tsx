@@ -11,26 +11,26 @@ export function ProfileHeaderCard({
 }) {
     return (
         <Card className="shadow-sm">
-            <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
-                <Avatar className="h-20 w-20">
+            <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+                <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
                     <AvatarImage src={sessionImage ?? ""} />
-                    <AvatarFallback className="text-xl">
+                    <AvatarFallback className="text-lg sm:text-xl">
                         {user.name?.[0]?.toUpperCase() ?? "U"}
                     </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1 space-y-1">
-                    <h1 className="text-2xl font-semibold">
+                <div className="flex-1 space-y-0.5 sm:space-y-1">
+                    <h1 className="text-xl sm:text-2xl font-semibold">
                         {user.name ?? user.username}
                     </h1>
 
                     {user.username && (
-                        <code className="text-sm text-muted-foreground">
+                        <code className="text-xs sm:text-sm text-muted-foreground">
                             linkid.me/{user.username}
                         </code>
                     )}
 
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                         Joined{" "}
                         {new Date(user.createdAt).toLocaleDateString("en-US", {
                             day: "2-digit",
@@ -40,10 +40,7 @@ export function ProfileHeaderCard({
                     </p>
                 </div>
 
-                <EditProfileModal
-                    initialName={user.name ?? ""}
-                    initialUsername={user.username ?? ""}
-                />
+                <EditProfileModal />
             </CardContent>
         </Card>
     );

@@ -32,8 +32,8 @@ export function LinkItem({
 
     return (
         <div className="rounded-md border p-4 space-y-3">
-            <div className="flex justify-between items-center">
-                <div className="flex gap-3 items-center">
+            <div className="flex  justify-between items-center">
+                <div className="flex gap-2 items-center">
                     <div className="h-9 w-9 bg-muted rounded-md flex items-center justify-center">
                         <Icon className="h-5 w-5" />
                     </div>
@@ -45,7 +45,7 @@ export function LinkItem({
                     </div>
                 </div>
 
-                <div className="flex gap-1">
+                <div className="flex flex-col sm:flex-row gap-1">
                     <Button size="icon" variant="ghost" onClick={copy}>
                         {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                     </Button>

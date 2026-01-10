@@ -15,7 +15,10 @@ export function ProfileActionsCard() {
             </CardHeader>
 
             <CardContent className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="outline">
+                <Button
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                >
                     <Link2 className="h-4 w-4" />
                     Connect Account
                 </Button>
@@ -23,9 +26,13 @@ export function ProfileActionsCard() {
                 <form
                     action="/api/auth/signout"
                     method="post"
-                    className="flex-1"
+                    className="w-full sm:w-auto"
                 >
-                    <Button variant="destructive" type="submit" className="">
+                    <Button
+                        variant="destructive"
+                        type="submit"
+                        className="w-full"
+                    >
                         <LogOut className="h-4 w-4" />
                         Logout
                     </Button>
