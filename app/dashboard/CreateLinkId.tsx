@@ -75,13 +75,13 @@ export default function CreateLinkId() {
 
                             {available === true && (
                                 <p className="text-sm text-green-500">
-                                    ✔ Username available
+                                    Username available
                                 </p>
                             )}
 
                             {available === false && (
                                 <p className="text-sm text-red-500">
-                                    ✖ Username already taken
+                                    Username already taken
                                 </p>
                             )}
                         </div>

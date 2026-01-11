@@ -1,14 +1,46 @@
 "use client";
-
 import { useState } from "react";
 import { DashboardNavbar } from "@/app/components/DashboardNavbar";
-import { Toaster } from "react-hot-toast";
-import { LinkIdCard } from "./LinkIdCard";
+import toast, { Toaster } from "react-hot-toast";
 import { LinksSection } from "./LinksSection";
+import { LinkIdCard } from "./LinkIdCard";
 
-export default function DashboardClient({ username, initialLinks }: any) {
+export default function DashboardClient({
+    username,
+    initialLinks,
+}: {
+    username: string;
+    initialLinks: any[];
+}) {
     const [links, setLinks] = useState(initialLinks);
     const [showAdd, setShowAdd] = useState(false);
+
+    async function addLink(link: any) {
+        setLinks((prev) => [...prev, link]);
+        setShowAdd(false);
+    }
+
+    async function updateLink(id: string, url: string) {
+        await fetch(`/api/links/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+        });
+        toast.success("Link updated");
+
+        setLinks((prev) =>
+            prev.map((l) =>
+                l.id === id ? { ...l, url } : l
+            )
+        );
+    }
+
+    async function deleteLink(id: string) {
+        if (!confirm("Delete this link?")) return;
+        await fetch(`/api/links/${id}`, { method: "DELETE" });
+        toast.success("Link deleted");
+        setLinks((prev) => prev.filter((l) => l.id !== id));
+    }
 
     return (
         <>
@@ -26,17 +58,13 @@ export default function DashboardClient({ username, initialLinks }: any) {
                 <LinkIdCard username={username} />
 
                 <LinksSection
-                    links={links}
                     username={username}
+                    links={links}
                     showAdd={showAdd}
                     setShowAdd={setShowAdd}
-                    onAdd={(l: any) => setLinks((p: any) => [...p, l])}
-                    onUpdate={(id: string, url: string) =>
-                        setLinks((p: any) => p.map((l: any) => (l.id === id ? { ...l, url } : l)))
-                    }
-                    onDelete={(id: string) =>
-                        setLinks((p: any) => p.filter((l: any) => l.id !== id))
-                    }
+                    onAdd={addLink}
+                    onUpdate={updateLink}
+                    onDelete={deleteLink}
                 />
 
                 <footer className="pt-10 border-t text-center text-sm text-muted-foreground">

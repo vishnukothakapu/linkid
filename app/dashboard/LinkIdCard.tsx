@@ -8,7 +8,7 @@ export function LinkIdCard({ username }: { username: string }) {
     const [copied, setCopied] = useState(false);
 
     function copyProfile() {
-        navigator.clipboard.writeText(`linkid.me/${username}`);
+        navigator.clipboard.writeText(`linkid.io/${username}`);
         setCopied(true);
         toast.success("Profile link copied");
         setTimeout(() => setCopied(false), 1200);

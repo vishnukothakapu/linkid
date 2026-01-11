@@ -1,13 +1,15 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import AddLinkBox from "./AddLinkBox";
 import { EmptyLinksState } from "./EmptyLinksState";
 import { LinkItem } from "./LinkItem";
+import AddLinkBox from "./AddLinkBox";
 
 export function LinksSection({
-    links,
     username,
+    links,
     showAdd,
     setShowAdd,
     onAdd,
@@ -18,8 +20,8 @@ export function LinksSection({
         <Card>
             <CardHeader className="flex justify-between items-center">
                 <CardTitle>Your Links</CardTitle>
-                <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
-                    <Plus className="h-4 w-4" />
+                <Button size="sm" onClick={() => setShowAdd((v: boolean) => !v)}>
+                    <Plus className="mr-2 h-4 w-4" />
                     Add Link
                 </Button>
             </CardHeader>

@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  output = "../app/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
 }
 model User {
   id            String   @id @default(uuid())
@@ -28,6 +28,7 @@ model User {
 model Link {
   id        String   @id @default(uuid())
   platform  String
+  label     String
   url       String
   order Int    @default(0)
   userId    String

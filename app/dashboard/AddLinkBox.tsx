@@ -4,24 +4,25 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
-import { detectPlatform, normalizeUrl } from "@/lib/platforms";
 
-export default function AddLinkBox({ onAdded }: { onAdded: (link:any) => void }) {
+export default function AddLinkBox({
+    onAdded,
+}: {
+    onAdded: (link: any) => void;
+}) {
     const [url, setUrl] = useState("");
-    const [platform, setPlatform] = useState<string | null>(null);
+    const [label, setLabel] = useState("");
+    const [needsLabel, setNeedsLabel] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    function handleUrlChange(v: string) {
-        setUrl(v);
-        if (v.trim()) {
-            setPlatform(detectPlatform(v));
-        } else {
-            setPlatform(null);
-        }
-    }
-
     async function submit() {
-        if (!url.trim()) return;
+        if (!url.trim()) {
+            return toast.error("Please enter a URL");
+        }
+
+        if (needsLabel && !label.trim()) {
+            return toast.error("Please enter a name for this link");
+        }
 
         setLoading(true);
 
@@ -29,8 +30,8 @@ export default function AddLinkBox({ onAdded }: { onAdded: (link:any) => void })
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                url: normalizeUrl(url),
-                platform,
+                url,
+                label: needsLabel ? label : undefined,
             }),
         });
 
@@ -38,32 +39,38 @@ export default function AddLinkBox({ onAdded }: { onAdded: (link:any) => void })
         setLoading(false);
 
         if (!res.ok) {
-            toast.error(data.error || "Invalid URL");
-            return;
+            if (data.error?.toLowerCase().includes("name")) {
+                setNeedsLabel(true);
+            }
+            return toast.error(data.error ?? "Failed to add link");
         }
 
         toast.success("Link added");
-        setUrl("");
-        setPlatform(null);
         onAdded(data.link);
+
+        setUrl("");
+        setLabel("");
+        setNeedsLabel(false);
     }
 
     return (
-        <div className="rounded-md border p-4 space-y-3">
+        <div className="rounded-lg border p-4 space-y-3">
             <Input
-                placeholder="Paste your link (GitHub, LinkedIn, etc.)"
+                placeholder="Paste your link (GitHub, LinkedIn, website, etc.)"
                 value={url}
-                onChange={(e) => handleUrlChange(e.target.value)}
+                onChange={(e) => setUrl(e.target.value)}
             />
 
-            {platform && (
-                <p className="text-sm text-muted-foreground">
-                    Detected as <span className="font-medium capitalize">{platform}</span>
-                </p>
+            {needsLabel && (
+                <Input
+                    placeholder="Name this link (e.g. ChatGPT, Blog, Docs)"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                />
             )}
 
-            <Button disabled={!url || loading} onClick={submit} className="cursor-pointer">
-                Add Link
+            <Button onClick={submit} disabled={loading}>
+                {loading ? "Adding…" : "Add link"}
             </Button>
         </div>
     );

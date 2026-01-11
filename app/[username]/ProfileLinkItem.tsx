@@ -1,9 +1,9 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight,Globe } from "lucide-react";
 import { PLATFORM_ICONS } from "../../lib/platformIcons";
 
 export function ProfileLinkItem({ link }: { link: any }) {
     const Icon =
-        PLATFORM_ICONS[link.platform] ?? PLATFORM_ICONS.default;
+        PLATFORM_ICONS[link.platform] ?? Globe;
 
     return (
         <a
@@ -18,7 +18,7 @@ export function ProfileLinkItem({ link }: { link: any }) {
                 </div>
 
                 <span className="font-medium capitalize">
-                    {link.platform}
+                    {link.label || link.platform}
                 </span>
             </div>
 
