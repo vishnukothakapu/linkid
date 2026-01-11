@@ -2,14 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
 import {
     validatePlatformUrl,
     normalizeUrl,
 } from "@/lib/platforms";
 
-// update link
 export async function PUT(
     req: Request,
     context: { params: Promise<{ id: string }> }
@@ -26,7 +24,6 @@ export async function PUT(
         return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    // Fetch link
     const link = await prisma.link.findUnique({
         where: { id },
         include: { user: true },
@@ -36,10 +33,8 @@ export async function PUT(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Normalize URL
     const finalUrl = normalizeUrl(url);
 
-    // Validate platform URL
     if (!validatePlatformUrl(link.platform as any, finalUrl)) {
         return NextResponse.json(
             { error: `Invalid ${link.platform} URL` },
@@ -47,7 +42,6 @@ export async function PUT(
         );
     }
 
-    // 4Update
     await prisma.link.update({
         where: { id },
         data: { url: finalUrl },
@@ -56,7 +50,6 @@ export async function PUT(
     return NextResponse.json({ success: true });
 }
 
-// delete link
 export async function DELETE(
     req: Request,
     context: { params: Promise<{ id: string }> }
