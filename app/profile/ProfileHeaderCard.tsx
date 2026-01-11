@@ -6,7 +6,11 @@ export function ProfileHeaderCard({
     user,
     sessionImage,
 }: {
-    user: any;
+    user: {
+        name?: string | null;
+        username?: string | null;
+        createdAt: string | Date;
+    };
     sessionImage?: string | null;
 }) {
     return (
@@ -40,7 +44,10 @@ export function ProfileHeaderCard({
                     </p>
                 </div>
 
-                <EditProfileModal />
+                <EditProfileModal
+                    initialName={user.name ?? ""}
+                    initialUsername={user.username ?? ""}
+                />
             </CardContent>
         </Card>
     );

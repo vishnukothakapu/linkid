@@ -101,11 +101,8 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ link });
-    } catch (err) {
-        if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2002"
-        ) {
+    } catch (err: any) {
+        if (err?.code === "P2002") {
             return NextResponse.json(
                 { error: `You already added your ${finalLabel} link.` },
                 { status: 409 }
@@ -118,4 +115,5 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
+
 }
