@@ -8,7 +8,6 @@ import {
     validatePlatformUrl,
 } from "@/lib/platforms";
 import { isValidHttpUrl } from "@/lib/url";
-import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
