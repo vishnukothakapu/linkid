@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,7 +32,9 @@ export function LinkItem({
     const [copied, setCopied] = useState(false);
 
     function copy() {
-        navigator.clipboard.writeText(`linkid.qzz.io/${username}/${link.platform}`);
+        navigator.clipboard.writeText(
+            `linkid.qzz.io/${username}/${link.platform}`
+        );
         setCopied(true);
         toast.success("Copied");
         setTimeout(() => setCopied(false), 1200);
@@ -43,19 +46,24 @@ export function LinkItem({
     }
 
     return (
-        <div className="rounded-md border p-4 space-y-3">
-            <div className="flex justify-between items-center">
-                <div className="flex gap-3 items-center">
-                    <div className="h-9 w-9 bg-muted rounded-md flex items-center justify-center">
+        <div className="rounded-md border p-4 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-3 items-center min-w-0">
+                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center shrink-0">
                         <Icon className="h-5 w-5" />
                     </div>
-                    <div>
-                        <p className="font-medium capitalize">{link.platform}</p>
-                        <p className="text-sm text-muted-foreground">{link.url}</p>
+
+                    <div className="min-w-0">
+                        <p className="font-medium capitalize">
+                            {link.platform}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate">
+                            {link.url}
+                        </p>
                     </div>
                 </div>
 
-                <div className="flex gap-1">
+                <div className="flex gap-1 justify-end">
                     <Button size="icon" variant="ghost" onClick={copy}>
                         {copied ? (
                             <Check className="h-4 w-4 text-green-600" />
@@ -75,24 +83,36 @@ export function LinkItem({
                         variant="ghost"
                         onClick={() => setEditing((v) => !v)}
                     >
-                        {editing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                        {editing ? (
+                            <X className="h-4 w-4" />
+                        ) : (
+                            <Pencil className="h-4 w-4" />
+                        )}
                     </Button>
                 </div>
             </div>
 
             {editing && (
-                <div className="flex gap-2">
-                    <Input value={url} onChange={(e) => setUrl(e.target.value)} />
-                    <Button size="icon" onClick={save}>
-                        <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        size="icon"
-                        variant="destructive"
-                        onClick={() => onDelete(link.id)}
-                    >
-                        <Trash className="h-4 w-4" />
-                    </Button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        className="flex-1 px-2 py-4 text-sm"
+                    />
+
+                    <div className="flex gap-2 justify-end">
+                        <Button size="icon" onClick={save}>
+                            <Check className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={() => onDelete(link.id)}
+                        >
+                            <Trash className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             )}
         </div>
