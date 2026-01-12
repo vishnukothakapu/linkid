@@ -8,7 +8,7 @@ export function LinkIdCard({ username }: { username: string }) {
     const [copied, setCopied] = useState(false);
 
     function copyProfile() {
-        navigator.clipboard.writeText(`linkid.io/${username}`);
+        navigator.clipboard.writeText(`linkid.qzz.io/${username}`);
         setCopied(true);
         toast.success("Profile link copied");
         setTimeout(() => setCopied(false), 1200);
@@ -25,7 +25,7 @@ export function LinkIdCard({ username }: { username: string }) {
 
             <CardContent className="flex justify-between items-center">
                 <code className="flex items-center bg-muted px-3 py-1 rounded-md text-sm">
-                    linkid.me/{username}
+                    linkid.qzz.io/{username}
                     <Button size="icon" variant="ghost" onClick={copyProfile}>
                         {copied ? (
                             <Check className="h-4 w-4 text-green-600" />

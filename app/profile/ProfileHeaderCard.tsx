@@ -30,7 +30,7 @@ export function ProfileHeaderCard({
 
                     {user.username && (
                         <code className="text-xs sm:text-sm text-muted-foreground">
-                            linkid.me/{user.username}
+                            linkid.qzz.io/{user.username}
                         </code>
                     )}
 

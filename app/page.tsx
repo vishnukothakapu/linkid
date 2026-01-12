@@ -45,7 +45,7 @@ export default async function Home() {
           </p>
 
           <div className="mt-4 inline-block rounded-lg border bg-muted px-4 py-2 font-mono text-sm text-muted-foreground">
-            linkid.me/username/github
+            linkid.qzz.io/username/github
           </div>
 
           <div className="mt-12 flex justify-center gap-4">
@@ -107,17 +107,17 @@ export default async function Home() {
             <DemoRow
               icon={<Github className="h-5 w-5" />}
               label="GitHub"
-              url="linkid.me/vishnu/github"
+              url="linkid.qzz.io/vishnu/github"
             />
             <DemoRow
               icon={<Linkedin className="h-5 w-5" />}
               label="LinkedIn"
-              url="linkid.me/vishnu/linkedin"
+              url="linkid.qzz.io/vishnu/linkedin"
             />
             <DemoRow
               icon={<Code2 className="h-5 w-5" />}
               label="LeetCode"
-              url="linkid.me/vishnu/leetcode"
+              url="linkid.qzz.io/vishnu/leetcode"
             />
           </div>
         </div>

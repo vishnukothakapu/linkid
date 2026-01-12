@@ -52,7 +52,7 @@ export default function EditProfileModal({
                             working.
                             <br />
                             <span className="font-mono">
-                                linkid.me/{initialUsername}/...
+                                linkid.qzz.io/{initialUsername}/...
                             </span>
                         </AlertDescription>
                     </Alert>

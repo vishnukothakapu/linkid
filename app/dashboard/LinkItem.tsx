@@ -31,7 +31,7 @@ export function LinkItem({
     const [copied, setCopied] = useState(false);
 
     function copy() {
-        navigator.clipboard.writeText(`linkid.io/${username}/${link.platform}`);
+        navigator.clipboard.writeText(`linkid.qzz.io/${username}/${link.platform}`);
         setCopied(true);
         toast.success("Copied");
         setTimeout(() => setCopied(false), 1200);

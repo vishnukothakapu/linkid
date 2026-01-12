@@ -6,9 +6,9 @@ LinkID lets you share **clean, predictable, platform-specific links** using a si
 Stop pasting long URLs everywhere.  
 Share links like:
 
-https://linkid.me/username/github  
-https://linkid.me/username/linkedin  
-https://linkid.me/username/portfolio  
+https://linkid.qzz.io/username/github  
+https://linkid.qzz.io/username/linkedin  
+https://linkid.qzz.io/username/portfolio  
 
 Perfect for resumes, forms, and professional workflows.
 
@@ -41,7 +41,7 @@ Update links anytime — your public URLs stay the same.
   Add, edit, and delete links instantly
 
 - **Public profile page**  
-  https://linkid.me/username
+  https://linkid.qzz.io/username
 
 - **Dark mode**  
   Fully supported
@@ -71,7 +71,7 @@ https://www.linkedin.com/in/some-long-username-928374/
 
 You share:
 
-https://linkid.me/vishnu/linkedin
+https://linkid.qzz.io/vishnu/linkedin
 
 Clean. Predictable. Professional.
 

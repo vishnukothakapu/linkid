@@ -62,7 +62,7 @@ export default function CreateLinkId() {
 
                             <div className="flex items-center rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring">
                                 <span className="px-3 text-sm text-muted-foreground select-none">
-                                    linkid.me/
+                                    linkid.qzz.io/
                                 </span>
 
                                 <Input
