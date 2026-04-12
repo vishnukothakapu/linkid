@@ -12,9 +12,12 @@ import { Navbar } from "../components/Navbar";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 
+import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+
 export default function RegisterPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -87,25 +90,49 @@ export default function RegisterPage() {
 
                     {/* EMAIL SIGNUP */}
                     <form onSubmit={handleSubmit} className="space-y-3">
-                        <Input
-                            name="name"
-                            placeholder="Full name"
-                            required
-                        />
-
-                        <Input
-                            name="email"
-                            type="email"
-                            placeholder="Email"
-                            required
-                        />
-
-                        <Input
-                            name="password"
-                            type="password"
-                            placeholder="Password"
-                            required
-                        />
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                                name="name"
+                                placeholder="Full name"
+                                className="pl-10"
+                                required
+                            />
+                        </div>
+                        
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                                name="email"
+                                type="email"
+                                placeholder="Email"
+                                className="pl-10"
+                                required
+                            />
+                        </div>
+                        
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Password"
+                                className="pl-10 pr-10"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
 
                         <Button className="w-full" disabled={loading}>
                             {loading ? "Creating account..." : "Signup with Email"}
