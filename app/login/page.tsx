@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Navbar } from "../components/Navbar";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -58,22 +58,26 @@ export default function LoginPage() {
                     </div>
 
                     {/* FORM */}
-                    <div className="space-y-3">
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                         <Input
                             type="email"
                             placeholder="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            className="pl-10"
                         />
+                    </div>
 
                         {/* PASSWORD WITH TOGGLE */}
                         <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                             <Input
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="pr-10"
+                                className="pr-10 pl-10"   // <-- add pl-10 here
                             />
 
                             <button
