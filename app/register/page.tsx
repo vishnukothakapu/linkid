@@ -11,10 +11,12 @@ import { Navbar } from "../components/Navbar";
 
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { CheckCircle2 } from "lucide-react";
 
 export default function RegisterPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -33,13 +35,38 @@ export default function RegisterPage() {
             body: JSON.stringify(data),
         });
 
+        const result = await res.json();
         setLoading(false);
 
         if (res.ok) {
-            router.push("/login");
+            setSuccess(true);
         } else {
-            alert("Registration failed");
+            alert(result.error || "Registration failed");
         }
+    }
+
+    if (success) {
+        return (
+            <>
+                <Navbar />
+                <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 text-center">
+                    <div className="w-full max-w-md space-y-4 rounded-xl border bg-background p-8 shadow-sm">
+                        <div className="flex justify-center">
+                            <div className="rounded-full bg-green-100 p-3 text-green-600">
+                                <CheckCircle2 className="h-10 w-10" />
+                            </div>
+                        </div>
+                        <h1 className="text-2xl font-bold">Check your email</h1>
+                        <p className="text-muted-foreground">
+                            We've sent a verification link to your email address. Please click the link to verify your account.
+                        </p>
+                        <Button asChild className="w-full">
+                            <Link href="/login">Go to Login</Link>
+                        </Button>
+                    </div>
+                </div>
+            </>
+        );
     }
 
     return (

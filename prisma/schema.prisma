@@ -15,8 +15,11 @@ model User {
   image         String?
 
   password      String?  
-
   username      String?  @unique
+
+  isVerified        Boolean   @default(false)
+  verificationToken String?   @unique
+  tokenExpiry       DateTime?
 
   links         Link[]
   accounts      Account[]

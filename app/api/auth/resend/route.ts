@@ -1,53 +1,54 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/mail";
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password } = await req.json();
+        const { email } = await req.json();
 
-        if (!email || !password) {
+        if (!email) {
             return NextResponse.json(
-                { error: "Missing fields" },
+                { error: "Email is required" },
                 { status: 400 }
             );
         }
 
-        const existingUser = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: { email },
         });
 
-        if (existingUser) {
+        if (!user) {
+            // We return generic success to avoid email enumeration
+            return NextResponse.json({ success: true, message: "If an account exists, a verification email has been sent." });
+        }
+
+        if (user.isVerified) {
             return NextResponse.json(
-                { error: "User already exists" },
-                { status: 409 }
+                { error: "Email is already verified" },
+                { status: 400 }
             );
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
+        // Generate new token
         const verificationToken = crypto.randomBytes(32).toString("hex");
         const tokenExpiryHours = Number(process.env.TOKEN_EXPIRY_HOURS) || 24;
         const tokenExpiry = new Date();
         tokenExpiry.setHours(tokenExpiry.getHours() + tokenExpiryHours);
 
-        await prisma.user.create({
+        await prisma.user.update({
+            where: { id: user.id },
             data: {
-                name,
-                email,
-                password: hashedPassword,
                 verificationToken,
                 tokenExpiry,
-                isVerified: false,
             },
         });
 
         await sendVerificationEmail(email, verificationToken);
 
-        return NextResponse.json({ success: true, message: "Verification email sent!" });
+        return NextResponse.json({ success: true, message: "Verification email resent!" });
     } catch (err) {
+        console.error("Resend error:", err);
         return NextResponse.json(
             { error: "Something went wrong" },
             { status: 500 }

@@ -42,7 +42,13 @@ export const authOptions: NextAuthOptions = {
                     user.password
                 );
 
-                return isValid ? user : null;
+                if (!isValid) return null;
+
+                if (user.isVerified === false) {
+                    throw new Error("EMAIL_NOT_VERIFIED");
+                }
+
+                return user;
             },
         }),
     ],
