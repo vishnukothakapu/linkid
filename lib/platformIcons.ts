@@ -11,6 +11,13 @@ import {
 } from "lucide-react";
 import { FaDiscord } from "react-icons/fa";
 
+import {
+  SiHashnode,
+  SiDevdotto,
+  SiMedium,
+  SiDribbble,
+} from "react-icons/si";
+
 export const PLATFORM_ICONS: Record<string, any> = {
     github: Github,
     linkedin: Linkedin,
@@ -22,5 +29,9 @@ export const PLATFORM_ICONS: Record<string, any> = {
     facebook: Facebook,
     instagram: Instagram,
     twitch: Twitch,
+    hashnode: SiHashnode,
+    devto: SiDevdotto,
+    medium: SiMedium,
+    dribbble: SiDribbble,
     discord: FaDiscord,
 };

@@ -8,7 +8,11 @@ export type Platform =
     | "instagram"
     | "discord"
     | "twitch"
-    | "website";
+    | "website"
+    | "hashnode"
+    | "devto"
+    | "medium"
+    | "dribbble";
 
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     github: /^https?:\/\/(www\.)?github\.com\/[^/]+/i,
@@ -21,6 +25,10 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     discord: /^https?:\/\/(www\.)?discord\.com\/users\/[^/]+/i,
     twitch: /^https?:\/\/(www\.)?twitch\.tv\/[^/]+/i,
     website: /^https?:\/\/.+/i,
+    hashnode: /hashnode\.com\/@?([a-zA-Z0-9_-]+)/,
+    devto: /dev\.to\/([a-zA-Z0-9_-]+)/,
+    medium: /medium\.com\/@?([a-zA-Z0-9_-]+)/,
+    dribbble: /dribbble\.com\/([a-zA-Z0-9_-]+)/,
 };
 
 export function normalizeUrl(url: string) {
