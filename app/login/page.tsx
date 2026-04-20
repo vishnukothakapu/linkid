@@ -9,6 +9,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { BorderBeam } from "@/components/lightswind/border-beam";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -100,7 +101,7 @@ export default function LoginPage() {
                         </div>
 
                         <Button
-                            className="w-full"
+                            className="w-full relative overflow-hidden group"
                             onClick={() =>
                                 signIn("credentials", {
                                     email,
@@ -110,6 +111,21 @@ export default function LoginPage() {
                             }
                         >
                             Login with Email
+                            <BorderBeam
+                                size={45}
+                                duration={6}
+                                delay={0}
+                                colorFrom="#00FFFC"
+                                colorTo=""
+                                reverse={false}
+                                initialOffset={0}
+                                borderThickness={5}
+                                opacity={1}
+                                glowIntensity={10}
+                                beamBorderRadius={100}
+                                pauseOnHover={false}
+                                speedMultiplier={1}
+                            />
                         </Button>
                     </div>
 

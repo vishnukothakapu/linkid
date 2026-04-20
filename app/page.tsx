@@ -1,5 +1,8 @@
 import { Navbar } from "@/app/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { MagneticButton } from "@/components/lightswind/magnetic-button";
+import RippleButton from "@/components/lightswind/ripple-button";
+import { BorderBeam } from "@/components/lightswind/border-beam";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -53,13 +56,35 @@ export default async function Home() {
             linkid.qzz.io/username/github
           </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/login">Create your LinkID</Link>
-            </Button>
+          <div className="mt-12 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 px-4">
+            <div className="-m-5 z-10 flex justify-center w-full sm:w-auto">
+              <Link href="/login" passHref>
+                <MagneticButton size="md" className="w-[240px] sm:w-[200px]">
+                  Create your LinkID
+                </MagneticButton>
+              </Link>
+            </div>
 
-            <Button size="lg" variant="outline">
+            <Button 
+              variant="outline" 
+              className="relative h-12 text-base rounded-full w-[240px] sm:w-[200px] overflow-hidden"
+            >
               View Demo
+              <BorderBeam
+                size={45}
+                duration={6}
+                delay={0}
+                colorFrom="#00FFFC"
+                colorTo=""
+                reverse={false}
+                initialOffset={0}
+                borderThickness={5}
+                opacity={1}
+                glowIntensity={10}
+                beamBorderRadius={100}
+                pauseOnHover={false}
+                speedMultiplier={1}
+              />
             </Button>
           </div>
         </div>
@@ -311,15 +336,38 @@ export default async function Home() {
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                 Help us improve LinkID by sharing your feedback. Your input helps us build better tools for developers worldwide.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="outline" asChild>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 mt-8">
+                <Button 
+                  variant="outline" 
+                  className="relative overflow-hidden h-14 text-lg rounded-full w-[280px] sm:w-[240px] group" 
+                  asChild
+                >
                   <Link href="https://github.com/your-repo/discussions" target="_blank">
                     Leave Feedback
+                    <BorderBeam
+                      size={45}
+                      duration={6}
+                      delay={0}
+                      colorFrom="#00FFFC"
+                      colorTo=""
+                      reverse={false}
+                      initialOffset={0}
+                      borderThickness={5}
+                      opacity={1}
+                      glowIntensity={10}
+                      beamBorderRadius={100}
+                      pauseOnHover={false}
+                      speedMultiplier={1}
+                    />
                   </Link>
                 </Button>
-                <Button size="lg" asChild>
-                  <Link href="/login">Join the Community</Link>
-                </Button>
+                <div className="-m-5 z-10 flex justify-center w-full sm:w-auto">
+                  <Link href="/login" passHref>
+                    <MagneticButton size="lg" className="w-[280px] sm:w-[240px]">
+                      Join the Community
+                    </MagneticButton>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -369,9 +417,12 @@ export default async function Home() {
           </p>
 
           <div className="mt-6 sm:mt-8">
-            <Button size="lg" asChild className="w-full sm:w-auto">
-              <Link href="/login">Get Started</Link>
-            </Button>
+            <Link href="/login" passHref className="w-full sm:w-auto">
+              <RippleButton
+                text="Get Started"
+                className="!h-10 !px-6 !text-sm !font-medium !rounded-md w-full sm:w-auto !bg-primary !border-none !text-primary-foreground hover:!bg-primary/90 hover:!text-black"
+              />
+            </Link>
           </div>
         </div>
       </section>
@@ -404,7 +455,7 @@ export default async function Home() {
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
                 </Link>
               </div>

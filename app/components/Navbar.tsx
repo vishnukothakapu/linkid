@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import RippleButton from "@/components/lightswind/ripple-button";
 
 export function Navbar() {
     return (
@@ -28,9 +29,12 @@ export function Navbar() {
                 <div className="flex items-center gap-4">
                     <ThemeToggle />
 
-                    <Button asChild>
-                        <Link href="/login">Get Started</Link>
-                    </Button>
+                    <Link href="/login" passHref>
+                        <RippleButton 
+                            text="Get Started" 
+                            className="!h-9 !px-4 !py-2 !text-sm !font-medium !rounded-md !bg-primary !border-none !text-primary-foreground hover:!bg-primary/90 hover:!text-black"
+                        />
+                    </Link>
                 </div>
             </div>
         </header>
