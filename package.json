@@ -9,7 +9,7 @@
     "start": "next start",
     "postinstall": "node scripts/postinstall-prisma-generate.mjs",
     "lint": "eslint",
-    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts"
+    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
