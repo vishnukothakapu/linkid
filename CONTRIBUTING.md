@@ -15,6 +15,7 @@ Please take a few minutes to read this guide before opening an issue or submitti
 - [Commit Message Guidelines](#-commit-message-guidelines)
 - [Pull Request Process](#-pull-request-process)
 - [Issue Assignment Rules](#-issue-assignment-rules)
+- [Open Source Programs (GSSoC/NSoC)](#-open-source-programs-gssocnsoc)
 - [Development Workflow](#-development-workflow)
 - [Code Style](#-code-style)
 - [Testing](#-testing)
@@ -274,6 +275,19 @@ Closes #<issue-number>
 | `duplicate` | Already reported |
 | `wontfix` | Out of scope or intentional |
 | `in progress` | Being actively worked on |
+
+---
+
+## 🌟 Open Source Programs (GSSoC/NSoC)
+
+LinkID is proud to be part of **GirlScript Summer of Code 2026** and **Nexus Spring of Code 2026**.
+
+### For Participants:
+
+1. **Identify Yourself:** When commenting on an issue or opening a PR, clearly state which program you are part of (e.g., "I am a GSSoC'26 contributor").
+2. **PR Tagging:** You **must** select your organization in the Pull Request template.
+3. **Labels:** Maintainers will add `GSSoC-2026` or `NSoC-2026` labels to your PRs for tracking.
+4. **Scoring:** Points will be awarded based on the difficulty and quality of the contribution, following each program's specific guidelines.
 
 ---
 

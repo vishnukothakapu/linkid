@@ -1,8 +1,13 @@
 # Pull Request
 
-⚠️ Important: This project is part of NSoC'26.
-All contributors must include "NSoC'26" in their PR title or description.
-PRs without this tag may not be reviewed.
+⚠️ **Important:** This project is part of **GSSoC'26** and **NSoC'26**.
+All contributors must select their organization below and include it in their PR title.
+PRs without an organization tag may not be reviewed.
+
+## 🏢 Organization
+- [ ] GirlScript Summer of Code 2026 (GSSoC'26)
+- [ ] Nexus Spring of Code 2026 (NSoC'26)
+- [ ] None (General contribution)
 
 ## 📋 Summary
 
@@ -75,6 +80,6 @@ Closes #
 
 ---
 
-> **NSoC '26 Contributors:** Thank you for your contribution to LinkID!
+> **GSSoC'26 / NSoC'26 Contributors:** Thank you for your contribution to LinkID!
 > A maintainer will review your PR within 3–5 business days.
 > Please be patient and address any requested changes promptly.
