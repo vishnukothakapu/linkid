@@ -102,8 +102,8 @@ export default function QRCodeButton({ qrCode, avatarUrl, username = "User", lin
     else setStatus("error");
   }, [qrCode, avatarUrl, username]);
 
-  useEffect(() => { if (open && !generatedRef.current) generate(); }, [open, generate]);
-  useEffect(() => { if (open) generate(); }, [avatarUrl, qrCode]); // eslint-disable-line
+  useEffect(() => { if (open && !generatedRef.current) setTimeout(generate, 0); }, [open, generate]);
+  useEffect(() => { if (open) setTimeout(generate, 0); }, [avatarUrl, qrCode]); // eslint-disable-line
 
   const handleDownload = () => {
     const src = compositeQR ?? qrCode;
@@ -135,6 +135,7 @@ export default function QRCodeButton({ qrCode, avatarUrl, username = "User", lin
                 </div>
               )}
               {displayQR ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={displayQR} alt="QR Code with profile picture" width={208} height={208} className="h-full w-full object-contain" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">QR code unavailable</div>

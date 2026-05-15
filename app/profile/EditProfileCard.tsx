@@ -32,16 +32,21 @@ export default function EditProfileCard({
     }
 
     useEffect(() => {
-        if (username.length < 3 || username === initialUsername) {
-            setAvailable(null);
-            setChecking(false);
-            return;
-        }
-
-        setChecking(true);
         const requestId = ++latestRequestId.current;
 
         const timer = setTimeout(async () => {
+            if (username.length < 3 || username === initialUsername) {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                    setChecking(false);
+                }
+                return;
+            }
+
+            if (requestId === latestRequestId.current) {
+                setChecking(true);
+            }
+
             const res = await fetch(`/api/username/check?username=${username}`);
             const data = await res.json();
 
@@ -52,7 +57,7 @@ export default function EditProfileCard({
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [username]);
+    }, [username, initialUsername]);
 
     async function saveChanges() {
         setLoading(true);

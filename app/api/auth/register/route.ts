@@ -36,8 +36,8 @@ export async function POST(req: Request) {
                     password: hashedPassword,
             },
         });
-    } catch (err: any) {
-        if (err.code === "P2002") {
+    } catch (err: unknown) {
+        if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
 
       return NextResponse.json (
         {error: "User already exists"},
