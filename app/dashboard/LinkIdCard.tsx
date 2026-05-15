@@ -8,7 +8,7 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
   const [copied, setCopied] = useState(false);
 
   function copyProfile() {
-    navigator.clipboard.writeText(`linkid.qzz.io/${username}`);
+    navigator.clipboard.writeText(`https://linkid.qzz.io/${username}`);
     setCopied(true);
     toast.success("Profile link copied");
     setTimeout(() => setCopied(false), 1200);
@@ -30,7 +30,7 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
         {/* Link box */}
         <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm font-mono w-full sm:w-auto">
           <code className="truncate">
-            linkid.qzz.io/{username}
+           https://linkid.qzz.io/{username}
           </code>
 
           <Button
@@ -53,7 +53,7 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
           asChild
           className="w-full sm:w-auto justify-center gap-2"
         >
-          <a href={`/${username}`} target="_blank">
+          <a href={`https://linkid.qzz.io/${username}`} target="_blank">
             <ExternalLink className="h-4 w-4" />
             Open
           </a>

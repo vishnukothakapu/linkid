@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
     await prisma.link.updateMany({
         where: { platform, user: { username } },
-        data: { clicks: { increment: 1 } },
+        data: { clickCount: { increment: 1 } },
     });
 
     return NextResponse.json({ success: true });

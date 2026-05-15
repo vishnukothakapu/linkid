@@ -85,9 +85,8 @@ export default async function PublicProfile({
         // If the DB isn't reachable in local OSS setups, fall back to 404 instead of a huge error page.
         notFound();
     }
-
     if (!user) {
-        // Check username history for redirect
+    try {
         const history = await prisma.usernameHistory.findUnique({
             where: { previousUsername: username },
             include: { user: { select: { username: true } } },
@@ -96,10 +95,12 @@ export default async function PublicProfile({
         if (history?.user?.username) {
             redirect(`/${history.user.username}`);
         }
-
-        notFound();
+    } catch {
+        // ignore DB error
     }
 
+    notFound();
+}
     return (
         <main className="min-h-screen bg-muted/40 px-4 py-16">
             <div className="mx-auto max-w-md">

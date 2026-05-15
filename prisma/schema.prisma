@@ -40,7 +40,6 @@ model Link {
   clickCount     Int      @default(0)
   lastClickedAt  DateTime?
   order     Int      @default(0)
-  clicks    Int      @default(0)
   isPublic  Boolean  @default(true)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -32,19 +32,19 @@ export async function GET() {
             platform: true,
             label: true,
             url: true,
-            clicks: true,
+            clickCount: true,
             createdAt: true,
             isPublic: true,
         },
     });
 
     const rows = [
-        ["platform", "label", "url", "clicks", "createdDate", "isPublic"],
+        ["platform", "label", "url", "clickCount", "createdDate", "isPublic"],
         ...links.map((link) => [
             link.platform,
             link.label,
             link.url,
-            String(link.clicks),
+            String(link.clickCount),
             link.createdAt.toISOString(),
             link.isPublic ? "true" : "false",
         ]),
