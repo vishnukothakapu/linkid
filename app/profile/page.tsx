@@ -7,6 +7,7 @@ import { DashboardNavbar } from "@/app/components/DashboardNavbar";
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
+import { DangerZoneCard } from "./DangerZoneCard";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -32,6 +33,11 @@ export default async function ProfilePage() {
                 <AccountInfoCard user={user} />
 
                 <ProfileActionsCard />
+
+                <DangerZoneCard
+                    userEmail={user.email}
+                    hasPassword={!!user.password}
+                />
             </main>
         </>
     );

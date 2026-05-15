@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 
 import prisma from "@/lib/prisma";
+import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
@@ -67,6 +68,11 @@ export const authOptions: NextAuthOptions = {
 
     callbacks: {
         async jwt({ token, trigger, session, user }) {
+            // Immediately invalidate token if user account was deleted
+            if (token.sub && isUserSessionInvalidated(token.sub)) {
+                return {} as typeof token;
+            }
+
             if (trigger === "update" && "image" in (session ?? {})) {
                 token.image = session.image ?? null;
             }
@@ -85,6 +91,10 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
         async session({ session, token }) {
+            // If token was invalidated (account deleted), force empty session
+            if (!token.sub) {
+                return {} as typeof session;
+            }
             if (session.user) {
                 session.user.image = token.image as string ?? null;
                 session.user.id = token.sub as string;
