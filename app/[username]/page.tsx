@@ -1,22 +1,35 @@
-import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ProfileCard } from "./ProfileCard";
 import { ProfileFooter } from "./ProfileFooter";
-
-import type { Link } from "./types/type";
+import { resolveUserByUsername } from "@/lib/userLookup";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
     const { username } = await params;
+    const resolved = await resolveUserByUsername(username);
 
-    return {
-        title: `${username} | LinkID`,
-        description: `Check out ${username}'s LinkID profile.`,
-        openGraph: {
+    if (!resolved) {
+        return {
             title: `${username} | LinkID`,
             description: `Check out ${username}'s LinkID profile.`,
-            url: `https://linkid.vercel.app/${username}`,
+            openGraph: {
+                title: `${username} | LinkID`,
+                description: `Check out ${username}'s LinkID profile.`,
+                url: `https://linkid.vercel.app/${username}`,
+            },
+        };
+    }
+
+    const canonicalUsername = resolved.canonicalUsername ?? username;
+
+    return {
+        title: `${canonicalUsername} | LinkID`,
+        description: `Check out ${canonicalUsername}'s LinkID profile.`,
+        openGraph: {
+            title: `${canonicalUsername} | LinkID`,
+            description: `Check out ${canonicalUsername}'s LinkID profile.`,
+            url: `https://linkid.vercel.app/${canonicalUsername}`,
         },
     };
 }
@@ -28,44 +41,25 @@ export default async function PublicProfile({
 }) {
     const { username } = await params;
     const session = await getServerSession(authOptions);
-
-    let user:
-        | {
-              name: string | null;
-              username: string | null;
-              bio: string | null;
-              image: string | null;
-              links: Link[];
-          }
-        | null = null;
+    let resolved;
 
     try {
-        user = await prisma.user.findUnique({
-            where: { username },
-            select: {
-                name: true,
-                username: true,
-                bio: true,
-                image: true,
-                links: {
-                    where: { isPublic: true },
-                    orderBy: { order: "asc" },
-                },
-            },
-        });
+        resolved = await resolveUserByUsername(username);
     } catch {
         // If the DB isn't reachable in local OSS setups, fall back to 404 instead of a huge error page.
         notFound();
     }
 
-    if (!user) notFound();
+    if (!resolved) notFound();
+
+    const user = resolved.user;
 
     return (
         <main className="min-h-screen bg-muted/40 px-4 py-16">
             <div className="mx-auto max-w-md">
                 <ProfileCard
-                    user={{ name: user.name, username: username, bio: user.bio, image: user.image, links: user.links }}
-                    username={username}
+                    user={{ name: user.name, username: user.username ?? resolved.canonicalUsername, bio: user.bio, image: user.image, links: user.links }}
+                    username={resolved.canonicalUsername}
                     showCTA={!session}
                 />
                 <ProfileFooter />
