@@ -23,7 +23,7 @@ This project is part of **GirlScript Summer of Code
 2026 (GSSoC'26)** and **Nexus Spring of Code 2026 (NSoC'26)**
 
 
-[🚀 Live Demo](https://linkid.qzz.io) · [📖 Docs](https://github.com/vishnukothakapu/linkid/wiki) · [🐛 Report Bug](https://github.com/vishnukothakapu/linkid/issues) · [✨ Request Feature](https://github.com/vishnukothakapu/linkid/issues)
+[Live Demo](https://linkid.qzz.io) · [Docs](https://github.com/vishnukothakapu/linkid/wiki) · [Report Bug](https://github.com/vishnukothakapu/linkid/issues) · [Request Feature](https://github.com/vishnukothakapu/linkid/issues)
 
 <br />
 
@@ -34,7 +34,7 @@ This project is part of **GirlScript Summer of Code
 </div>
 
 
-## ✨ Features
+## Features
 
 ### Core
 - **Platform Routing** — Predictable links like `/github`, `/linkedin`, `/leetcode`, `/portfolio`
@@ -49,16 +49,16 @@ This project is part of **GirlScript Summer of Code
 - **Route Protection** — Middleware-based auth guards on dashboard and API routes
 
 ### UX & Design
-- 🌙 **Dark Mode** — Full system, light, and dark theme support via `next-themes`
-- 📱 **Fully Responsive** — Mobile-first design with Tailwind CSS
-- 🔔 **Toast Notifications** — Instant feedback on all user actions
-- 🎨 **Platform Icons** — Automatic icon matching for 10+ platforms
+- **Dark Mode** — Full system, light, and dark theme support via `next-themes`
+- **Fully Responsive** — Mobile-first design with Tailwind CSS
+- **Toast Notifications** — Instant feedback on all user actions
+- **Platform Icons** — Automatic icon matching for 10+ platforms
 
 ### Developer Experience
-- 🏗️ **Type-safe** — End-to-end TypeScript with strict mode
-- 🗄️ **Prisma ORM** — Type-safe database access with PostgreSQL
-- 🚦 **URL Validation** — Strict per-platform URL validation before saving
-- 🔄 **Optimistic UI** — Local state updates before server confirmation
+- **Type-safe** — End-to-end TypeScript with strict mode
+- **Prisma ORM** — Type-safe database access with PostgreSQL
+- **URL Validation** — Strict per-platform URL validation before saving
+- **Optimistic UI** — Local state updates before server confirmation
 
 ---
 
@@ -78,7 +78,7 @@ This project is part of **GirlScript Summer of Code
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
 > **Try it live:** [https://linkid.qzz.io](https://linkid.qzz.io)
 
@@ -87,7 +87,7 @@ This project is part of **GirlScript Summer of Code
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -138,7 +138,7 @@ npx prisma migrate dev
 # (Optional) Open Prisma Studio to inspect data
 npx prisma studio
 ```
-## 🐳 Docker Setup (optional)
+## Docker Setup (optional)
 
 ```bash
 docker-compose up -d   # starts PostgreSQL
@@ -204,7 +204,7 @@ linkid/
 
 ---
 
-## 🧭 Usage Guide
+## Usage Guide
 
 ### Creating Your LinkID
 
@@ -252,7 +252,7 @@ git push origin feat/your-feature-name
 # Open a Pull Request on GitHub
 ```
 
-## 🗺️ Roadmap / Open Issues
+## Roadmap / Open Issues
 
 See [GitHub Issues](https://github.com/vishnukothakapu/linkid/issues) for 
 tasks open to contributors.

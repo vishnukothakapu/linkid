@@ -12,6 +12,7 @@ const CSRF_EXCLUDED_PATH_PREFIXES = [
     "/api/auth",
     "/api/csrf",
     "/api/links/click",
+    "/api/analytics/aggregate",
 ];
 
 export type CsrfDecision = "skip" | "allow" | "reject";

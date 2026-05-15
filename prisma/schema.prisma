@@ -39,9 +39,48 @@ model Link {
   isPublic  Boolean  @default(true)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clickEvents ClickEvent[]
+  dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
 
   @@unique([userId, platform])
+}
+
+model ClickEvent {
+  id              String   @id @default(uuid())
+  linkId           String
+  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId           String
+  visitorKey       String?
+  userAgent        String?
+  referrer         String?
+  country          String?
+  deviceType       String?
+  isBot            Boolean  @default(false)
+  isUniqueVisitor  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([linkId, createdAt])
+  @@index([userId, createdAt])
+  @@index([linkId, visitorKey, createdAt])
+  @@index([createdAt])
+}
+
+model DailyLinkAnalytics {
+  id            String   @id @default(uuid())
+  linkId         String
+  link           Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId         String
+  date           DateTime
+  totalClicks    Int      @default(0)
+  uniqueClicks   Int      @default(0)
+  botClicks      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([linkId, date])
+  @@index([userId, date])
+  @@index([date])
 }
 model Account {
   id                String  @id @default(cuid())
