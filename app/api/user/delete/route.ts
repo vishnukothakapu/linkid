@@ -17,7 +17,6 @@ export async function DELETE(req: NextRequest) {
     const body = await req.json();
     const { password, otp } = body as { password?: string; otp?: string };
 
-    // Fetch user with password field
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, password: true, email: true },
@@ -27,7 +26,6 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Step 1: Verify password for credential users
     if (user.password) {
       if (!password) {
         return NextResponse.json(
@@ -45,7 +43,6 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
-    // Step 2: Verify OTP (mandatory for all users)
     if (!otp) {
       return NextResponse.json(
         { error: "Verification code is required" },
@@ -61,15 +58,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Invalidate sessions on all devices BEFORE deleting
     invalidateUserSessions(userId);
 
-    // All checks passed — delete user (cascade handles related records)
     await prisma.user.delete({
       where: { id: session.user.id },
     });
 
-    // Clean up OTP store
     clearOtp(userId);
 
     return NextResponse.json({ success: true });

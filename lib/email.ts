@@ -1,9 +1,5 @@
 import nodemailer from "nodemailer";
 
-/**
- * Creates a nodemailer transporter from SMTP environment variables.
- * Returns null if SMTP is not configured (dev fallback).
- */
 function createTransporter() {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT;
@@ -22,10 +18,6 @@ function createTransporter() {
   });
 }
 
-/**
- * Sends a delete-account OTP email to the given address.
- * Falls back to console logging in development when SMTP is not configured.
- */
 export async function sendDeleteOtpEmail(
   to: string,
   otp: string

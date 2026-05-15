@@ -1,16 +1,7 @@
-/**
- * In-memory OTP store for account deletion verification.
- *
- * Stores ephemeral 6-digit OTPs with a 10-minute TTL and
- * a maximum of 3 verification attempts per OTP.
- *
- * Uses globalThis to persist across Next.js dev-mode hot reloads.
- */
-
-const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 const MAX_SEND_PER_WINDOW = 3;
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 
 interface OtpEntry {
   otp: string;
@@ -23,7 +14,6 @@ interface RateLimitEntry {
   windowStart: number;
 }
 
-// Persist across HMR in dev mode (same pattern as Prisma singleton)
 declare global {
   var __deleteOtpStore: Map<string, OtpEntry> | undefined;
   var __deleteRateLimitStore: Map<string, RateLimitEntry> | undefined;
@@ -47,9 +37,6 @@ export function generateOtp(): string {
   return String(num % 1_000_000).padStart(6, "0");
 }
 
-/**
- * Stores an OTP for the given user. Overwrites any previous OTP.
- */
 export function setOtp(userId: string, otp: string): void {
   otpStore.set(userId, {
     otp,
@@ -58,22 +45,14 @@ export function setOtp(userId: string, otp: string): void {
   });
 }
 
-/**
- * Verifies an OTP for the given user with constant-time comparison.
- * Returns true if the OTP is valid and not expired.
- * Increments attempt counter; auto-clears after max attempts.
- */
 export function verifyOtp(userId: string, candidateOtp: string): { valid: boolean; error?: string } {
   const entry = otpStore.get(userId);
   if (!entry) return { valid: false, error: "Verification code expired or not requested" };
-
-  // Check expiry
   if (Date.now() > entry.expiresAt) {
     otpStore.delete(userId);
     return { valid: false, error: "Verification code expired. Please request a new one." };
   }
 
-  // Check max attempts
   entry.attempts += 1;
   const attemptsRemaining = MAX_ATTEMPTS - entry.attempts;
 
@@ -82,7 +61,6 @@ export function verifyOtp(userId: string, candidateOtp: string): { valid: boolea
     return { valid: false, error: "Too many failed attempts. Please request a new code." };
   }
 
-  // Constant-time comparison
   const encoder = new TextEncoder();
   const a = encoder.encode(candidateOtp);
   const b = encoder.encode(entry.otp);
@@ -107,18 +85,12 @@ export function verifyOtp(userId: string, candidateOtp: string): { valid: boolea
   }
 }
 
-/**
- * Clears the OTP for the given user (e.g. after successful deletion).
- */
+
 export function clearOtp(userId: string): void {
   otpStore.delete(userId);
   rateLimitStore.delete(userId);
 }
 
-/**
- * Checks and increments the rate limit for OTP sends.
- * Returns true if the request is allowed, false if rate-limited.
- */
 export function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const entry = rateLimitStore.get(userId);

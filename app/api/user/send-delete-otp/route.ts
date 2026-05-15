@@ -14,15 +14,12 @@ export async function POST() {
 
     const userId = session.user.id;
 
-    // Rate-limit OTP sends
     if (!checkRateLimit(userId)) {
       return NextResponse.json(
         { error: "Too many OTP requests. Please try again later." },
         { status: 429 }
       );
     }
-
-    // Fetch user email
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { email: true },
@@ -35,11 +32,9 @@ export async function POST() {
       );
     }
 
-    // Generate and store OTP
     const otp = generateOtp();
     setOtp(userId, otp);
 
-    // Send OTP via email (or console fallback)
     await sendDeleteOtpEmail(user.email, otp);
 
     return NextResponse.json({ success: true });

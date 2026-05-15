@@ -2,9 +2,6 @@ export const CSRF_COOKIE_NAME = "csrf_token";
 export const CSRF_HEADER_NAME = "x-csrf-token";
 export const CSRF_TOKEN_MAX_AGE_SECONDS = 60 * 60;
 
-/**
- * Generates a cryptographically secure CSRF token.
- */
 export function generateCsrfToken(): string {
     if (!globalThis.crypto?.getRandomValues) {
         throw new Error("Secure crypto API is unavailable");
@@ -16,9 +13,6 @@ export function generateCsrfToken(): string {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/**
- * Validates a CSRF token with constant-time comparison semantics.
- */
 export function validateCsrfToken(
     token: string | null | undefined,
     storedToken: string | null | undefined
@@ -44,9 +38,6 @@ export function validateCsrfToken(
     return mismatch === 0;
 }
 
-/**
- * Extracts a CSRF token from the request header or request body.
- */
 export async function extractCsrfTokenFromRequest(request: Request): Promise<string | null> {
     const headerToken = request.headers.get(CSRF_HEADER_NAME);
 
@@ -79,9 +70,6 @@ export async function extractCsrfTokenFromRequest(request: Request): Promise<str
     return null;
 }
 
-/**
- * Returns the cookie settings used for CSRF token storage.
- */
 export function getCsrfCookieOptions() {
     return {
         httpOnly: true,

@@ -43,7 +43,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
 
-  // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
       setStep("confirm");
@@ -59,7 +58,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
     }
   }, [open]);
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setInterval(() => {
@@ -197,8 +195,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
               {error}
             </div>
           )}
-
-          {/* Step 1: Type DELETE */}
           {step === "confirm" && (
             <div className="space-y-3">
               <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-200">
@@ -222,7 +218,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
             </div>
           )}
 
-          {/* Step 2: Password (credential users only) */}
           {step === "password" && (
             <div className="space-y-1.5">
               <Label htmlFor="delete-password-input">Password</Label>
@@ -251,7 +246,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
             </div>
           )}
 
-          {/* Step 3: Email OTP */}
           {step === "otp" && (
             <div className="space-y-3">
               {!otpSent ? (
@@ -368,9 +362,6 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
   );
 }
 
-/**
- * Masks an email address for display: n****s@gmail.com
- */
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
   if (!domain) return email;
