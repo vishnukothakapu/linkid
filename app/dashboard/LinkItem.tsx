@@ -39,7 +39,7 @@ export function LinkItem({
   async function copy() {
     try {
       await navigator.clipboard.writeText(
-        `linkid.qzz.io/${username}/${link.platform}`,
+        `https://linkid.qzz.io/${username}/${link.platform}`,
       );
       setCopied(true);
       toast.success("Link copied successfully!");
@@ -110,20 +110,21 @@ export function LinkItem({
             )}
           </Button>
 
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open ${link.label ?? link.platform} in new tab`}
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            title={`Open ${link.label ?? link.platform}`}
           >
-            <Button
-              size="icon"
-              variant="ghost"
-              title={`Open ${link.label ?? link.platform}`}
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${link.label ?? link.platform} in new tab`}
             >
               <ExternalLink className="h-4 w-4" />
-            </Button>
-          </a>
+            </a>
+          </Button>
 
           <Button
             size="icon"

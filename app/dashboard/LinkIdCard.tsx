@@ -15,7 +15,7 @@ export function LinkIdCard({
 
   async function copyProfile() {
     try {
-      await navigator.clipboard.writeText(`linkid.qzz.io/${username}`);
+      await navigator.clipboard.writeText(`https://linkid.qzz.io/${username}`);
       setCopied(true);
       toast.success("Profile link copied successfully!");
       setTimeout(() => setCopied(false), 1200);
