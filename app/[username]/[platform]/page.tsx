@@ -28,7 +28,10 @@ export default async function PlatformRedirect({
 
     await prisma.link.update({
         where: { id: link.id },
-        data: { clicks: { increment: 1 } },
+        data: {
+         clickCount: { increment: 1 },
+         lastClickedAt: new Date(),
+        }
     });
 
     redirect(link.url);

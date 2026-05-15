@@ -8,12 +8,11 @@ import QRCode from "./qrcode";
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) redirect("/login");
+  //  if (!session?.user?.email) redirect("/login");
 
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        include: { links: { orderBy: { order: 'asc' } } },
-    });
+    const user = await prisma.user.findFirst({
+    include: { links: { orderBy: { order: 'asc' } } },
+});
 
     if (!user?.username) return <CreateLinkId />;
 

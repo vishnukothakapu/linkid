@@ -5,7 +5,7 @@ export type Link = {
     platform: string;
     url: string;
     order: number;
-    clicks: number;
+    clickCount: number;
     isPublic: boolean;
     userId: string;
 }
