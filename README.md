@@ -109,17 +109,17 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Edit `.env` with your values. For local development, you can use a local PostgreSQL instance or the provided Docker setup.
 
 ```env
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/linkid"
 
 # NextAuth
-NEXTAUTH_SECRET="your-secret-here"          # openssl rand -base64 32
+NEXTAUTH_SECRET="your-secret-here"          # Generate with: openssl rand -base64 32
 NEXTAUTH_URL="http://localhost:3000"
 
-# OAuth Providers (optional but recommended)
+# OAuth Providers (Optional but recommended for full testing)
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
@@ -127,24 +127,16 @@ GITHUB_CLIENT_ID="your-github-client-id"
 GITHUB_CLIENT_SECRET="your-github-client-secret"
 ```
 
-> **Tip:** Generate `NEXTAUTH_SECRET` with `openssl rand -base64 32`
-
 ### 3. Set Up the Database
 
 ```bash
-# Run migrations
+# Run migrations to create tables
 npx prisma migrate dev
 
-# (Optional) Open Prisma Studio to inspect data
+# (Optional) Open Prisma Studio to inspect your data visually
 npx prisma studio
 ```
-## Docker Setup (optional)
 
-```bash
-docker-compose up -d   # starts PostgreSQL
-npx prisma migrate dev
-npm run dev
-```
 ### 4. Start the Development Server
 
 ```bash
@@ -152,6 +144,32 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) 🎉
+
+---
+
+## 🔑 OAuth Configuration Guide
+
+To enable Google or GitHub login locally:
+
+### Google Setup
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project.
+3. Navigate to **APIs & Services > Credentials**.
+4. Create an **OAuth 2.0 Client ID**.
+5. Set Authorized Redirect URIs to: `http://localhost:3000/api/auth/callback/google`.
+
+### GitHub Setup
+1. Go to your GitHub **Settings > Developer settings > OAuth Apps**.
+2. Click **New OAuth App**.
+3. Set Authorization callback URL to: `http://localhost:3000/api/auth/callback/github`.
+
+---
+
+## 🛠️ Troubleshooting
+
+- **Database Connection Error**: Ensure PostgreSQL is running and the `DATABASE_URL` in `.env` matches your credentials.
+- **NextAuth Secret**: If you see session errors, ensure `NEXTAUTH_SECRET` is set to a long random string.
+- **Migration Issues**: If Prisma migrations fail, try `npx prisma migrate reset` (Note: this will wipe your local data).
 
 ---
 
