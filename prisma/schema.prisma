@@ -1,64 +1,99 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "sqlite"
-   url  = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-  
-
-
 model User {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   name          String?
-  email         String   @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
 
-  password      String?
+  password String?
 
-  username      String?  @unique
+  username String? @unique
 
-  bio            String?
+  bio String?
 
-  links         Link[]
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime @default(now())
+  links     Link[]
+  accounts  Account[]
+  sessions  Session[]
+  createdAt DateTime  @default(now())
 
   usernameHistory UsernameHistory[]
+  clickEvents     ClickEvent[]
 }
 
-
-
 model Link {
-  id        String   @id @default(uuid())
-  platform  String
-  label     String
-  url       String
-  clickCount     Int      @default(0)
+  id             String               @id @default(uuid())
+  platform       String
+  label          String
+  url            String
+  clickCount     Int                  @default(0)
   lastClickedAt  DateTime?
-  order     Int      @default(0)
-  isPublic  Boolean  @default(true)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  order          Int                  @default(0)
+  isPublic       Boolean              @default(true)
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clickEvents    ClickEvent[]
+  dailyAnalytics DailyLinkAnalytics[]
+  createdAt      DateTime             @default(now())
 
   @@unique([userId, platform])
 }
+
+model ClickEvent {
+  id              String   @id @default(cuid())
+  linkId          String
+  link            Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visitorKey      String?
+  userAgent       String?
+  referrer        String?
+  country         String?
+  deviceType      String?
+  isBot           Boolean  @default(false)
+  isUniqueVisitor Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([linkId, createdAt])
+}
+
+model DailyLinkAnalytics {
+  id               String   @id @default(uuid())
+  linkId           String
+  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId           String
+  date             DateTime
+  totalClickCount  Int      @default(0)
+  uniqueClickCount Int      @default(0)
+  botClickCount    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([linkId, date])
+  @@index([userId, date])
+  @@index([date])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? 
-  access_token      String? 
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? 
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

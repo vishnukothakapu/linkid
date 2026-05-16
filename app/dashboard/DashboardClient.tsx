@@ -6,6 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { LinksSection } from "./LinksSection";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import { LinkIdCard } from "./LinkIdCard";
+import { AnalyticsOverview } from "./AnalyticsOverview";
 
 export default function DashboardClient({
     username,
@@ -116,6 +117,8 @@ export default function DashboardClient({
                 </section>
 
                 <LinkIdCard username={username} qrCode={qrCode} />
+
+                <AnalyticsOverview />
 
                 <LinksSection
                     username={username}

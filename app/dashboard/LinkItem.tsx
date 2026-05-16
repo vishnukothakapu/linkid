@@ -38,7 +38,7 @@ export function LinkItem({
 
     function copy() {
         navigator.clipboard.writeText(
-            `linkid.qzz.io/${username}/${link.platform}`
+            `https://linkid.qzz.io/${username}/${link.platform}`
         );
         setCopied(true);
         toast.success("Copied");
@@ -66,7 +66,7 @@ export function LinkItem({
                             {link.url}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            {link.clickCount ?? 0} {(link.clickCount ?? 0) === 1 ? "click" : "clicks"}
+                            {link.clickCount ?? 0} {(link.clickCount ?? 0) === 1 ? "click" : "clickCount"}
                         </p>
                         <p className="mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
                             {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
@@ -98,11 +98,16 @@ export function LinkItem({
                         )}
                     </Button>
 
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${link.label ?? link.platform} in new tab`}> 
-                        <Button size="icon" variant="ghost" title={`Open ${link.label ?? link.platform}`}>
-                            <ExternalLink className="h-4 w-4" />
-                        </Button>
-                    </a>
+                    <Button asChild size="icon" variant="ghost">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Open ${link.label ?? link.platform}`}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                   </Button>
 
                     <Button
                         size="icon"

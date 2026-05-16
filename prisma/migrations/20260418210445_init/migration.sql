@@ -20,7 +20,7 @@ CREATE TABLE "Link" (
     "label" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "order" INTEGER NOT NULL DEFAULT 0,
-    "clicks" INTEGER NOT NULL DEFAULT 0,
+    "clickCount" INTEGER NOT NULL DEFAULT 0,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

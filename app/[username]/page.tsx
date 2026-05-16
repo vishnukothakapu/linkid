@@ -86,26 +86,33 @@ export default async function PublicProfile({
         notFound();
     }
     if (!user) {
-    try {
-        const history = await prisma.usernameHistory.findUnique({
-            where: { previousUsername: username },
-            include: { user: { select: { username: true } } },
-        });
+        try {
+            const history = await prisma.usernameHistory.findUnique({
+                where: { previousUsername: username },
+                include: { user: { select: { username: true } } },
+            });
 
-        if (history?.user?.username) {
-            redirect(`/${history.user.username}`);
+            if (history?.user?.username) {
+                redirect(`/${history.user.username}`);
+            }
+        } catch {
+            // ignore DB error
         }
-    } catch {
-        // ignore DB error
+
+        notFound();
     }
 
-    notFound();
-}
     return (
         <main className="min-h-screen bg-muted/40 px-4 py-16">
             <div className="mx-auto max-w-md">
                 <ProfileCard
-                    user={{ name: user.name, username: username, bio: user.bio, image: user.image, links: user.links }}
+                    user={{
+                        name: user.name,
+                        username: username,
+                        bio: user.bio,
+                        image: user.image,
+                        links: user.links,
+                    }}
                     username={username}
                     showCTA={!session}
                 />
