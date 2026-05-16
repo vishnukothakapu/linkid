@@ -34,7 +34,7 @@ model Link {
   platform       String
   label          String
   url            String
-  clicks         Int      @default(0)   // ✅ clickCount hata diya
+  clickCount        Int      @default(0)   // ✅ clickCount hata diya
   lastClickedAt  DateTime?
   order          Int      @default(0)
   isPublic       Boolean  @default(true)
