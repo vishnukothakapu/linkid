@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Link2, LogOut, Copy } from "lucide-react";
+import { KeyRound, Link2, LogOut, Copy, Check } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { getCsrfToken } from "@/lib/csrfClient";
+import { ProfileDraft } from "@prisma/client";
 
 type MergeResult = {
     success?: boolean;
@@ -22,14 +23,24 @@ type MergeResult = {
     error?: string;
 };
 
-export function ProfileActionsCard({ hasPassword }: { hasPassword: boolean }) {
+interface ProfileActionsCardProps {
+    hasPassword: boolean;
+    profileDraft?: ProfileDraft | null;
+    profileVersions?: any[];
+}
+
+export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions = [] }: ProfileActionsCardProps) {
     const [generateOpen, setGenerateOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const [publishOpen, setPublishOpen] = useState(false);
+    const [previewOpen, setPreviewOpen] = useState(false);
     const [generatePassword, setGeneratePassword] = useState("");
     const [mergePassword, setMergePassword] = useState("");
     const [mergeCode, setMergeCode] = useState("");
     const [generatedCode, setGeneratedCode] = useState("");
     const [expiresAt, setExpiresAt] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState("");
+    const [previewExpiresAt, setPreviewExpiresAt] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [mergeSummary, setMergeSummary] = useState<MergeResult | null>(null);
 
@@ -96,6 +107,68 @@ export function ProfileActionsCard({ hasPassword }: { hasPassword: boolean }) {
         }
     }
 
+    async function handlePublishDraft() {
+        setLoading(true);
+
+        try {
+            const csrfToken = await getCsrfToken();
+            const response = await fetch("/api/profile/publish", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(data?.error ?? "Unable to publish profile");
+                return;
+            }
+
+            toast.success("Profile published successfully!");
+            setPublishOpen(false);
+            window.location.reload();
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleGeneratePreview() {
+        setLoading(true);
+
+        try {
+            const csrfToken = await getCsrfToken();
+            const response = await fetch("/api/profile/preview", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(data?.error ?? "Unable to generate preview link");
+                return;
+            }
+
+            setPreviewUrl(data.previewUrl);
+            setPreviewExpiresAt(data.expiresAt);
+            toast.success("Preview link generated");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function copyPreviewUrl() {
+        if (!previewUrl) return;
+        await navigator.clipboard.writeText(previewUrl);
+        toast.success("Preview URL copied");
+    }
+
     async function copyCode() {
         if (!generatedCode) return;
         await navigator.clipboard.writeText(generatedCode);
@@ -110,6 +183,27 @@ export function ProfileActionsCard({ hasPassword }: { hasPassword: boolean }) {
                 </CardHeader>
 
                 <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    {profileDraft && (
+                        <>
+                            <Button
+                                onClick={() => setPublishOpen(true)}
+                                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                            >
+                                <Check className="h-4 w-4" />
+                                Publish Draft
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() => setPreviewOpen(true)}
+                            >
+                                <Link2 className="h-4 w-4" />
+                                Preview Draft
+                            </Button>
+                        </>
+                    )}
+
                     <Button
                         variant="outline"
                         className="w-full sm:w-auto"
@@ -155,6 +249,83 @@ export function ProfileActionsCard({ hasPassword }: { hasPassword: boolean }) {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Publish Draft Dialog */}
+            <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Publish Draft</DialogTitle>
+                        <DialogDescription>
+                            Publishing will make your draft changes live to your public profile.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div className="rounded-lg border bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-900 dark:text-blue-200">
+                            <strong>Draft changes:</strong>
+                            {profileDraft?.name && <p>• Name: {profileDraft.name}</p>}
+                            {profileDraft?.username && <p>• Username: {profileDraft.username}</p>}
+                            {profileDraft?.bio && <p>• Bio: {profileDraft.bio}</p>}
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPublishOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handlePublishDraft} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                            {loading ? "Publishing..." : "Publish"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Preview Dialog */}
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Preview Draft</DialogTitle>
+                        <DialogDescription>
+                            Generate a shareable preview link for your draft profile.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        {previewUrl && (
+                            <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-medium">Preview link</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Expires {previewExpiresAt ? new Date(previewExpiresAt).toLocaleString() : "in 7 days"}
+                                        </p>
+                                    </div>
+                                    <Badge variant="secondary">Expires</Badge>
+                                </div>
+
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <Input value={previewUrl} readOnly />
+                                    <Button type="button" variant="outline" onClick={copyPreviewUrl}>
+                                        <Copy className="h-4 w-4" />
+                                        Copy
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                            Close
+                        </Button>
+                        {!previewUrl && (
+                            <Button onClick={handleGeneratePreview} disabled={loading}>
+                                {loading ? "Generating..." : "Generate Preview"}
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
                 <DialogContent>
@@ -254,3 +425,4 @@ export function ProfileActionsCard({ hasPassword }: { hasPassword: boolean }) {
         </>
     );
 }
+
