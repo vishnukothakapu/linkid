@@ -14,7 +14,7 @@ export async function POST() {
 
     const userId = session.user.id;
 
-    if (!checkRateLimit(userId)) {
+    if (!(await checkRateLimit(userId))) {
       return NextResponse.json(
         { error: "Too many OTP requests. Please try again later." },
         { status: 429 }
@@ -33,9 +33,9 @@ export async function POST() {
     }
 
     const otp = generateOtp();
-    setOtp(userId, otp);
 
     await sendDeleteOtpEmail(user.email, otp);
+    await setOtp(userId, otp);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async jwt({ token, trigger, session, user }) {
             // Immediately invalidate token if user account was deleted
-            if (token.sub && isUserSessionInvalidated(token.sub)) {
+            if (token.sub && (await isUserSessionInvalidated(token.sub))) {
                 return {} as typeof token;
             }
 

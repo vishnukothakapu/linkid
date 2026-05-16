@@ -14,9 +14,13 @@ export async function DELETE(req: NextRequest) {
     }
 
     const userId = session.user.id;
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const { password, otp } = body as { password?: string; otp?: string };
-
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, password: true, email: true },
@@ -50,7 +54,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const otpVerification = verifyOtp(userId, otp);
+    const otpVerification = await verifyOtp(userId, otp);
     if (!otpVerification.valid) {
       return NextResponse.json(
         { error: otpVerification.error || "Invalid verification code" },
@@ -58,13 +62,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    invalidateUserSessions(userId);
 
     await prisma.user.delete({
       where: { id: session.user.id },
     });
-
-    clearOtp(userId);
+    await invalidateUserSessions(userId);
+    await clearOtp(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

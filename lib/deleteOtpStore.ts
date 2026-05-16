@@ -1,31 +1,9 @@
+import prisma from "@/lib/prisma";
+
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 const MAX_SEND_PER_WINDOW = 3;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-
-interface OtpEntry {
-  otp: string;
-  expiresAt: number;
-  attempts: number;
-}
-
-interface RateLimitEntry {
-  count: number;
-  windowStart: number;
-}
-
-declare global {
-  var __deleteOtpStore: Map<string, OtpEntry> | undefined;
-  var __deleteRateLimitStore: Map<string, RateLimitEntry> | undefined;
-}
-
-const otpStore = globalThis.__deleteOtpStore ?? new Map<string, OtpEntry>();
-const rateLimitStore = globalThis.__deleteRateLimitStore ?? new Map<string, RateLimitEntry>();
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__deleteOtpStore = otpStore;
-  globalThis.__deleteRateLimitStore = rateLimitStore;
-}
 
 /**
  * Generates a cryptographically secure 6-digit OTP.
@@ -37,29 +15,48 @@ export function generateOtp(): string {
   return String(num % 1_000_000).padStart(6, "0");
 }
 
-export function setOtp(userId: string, otp: string): void {
-  otpStore.set(userId, {
-    otp,
-    expiresAt: Date.now() + OTP_TTL_MS,
-    attempts: 0,
+export async function setOtp(userId: string, otp: string): Promise<void> {
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+  await prisma.deleteOtp.upsert({
+    where: { userId },
+    update: {
+      otp,
+      expiresAt,
+      attempts: 0,
+    },
+    create: {
+      userId,
+      otp,
+      expiresAt,
+      attempts: 0,
+    },
   });
 }
 
-export function verifyOtp(userId: string, candidateOtp: string): { valid: boolean; error?: string } {
-  const entry = otpStore.get(userId);
-  if (!entry) return { valid: false, error: "Verification code expired or not requested" };
-  if (Date.now() > entry.expiresAt) {
-    otpStore.delete(userId);
+export async function verifyOtp(userId: string, candidateOtp: string): Promise<{ valid: boolean; error?: string }> {
+  const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
+  
+  if (!entry || !entry.otp || !entry.expiresAt) {
+    return { valid: false, error: "Verification code expired or not requested" };
+  }
+
+  if (Date.now() > entry.expiresAt.getTime()) {
+    await clearOtpFields(userId);
     return { valid: false, error: "Verification code expired. Please request a new one." };
   }
 
-  entry.attempts += 1;
-  const attemptsRemaining = MAX_ATTEMPTS - entry.attempts;
+  const attempts = entry.attempts + 1;
+  const attemptsRemaining = MAX_ATTEMPTS - attempts;
 
-  if (entry.attempts > MAX_ATTEMPTS) {
-    otpStore.delete(userId);
+  if (attempts > MAX_ATTEMPTS) {
+    await clearOtpFields(userId);
     return { valid: false, error: "Too many failed attempts. Please request a new code." };
   }
+
+  await prisma.deleteOtp.update({
+    where: { userId },
+    data: { attempts },
+  });
 
   const encoder = new TextEncoder();
   const a = encoder.encode(candidateOtp);
@@ -75,35 +72,52 @@ export function verifyOtp(userId: string, candidateOtp: string): { valid: boolea
   }
 
   if (mismatch === 0) {
+    await clearOtpFields(userId);
     return { valid: true };
   } else {
     if (attemptsRemaining <= 0) {
-      otpStore.delete(userId);
+      await clearOtpFields(userId);
       return { valid: false, error: "Incorrect verification code. Maximum attempts reached. Please request a new code." };
     }
     return { valid: false, error: `Incorrect verification code. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.` };
   }
 }
 
-
-export function clearOtp(userId: string): void {
-  otpStore.delete(userId);
-  rateLimitStore.delete(userId);
+async function clearOtpFields(userId: string) {
+  // Clear OTP but retain rate-limiting window
+  await prisma.deleteOtp.update({
+    where: { userId },
+    data: { otp: null, expiresAt: null, attempts: 0 },
+  }).catch(() => {});
 }
 
-export function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitStore.get(userId);
+export async function clearOtp(userId: string): Promise<void> {
+  await prisma.deleteOtp.delete({
+    where: { userId },
+  }).catch(() => {});
+}
 
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    rateLimitStore.set(userId, { count: 1, windowStart: now });
+export async function checkRateLimit(userId: string): Promise<boolean> {
+  const now = new Date();
+  const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
+  
+  if (!entry || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
+    await prisma.deleteOtp.upsert({
+      where: { userId },
+      update: { sendCount: 1, windowStart: now },
+      create: { userId, sendCount: 1, windowStart: now }
+    });
     return true;
   }
 
-  if (entry.count >= MAX_SEND_PER_WINDOW) {
+  if (entry.sendCount >= MAX_SEND_PER_WINDOW) {
     return false;
   }
 
-  entry.count += 1;
+  await prisma.deleteOtp.update({
+    where: { userId },
+    data: { sendCount: entry.sendCount + 1 },
+  });
+  
   return true;
 }

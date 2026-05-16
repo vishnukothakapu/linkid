@@ -102,8 +102,13 @@ export default function QRCodeButton({ qrCode, avatarUrl, username = "User", lin
     else setStatus("error");
   }, [qrCode, avatarUrl, username]);
 
-  useEffect(() => { if (open && !generatedRef.current) setTimeout(generate, 0); }, [open, generate]);
-  useEffect(() => { if (open) setTimeout(generate, 0); }, [avatarUrl, qrCode]); // eslint-disable-line
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      void generate();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [open, avatarUrl, qrCode, username, generate]);
 
   const handleDownload = () => {
     const src = compositeQR ?? qrCode;

@@ -25,6 +25,7 @@ model User {
   createdAt     DateTime @default(now())
 
   usernameHistory UsernameHistory[]
+  deleteOtp       DeleteOtp?
 }
 
 
@@ -125,4 +126,23 @@ model UsernameHistory {
   createdAt        DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DeleteOtp {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  otp         String?
+  attempts    Int      @default(0)
+  sendCount   Int      @default(0)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InvalidatedSession {
+  userId    String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
