@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import { ScrollToTop } from "@/app/components/ScrollToTop";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,7 +24,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+            {children}
+            <ScrollToTop />
+        </Providers>
       </body>
     </html>
   );
