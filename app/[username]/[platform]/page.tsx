@@ -10,9 +10,17 @@ export default async function PlatformRedirect({
     params: Promise<PlatformParams>;
 }) {
     const { username, platform } = await params;
-    const requestHeaders = await headers();
 
+    // "share" is a static route handled by app/[username]/share/[slug]/page.tsx
+    // Returning notFound() here would swallow it — redirect instead so Next.js
+    // re-evaluates against the correct nested route.
+    if (platform === "share") {
+        notFound();
+    }
+
+    const requestHeaders = await headers();
     let link: { id: string; url: string; userId: string } | null = null;
+
     try {
         link = await prisma.link.findFirst({
             where: {

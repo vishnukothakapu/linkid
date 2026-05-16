@@ -7,6 +7,20 @@ import { LinksSection } from "./LinksSection";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import { LinkIdCard } from "./LinkIdCard";
 import { AnalyticsOverview } from "./AnalyticsOverview";
+import ShareVariantsList from "./Sharevariantslist";
+import ShareVariantEditor from "./Sharevarianteditor";
+
+type ShareVariant = {
+    id: string;
+    slug: string;
+    title: string;
+    description: string | null;
+    isPublic: boolean;
+    isActive: boolean;
+    accentColor: string | null;
+    linkIds: string[];
+    viewCount: number;
+};
 
 export default function DashboardClient({
     username,
@@ -19,6 +33,31 @@ export default function DashboardClient({
 }) {
     const [links, setLinks] = useState(initialLinks);
     const [showAdd, setShowAdd] = useState(false);
+
+    // Share Variants state
+    const [variantRefresh, setVariantRefresh] = useState(0);
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editingVariant, setEditingVariant] = useState<ShareVariant | null>(null);
+
+    function openCreateVariant() {
+        setEditingVariant(null);
+        setEditorOpen(true);
+    }
+
+    function openEditVariant(variant: ShareVariant) {
+        setEditingVariant(variant);
+        setEditorOpen(true);
+    }
+
+    function closeEditor() {
+        setEditorOpen(false);
+        setEditingVariant(null);
+    }
+
+    function onVariantSaved() {
+        closeEditor();
+        setVariantRefresh((n) => n + 1);
+    }
 
     async function addLink(link: ProfileLink) {
         setLinks((prev) => [...prev, link]);
@@ -39,9 +78,7 @@ export default function DashboardClient({
         toast.success("Link updated");
 
         setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, url } : l
-            )
+            prev.map((l) => (l.id === id ? { ...l, url } : l))
         );
     }
 
@@ -65,9 +102,7 @@ export default function DashboardClient({
         toast.success(isPublic ? "Link set to public" : "Link set to private");
 
         setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, isPublic } : l
-            )
+            prev.map((l) => (l.id === id ? { ...l, isPublic } : l))
         );
     }
 
@@ -94,9 +129,7 @@ export default function DashboardClient({
         const csrfToken = await getCsrfToken();
 
         await fetch(`/api/links/${id}`, {
-            headers: {
-                "x-csrf-token": csrfToken,
-            },
+            headers: { "x-csrf-token": csrfToken },
             method: "DELETE",
         });
         toast.success("Link deleted");
@@ -132,10 +165,35 @@ export default function DashboardClient({
                     onDelete={deleteLink}
                 />
 
+                {/* ── Share Variants ───────────────────────────────────────── */}
+                <section className="rounded-xl border bg-card p-6 shadow-sm">
+                    <ShareVariantsList
+                        username={username}
+                        onEdit={openEditVariant}
+                        onCreate={openCreateVariant}
+                        refreshSignal={variantRefresh}
+                    />
+                </section>
+
                 <footer className="pt-10 border-t text-center text-sm text-muted-foreground">
                     © {new Date().getFullYear()} LinkID · Built for developers
                 </footer>
             </main>
+
+            {/* Editor modal — rendered outside main so it overlays everything */}
+            {editorOpen && (
+                <ShareVariantEditor
+                    variant={editingVariant}
+                    userLinks={links.map((l) => ({
+                        id: l.id,
+                        platform: l.platform,
+                        url: l.url,
+                        label: l.label,
+                    }))}
+                    onClose={closeEditor}
+                    onSaved={onVariantSaved}
+                />
+            )}
         </>
     );
 }
