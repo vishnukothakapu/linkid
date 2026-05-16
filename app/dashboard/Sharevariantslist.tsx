@@ -36,7 +36,6 @@ export default function ShareVariantsList({ username, onEdit, onCreate, refreshS
   const csrfToken = useCsrf();
 
   useEffect(() => {
-    setError(null);
     fetch("/api/share-variants")
       .then((response) => {
         if (!response.ok) {
@@ -44,7 +43,10 @@ export default function ShareVariantsList({ username, onEdit, onCreate, refreshS
         }
         return response.json();
       })
-      .then(setVariants)
+      .then((data) => {
+        setVariants(data);
+        setError(null);
+      })
       .catch((err) => {
         const message = err instanceof Error ? err.message : "Failed to load variants";
         setError(message);

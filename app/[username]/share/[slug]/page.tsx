@@ -8,6 +8,26 @@ interface Props {
   params: Promise<{ username: string; slug: string }>;
 }
 
+function sanitizeBackgroundImage(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    const protocol = url.protocol.toLowerCase();
+    if (protocol === "http:" || protocol === "https:") {
+      return `url("${url.href}")`;
+    }
+
+    if (protocol === "data:" && url.href.toLowerCase().startsWith("data:image/")) {
+      return `url("${url.href}")`;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export async function generateMetadata({ params }: Props) {
   const { username, slug } = await params;
   const user = await prisma.user.findUnique({ where: { username } });
@@ -56,6 +76,7 @@ export default async function ShareVariantPage({ params }: Props) {
     .filter(Boolean) as typeof links;
 
   const accent = variant.accentColor ?? "#6366f1";
+  const sanitizedBackgroundImage = sanitizeBackgroundImage(variant.backgroundImage);
 
   return (
     <>
@@ -64,7 +85,7 @@ export default async function ShareVariantPage({ params }: Props) {
         className="min-h-screen bg-background flex flex-col items-center justify-start py-16 px-4"
         style={{
           ...(variant.backgroundColor ? { backgroundColor: variant.backgroundColor } : {}),
-          ...(variant.backgroundImage ? { backgroundImage: `url(${variant.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+          ...(sanitizedBackgroundImage ? { backgroundImage: sanitizedBackgroundImage, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
         }}
       >
         <div className="w-full max-w-md space-y-6">
