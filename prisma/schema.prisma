@@ -30,21 +30,19 @@ model User {
 }
 
 model Link {
-  id             String               @id @default(uuid())
+  id             String   @id @default(uuid())
   platform       String
   label          String
   url            String
-  clickCount     Int                  @default(0)
+  clicks         Int      @default(0)   // ✅ clickCount hata diya
   lastClickedAt  DateTime?
-  order          Int                  @default(0)
-  isPublic       Boolean              @default(true)
-  userId         String
-  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clickEvents    ClickEvent[]
-  dailyAnalytics DailyLinkAnalytics[]
-  createdAt      DateTime             @default(now())
+  order          Int      @default(0)
+  isPublic       Boolean  @default(true)
 
-  @@unique([userId, platform])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  clickEvents ClickEvent[]
+  dailyAnalytics DailyLinkAnalytics[] 
 }
 
 model ClickEvent {
@@ -66,22 +64,23 @@ model ClickEvent {
 }
 
 model DailyLinkAnalytics {
-  id               String   @id @default(uuid())
-  linkId           String
-  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId           String
-  date             DateTime
-  totalClickCount  Int      @default(0)
-  uniqueClickCount Int      @default(0)
-  botClickCount    Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id            String   @id @default(uuid())
+  linkId        String
+  link          Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId        String
+  date          DateTime
+
+  totalClicks   Int      @default(0)
+  uniqueClicks  Int      @default(0)
+  botClicks     Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([linkId, date])
   @@index([userId, date])
   @@index([date])
 }
-
 model Account {
   id                String  @id @default(cuid())
   userId            String

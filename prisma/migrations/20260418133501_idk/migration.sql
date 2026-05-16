@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Link" ADD COLUMN     "clickCount" INTEGER NOT NULL DEFAULT 0;

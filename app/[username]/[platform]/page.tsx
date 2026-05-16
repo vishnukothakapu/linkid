@@ -13,6 +13,7 @@ export default async function PlatformRedirect({
     const requestHeaders = await headers();
 
     let link: { id: string; url: string; userId: string } | null = null;
+
     try {
         link = await prisma.link.findFirst({
             where: {
@@ -29,19 +30,20 @@ export default async function PlatformRedirect({
         notFound();
     }
 
+    // ❌ REMOVE clickCount increment (double counting issue fix)
     await prisma.link.update({
-       where: { id: link.id },
-       data: {
-           clickCount: { increment: 1 },
-           lastClickedAt: new Date(),
-       },
+        where: { id: link.id },
+        data: {
+            lastClickedAt: new Date(),
+        },
     });
 
+    // ✅ ONLY trackLinkClick will handle counting
     await trackLinkClick({
-       linkId: link.id,
-       userId: link.userId,
-       headers: requestHeaders,
+        linkId: link.id,
+        userId: link.userId,
+        headers: requestHeaders,
     });
 
     redirect(link.url);
-    }
+}
