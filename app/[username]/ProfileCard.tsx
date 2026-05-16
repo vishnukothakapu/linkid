@@ -7,7 +7,7 @@ import { User } from "./types/type";
 export function ProfileCard(props: User) {
     const { user, username, showCTA } = props;
     return (
-        <Card className="shadow-lg">
+        <Card className="transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
             <CardHeader className="pb-2">
                 <ProfileHeader name={user.name} username={username} bio={user.bio} image={user.image} />
             </CardHeader>
