@@ -41,6 +41,16 @@ model UserAlias {
   @@index([userId])
 }
 
+model UserAlias {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 
 
 model Link {
