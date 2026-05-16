@@ -11,26 +11,36 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
     if (!resolved) {
         return {
-            title: `${username} | LinkID`,
+            title: username,
             description: `Check out ${username}'s LinkID profile.`,
             openGraph: {
                 title: `${username} | LinkID`,
                 description: `Check out ${username}'s LinkID profile.`,
-                url: `https://linkid.vercel.app/${username}`,
+                url: `https://linkid.qzz.io/${username}`,
             },
+            twitter: {
+                card: "summary",
+                title: `${username} | LinkID`,
+                description: `Check out ${username}'s LinkID profile.`,
+            }
         };
     }
 
     const canonicalUsername = resolved.canonicalUsername ?? username;
 
     return {
-        title: `${canonicalUsername} | LinkID`,
+        title: canonicalUsername,
         description: `Check out ${canonicalUsername}'s LinkID profile.`,
         openGraph: {
             title: `${canonicalUsername} | LinkID`,
             description: `Check out ${canonicalUsername}'s LinkID profile.`,
-            url: `https://linkid.vercel.app/${canonicalUsername}`,
+            url: `https://linkid.qzz.io/${canonicalUsername}`,
         },
+        twitter: {
+            card: "summary",
+            title: `${canonicalUsername} | LinkID`,
+            description: `Check out ${canonicalUsername}'s LinkID profile.`,
+        }
     };
 }
 

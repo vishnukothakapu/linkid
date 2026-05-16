@@ -9,8 +9,24 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "LinkID",
-  description: "Your professional identity, simplified.",
+  title: {
+    default: "LinkID",
+    template: "%s | LinkID",
+  },
+  description: "Your professional identity, simplified. One username, all your platforms.",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://linkid.qzz.io",
+    siteName: "LinkID",
+    title: "LinkID",
+    description: "Your professional identity, simplified.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LinkID",
+    description: "Your professional identity, simplified.",
+  },
 };
 
 export default function RootLayout({
