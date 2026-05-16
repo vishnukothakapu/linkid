@@ -26,11 +26,11 @@ export async function sendDeleteOtpEmail(
   const from = process.env.EMAIL_FROM || "noreply@linkid.app";
 
   if (!transporter) {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(`📧 DELETE ACCOUNT OTP for ${to}: ${otp}`);
-    console.log("   (SMTP not configured — logging to console)");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    return;
+    const msg = "SMTP is not configured for account-deletion OTP delivery";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(msg);
+    }
+    throw new Error(msg);
   }
 
   await transporter.sendMail({

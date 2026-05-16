@@ -47,12 +47,21 @@ export default function EditProfileCard({
                 setChecking(true);
             }
 
-            const res = await fetch(`/api/username/check?username=${username}`);
-            const data = await res.json();
+            try {
+                const res = await fetch(`/api/username/check?username=${username}`);
+                const data = await res.json();
 
-            if (requestId === latestRequestId.current) {
-                setAvailable(data.available);
-                setChecking(false);
+                if (requestId === latestRequestId.current) {
+                    setAvailable(data.available);
+                }
+            } catch {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                }
+            } finally {
+                if (requestId === latestRequestId.current) {
+                    setChecking(false);
+                }
             }
         }, 400);
 

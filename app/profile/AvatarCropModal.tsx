@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useRef, useCallback } from "react";
@@ -102,6 +101,7 @@ export function AvatarCropModal({
                         aspect={1}
                         circularCrop
                     >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             ref={imgRef}
                             src={imageSrc}

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -17,16 +18,17 @@ export function generateOtp(): string {
 
 export async function setOtp(userId: string, otp: string): Promise<void> {
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+  const otpHash = await bcrypt.hash(otp, 10);
   await prisma.deleteOtp.upsert({
     where: { userId },
     update: {
-      otp,
+      otp: otpHash,
       expiresAt,
       attempts: 0,
     },
     create: {
       userId,
-      otp,
+      otp: otpHash,
       expiresAt,
       attempts: 0,
     },
@@ -45,7 +47,13 @@ export async function verifyOtp(userId: string, candidateOtp: string): Promise<{
     return { valid: false, error: "Verification code expired. Please request a new one." };
   }
 
-  const attempts = entry.attempts + 1;
+  // Atomically increment attempts to prevent race conditions
+  const updatedEntry = await prisma.deleteOtp.update({
+    where: { userId },
+    data: { attempts: { increment: 1 } },
+  });
+
+  const attempts = updatedEntry.attempts;
   const attemptsRemaining = MAX_ATTEMPTS - attempts;
 
   if (attempts > MAX_ATTEMPTS) {
@@ -53,25 +61,9 @@ export async function verifyOtp(userId: string, candidateOtp: string): Promise<{
     return { valid: false, error: "Too many failed attempts. Please request a new code." };
   }
 
-  await prisma.deleteOtp.update({
-    where: { userId },
-    data: { attempts },
-  });
+  const isValid = await bcrypt.compare(candidateOtp, entry.otp);
 
-  const encoder = new TextEncoder();
-  const a = encoder.encode(candidateOtp);
-  const b = encoder.encode(entry.otp);
-
-  let mismatch = 0;
-  if (a.length !== b.length) {
-    mismatch = 1;
-  } else {
-    for (let i = 0; i < a.length; i++) {
-      mismatch |= a[i] ^ b[i];
-    }
-  }
-
-  if (mismatch === 0) {
+  if (isValid) {
     await clearOtpFields(userId);
     return { valid: true };
   } else {
@@ -102,22 +94,27 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
   
   if (!entry || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
-    await prisma.deleteOtp.upsert({
-      where: { userId },
-      update: { sendCount: 1, windowStart: now },
-      create: { userId, sendCount: 1, windowStart: now }
-    });
-    return true;
+    try {
+      await prisma.deleteOtp.upsert({
+        where: { userId },
+        update: { sendCount: 1, windowStart: now },
+        create: { userId, sendCount: 1, windowStart: now }
+      });
+      return true;
+    } catch {
+      // Ignore creation race condition
+    }
   }
 
-  if (entry.sendCount >= MAX_SEND_PER_WINDOW) {
+  // Atomically increment send count
+  const updatedEntry = await prisma.deleteOtp.update({
+    where: { userId },
+    data: { sendCount: { increment: 1 } },
+  });
+  
+  if (updatedEntry.sendCount > MAX_SEND_PER_WINDOW) {
     return false;
   }
-
-  await prisma.deleteOtp.update({
-    where: { userId },
-    data: { sendCount: entry.sendCount + 1 },
-  });
   
   return true;
 }
