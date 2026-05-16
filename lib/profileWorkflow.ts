@@ -101,7 +101,7 @@ export async function getEditableProfileState(
  * Helper: Ensure username aliases are created for previous usernames
  */
 async function ensureUsernameAliases(
-  tx: TransactionClient,
+  tx: any,
   userId: string,
   previousUsername: string | null
 ): Promise<void> {
