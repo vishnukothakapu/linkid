@@ -18,8 +18,16 @@ import {
   Globe,
   Moon,
   Shield,
+  CheckCircle2,
 } from "lucide-react";
 import React from "react";
+
+const stats = [
+  { value: "10+", label: "Platforms Supported" },
+  { value: "Unlimited", label: "Custom Links" },
+  { value: "1 min", label: "Setup Time" },
+  { value: "Free", label: "For Everyone" },
+];
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -29,299 +37,365 @@ export default async function Home() {
     <>
       <Navbar />
 
-      <section className="relative overflow-hidden min-h-screen flex items-center md:min-h-[unset]">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-0 h-[420px] w-[900px] -translate-x-1/2 bg-gradient-to-b from-primary/10 to-transparent blur-3xl" />
-        </div>
+      <main className="overflow-hidden">
+        <section className="relative flex min-h-[calc(100vh-4rem)] items-center border-b border-violet-200/60 px-4 py-16 dark:border-white/10 sm:px-6 lg:px-8">
+          <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
+          <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-violet-200/70 via-indigo-100/40 to-transparent blur-2xl dark:from-violet-700/20 dark:via-indigo-700/10" />
 
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground">
-            One identity.
-            <br />
-            <span className="text-muted-foreground">
-              Infinite professional links.
-            </span>
-          </h1>
-
-          <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-            Stop pasting long URLs everywhere.
-            <br />
-            Share clean, predictable links like:
-          </p>
-
-          <div className="mt-4 inline-block rounded-lg border bg-muted px-4 py-2 font-mono text-sm text-muted-foreground">
-            linkid.qzz.io/username/github
-          </div>
-
-          <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/login">Create your LinkID</Link>
-            </Button>
-
-            <Button size="lg" variant="outline">
-              View Demo
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-24 md:py-28 bg-muted/40" id="features">
-        <div className="mx-auto max-w-7xl px-6">
-          {/* Stats Section */}
-          <div className="mb-16 md:mb-24">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">10+</div>
-                <div className="text-sm md:text-base text-muted-foreground">Platforms Supported</div>
+          <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.06fr_0.94fr]">
+            <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/70 bg-white/70 px-4 py-2 text-sm font-medium text-violet-700 shadow-sm backdrop-blur-xl dark:border-violet-400/20 dark:bg-white/5 dark:text-violet-200">
+                <SparkDot />
+                Professional link management
               </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">∞</div>
-                <div className="text-sm md:text-base text-muted-foreground">Custom Links</div>
+
+              <h1 className="text-4xl font-black leading-[1.04] tracking-tight text-zinc-950 dark:text-white sm:text-5xl md:text-6xl lg:text-7xl">
+                One identity for every professional link.
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300 sm:text-lg lg:mx-0">
+                Stop pasting long URLs everywhere. Share clean, predictable
+                links for GitHub, LinkedIn, portfolios, resumes, and more.
+              </p>
+
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
+                <Button
+                  size="lg"
+                  asChild
+                  className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-7 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-violet-500/30 sm:w-auto"
+                >
+                  <Link href="/login">Create your LinkID</Link>
+                </Button>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="w-full rounded-xl border-violet-200/70 bg-white/60 px-7 py-6 text-base font-semibold shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white/90 hover:shadow-lg dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:w-auto"
+                >
+                  <a href="#demo">View Demo</a>
+                </Button>
               </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">1min</div>
-                <div className="text-sm md:text-base text-muted-foreground">Setup Time</div>
+
+              <div className="mt-8 flex flex-col items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 sm:flex-row sm:justify-center lg:justify-start">
+                <ProofItem>OAuth-ready</ProofItem>
+                <ProofItem>Dark mode</ProofItem>
+                <ProofItem>Resume-friendly URLs</ProofItem>
               </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">100%</div>
-                <div className="text-sm md:text-base text-muted-foreground">Free Forever</div>
+            </div>
+
+            <div className="relative mx-auto w-full max-w-xl">
+              <div className="absolute inset-x-8 -top-6 -z-10 h-32 bg-gradient-to-r from-violet-500/25 via-indigo-500/20 to-blue-500/20 blur-3xl" />
+              <div className="rounded-3xl border border-white/70 bg-white/75 p-3 shadow-2xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 dark:shadow-black/30">
+                <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-5 dark:border-white/10 dark:from-zinc-900 dark:to-indigo-950/30 sm:p-6">
+                  <div className="flex items-center justify-between gap-4 border-b border-violet-100 pb-4 dark:border-white/10">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        linkid.qzz.io/vishnu
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        Public profile preview
+                      </p>
+                    </div>
+                    <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+                      Live
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <PreviewLink icon={<Github className="h-4 w-4" />} label="GitHub" path="/github" />
+                    <PreviewLink icon={<Linkedin className="h-4 w-4" />} label="LinkedIn" path="/linkedin" />
+                    <PreviewLink icon={<Code2 className="h-4 w-4" />} label="LeetCode" path="/leetcode" />
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-violet-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                        Share one clean identity
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+                    </div>
+                    <p className="mt-2 font-mono text-sm text-zinc-500 dark:text-zinc-400">
+                      linkid.qzz.io/username/github
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="mb-14 md:mb-20 max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Why developers love LinkID
+        <section className="relative px-4 py-14 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {stats.map((stat) => (
+              <StatCard key={stat.label} value={stat.value} label={stat.label} />
+            ))}
+          </div>
+        </section>
+
+        <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="features">
+          <SectionWash />
+          <div className="mx-auto max-w-7xl">
+            <SectionHeader
+              eyebrow="Features"
+              title="Why developers love LinkID"
+              desc="Built for developers, job seekers, and professionals who value clean, predictable links."
+            />
+
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <FeatureCard
+                icon={<Link2 className="h-5 w-5" />}
+                title="Resume-friendly links"
+                desc="Short, readable URLs that look clean and professional on resumes and portfolios."
+              />
+              <FeatureCard
+                icon={<Route className="h-5 w-5" />}
+                title="Platform routing"
+                desc="Predictable links like /github, /linkedin, /leetcode for every professional platform."
+              />
+              <FeatureCard
+                icon={<Zap className="h-5 w-5" />}
+                title="One-time setup"
+                desc="Add links once. Share everywhere. Update anytime without breaking existing links."
+              />
+              <FeatureCard
+                icon={<Wand2 className="h-5 w-5" />}
+                title="Auto platform detection"
+                desc="Paste any URL and LinkID automatically detects the platform and formats it correctly."
+              />
+              <FeatureCard
+                icon={<User className="h-5 w-5" />}
+                title="Public profile page"
+                desc="Shareable profile at linkid.qzz.io/username showcasing all your professional links."
+              />
+              <FeatureCard
+                icon={<BarChart3 className="h-5 w-5" />}
+                title="Real-time dashboard"
+                desc="Add, edit, and delete links instantly with a responsive, intuitive interface."
+              />
+              <FeatureCard
+                icon={<Globe className="h-5 w-5" />}
+                title="Multi-platform support"
+                desc="GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported."
+              />
+              <FeatureCard
+                icon={<Moon className="h-5 w-5" />}
+                title="Dark mode ready"
+                desc="Full system theme support with light and dark modes for comfortable viewing."
+              />
+              <FeatureCard
+                icon={<Shield className="h-5 w-5" />}
+                title="Secure & private"
+                desc="OAuth authentication with Google & GitHub. Your data stays secure and private."
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
+            <SectionHeader
+              align="left"
+              eyebrow="Demo"
+              title="Clean links. Everywhere."
+              desc="One username gives you predictable links for every platform your audience already knows."
+            />
+
+            <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
+              <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
+                <DemoRow
+                  icon={<Github className="h-5 w-5" />}
+                  label="GitHub"
+                  url="linkid.qzz.io/vishnu/github"
+                />
+                <DemoRow
+                  icon={<Linkedin className="h-5 w-5" />}
+                  label="LinkedIn"
+                  url="linkid.qzz.io/vishnu/linkedin"
+                />
+                <DemoRow
+                  icon={<Code2 className="h-5 w-5" />}
+                  label="LeetCode"
+                  url="linkid.qzz.io/vishnu/leetcode"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="relative px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
+          <div className="absolute inset-x-0 top-1/2 -z-10 h-44 -translate-y-1/2 bg-gradient-to-r from-transparent via-violet-200/45 to-transparent blur-3xl dark:via-violet-500/10" />
+          <div className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-white/70 px-6 py-12 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:px-10">
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
+              Your professional identity, simplified.
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Built for developers, job seekers, and professionals who value clean, predictable links.
+            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+              Create your LinkID in under a minute and share one memorable URL everywhere.
             </p>
+            <div className="mt-8">
+              <Button
+                size="lg"
+                asChild
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-violet-500/30"
+              >
+                <Link href="/login">Get Started</Link>
+              </Button>
+            </div>
           </div>
+        </section>
+      </main>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <FeatureCard
-              icon={<Link2 className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Resume-friendly links"
-              desc="Short, readable URLs that look clean and professional on resumes and portfolios."
-            />
-
-            <FeatureCard
-              icon={<Route className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Platform routing"
-              desc="Predictable links like /github, /linkedin, /leetcode for every professional platform."
-            />
-
-            <FeatureCard
-              icon={<Zap className="h-5 w-5 md:h-6 md:w-6" />}
-              title="One-time setup"
-              desc="Add links once. Share everywhere. Update anytime without breaking existing links."
-            />
-
-            <FeatureCard
-              icon={<Wand2 className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Auto platform detection"
-              desc="Paste any URL and LinkID automatically detects the platform and formats it correctly."
-            />
-
-            <FeatureCard
-              icon={<User className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Public profile page"
-              desc="Shareable profile at linkid.qzz.io/username showcasing all your professional links."
-            />
-
-            <FeatureCard
-              icon={<BarChart3 className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Real-time dashboard"
-              desc="Add, edit, and delete links instantly with a responsive, intuitive interface."
-            />
-
-            <FeatureCard
-              icon={<Globe className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Multi-platform support"
-              desc="GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported."
-            />
-
-            <FeatureCard
-              icon={<Moon className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Dark mode ready"
-              desc="Full system theme support with light and dark modes for comfortable viewing."
-            />
-
-            <FeatureCard
-              icon={<Shield className="h-5 w-5 md:h-6 md:w-6" />}
-              title="Secure & private"
-              desc="OAuth authentication with Google & GitHub. Your data stays secure and private."
-            />
-          </div>
-        </div>
-      </section>
-
-
-      <section className="py-24 md:py-28" id="demo">
-        <div className="mx-auto max-w-4xl px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground">
-            Clean links. Everywhere.
-          </h2>
-          <p className="mt-3 text-muted-foreground text-center">
-            One username. Predictable links for every platform.
-          </p>
-
-          <div className="mt-10 space-y-4">
-            <DemoRow
-              icon={<Github className="h-5 w-5" />}
-              label="GitHub"
-              url="linkid.qzz.io/vishnu/github"
-            />
-            <DemoRow
-              icon={<Linkedin className="h-5 w-5" />}
-              label="LinkedIn"
-              url="linkid.qzz.io/vishnu/linkedin"
-            />
-            <DemoRow
-              icon={<Code2 className="h-5 w-5" />}
-              label="LeetCode"
-              url="linkid.qzz.io/vishnu/leetcode"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="how"
-        className="bg-muted/40 px-4 py-16 sm:px-6 md:py-24 text-center"
-      >
-        <div className="mx-auto max-w-2xl">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground leading-tight">
-            Your professional identity, simplified.
-          </h2>
-
-          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground">
-            Create your LinkID in under a minute.
-          </p>
-
-          <div className="mt-6 sm:mt-8">
-            <Button size="lg" asChild className="w-full sm:w-auto">
-              <Link href="/login">Get Started</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t border-border bg-muted/20">
+      <footer className="border-t border-violet-200/60 bg-white/45 backdrop-blur-xl dark:border-white/10 dark:bg-black/10">
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {/* Brand Section */}
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Link2 className="h-4 w-4 text-primary-foreground" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/20">
+                  <Link2 className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-xl font-bold text-foreground">LinkID</span>
+                <span className="text-xl font-bold text-zinc-950 dark:text-white">LinkID</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                 One identity. Infinite professional links. Built for developers who value clean, predictable URLs.
               </p>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="https://github.com/your-repo"
-                  target="_blank"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
+              <div className="flex items-center gap-3">
+                <FooterIcon href="https://github.com/your-repo" label="GitHub">
                   <Github className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="https://twitter.com/your-handle"
-                  target="_blank"
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </FooterIcon>
+                <FooterIcon href="https://twitter.com/your-handle" label="Twitter">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
-                </Link>
+                </FooterIcon>
               </div>
             </div>
 
-            {/* Product Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Product</h3>
-              <div className="space-y-3">
-                <Link href="/dashboard" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="#features" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Features
-                </Link>
-                <Link href="#demo" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Demo
-                </Link>
-                <Link href="/login" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Get Started
-                </Link>
-              </div>
-            </div>
-
-            {/* Support Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Support</h3>
-              <div className="space-y-3">
-                <Link href="https://github.com/your-repo/issues" target="_blank" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Report Issue
-                </Link>
-                <Link href="https://github.com/your-repo/discussions" target="_blank" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Community
-                </Link>
-                <Link href="/docs" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Documentation
-                </Link>
-                <Link href="mailto:support@linkid.qzz.io" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Contact Us
-                </Link>
-              </div>
-            </div>
-
-            {/* Company Links */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Company</h3>
-              <div className="space-y-3">
-                <Link href="/about" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  About
-                </Link>
-                <Link href="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Terms of Service
-                </Link>
-                <Link href="/status" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Status
-                </Link>
-              </div>
-            </div>
+            <FooterColumn title="Product" links={[
+              ["Dashboard", "/dashboard"],
+              ["Features", "#features"],
+              ["Demo", "#demo"],
+              ["Get Started", "/login"],
+            ]} />
+            <FooterColumn title="Support" links={[
+              ["Report Issue", "https://github.com/your-repo/issues"],
+              ["Community", "https://github.com/your-repo/discussions"],
+              ["Documentation", "/docs"],
+              ["Contact Us", "mailto:support@linkid.qzz.io"],
+            ]} />
+            <FooterColumn title="Company" links={[
+              ["About", "/about"],
+              ["Privacy Policy", "/privacy"],
+              ["Terms of Service", "/terms"],
+              ["Status", "/status"],
+            ]} />
           </div>
 
-          {/* Bottom Section */}
-          <div className="mt-8 pt-8 border-t border-border">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-muted-foreground">
-                © {new Date().getFullYear()} LinkID. Built with ❤️ by{" "}
-                <span className="font-medium text-foreground">Vishnu Kothakapu</span>
-              </p>
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Shield className="h-4 w-4" />
-                  Secure & Private
-                </span>
-                <span className="flex items-center gap-1">
-                  <Globe className="h-4 w-4" />
-                  100% Free
-                </span>
-              </div>
+          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-violet-200/60 pt-8 text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400 md:flex-row">
+            <p>
+              &copy; {new Date().getFullYear()} LinkID. Built by{" "}
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">Vishnu Kothakapu</span>
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+                Secure & Private
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Globe className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+                100% Free
+              </span>
             </div>
           </div>
         </div>
       </footer>
-
     </>
+  );
+}
+
+function SparkDot() {
+  return (
+    <span className="relative flex h-2.5 w-2.5">
+      <span className="absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-violet-600 dark:bg-violet-300" />
+    </span>
+  );
+}
+
+function ProofItem({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <CheckCircle2 className="h-4 w-4 text-violet-600 dark:text-violet-300" />
+      {children}
+    </span>
+  );
+}
+
+function PreviewLink({
+  icon,
+  label,
+  path,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-violet-100 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-200">
+          {icon}
+        </div>
+        <span className="font-medium text-zinc-800 dark:text-zinc-100">{label}</span>
+      </div>
+      <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{path}</span>
+    </div>
+  );
+}
+
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-2xl border border-white/70 bg-white/65 p-5 text-center shadow-lg shadow-violet-950/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-950/10 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
+      <div className="text-2xl font-black tracking-tight text-violet-700 dark:text-violet-200 sm:text-3xl">
+        {value}
+      </div>
+      <div className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400 sm:text-sm">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function SectionWash() {
+  return (
+    <div className="absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-white/50 to-transparent dark:from-white/[0.03]" />
+  );
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  desc,
+  align = "center",
+}: {
+  eyebrow: string;
+  title: string;
+  desc: string;
+  align?: "left" | "center";
+}) {
+  const alignment = align === "center" ? "mx-auto text-center" : "";
+
+  return (
+    <div className={`max-w-2xl ${alignment}`}>
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
+        {title}
+      </h2>
+      <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-300">
+        {desc}
+      </p>
+    </div>
   );
 }
 
@@ -335,16 +409,15 @@ function FeatureCard({
   desc: string;
 }) {
   return (
-    <div className="group rounded-2xl border bg-card p-6 md:p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20">
-      <div className="mb-4 flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 text-primary group-hover:scale-110 transition-transform duration-300">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/70 bg-white/70 p-6 shadow-lg shadow-violet-950/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-200 hover:bg-white/90 hover:shadow-xl hover:shadow-violet-950/10 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07]">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 text-violet-700 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:from-violet-400/15 dark:to-indigo-400/10 dark:text-violet-200">
         {icon}
       </div>
-
-      <h3 className="text-lg md:text-xl font-semibold mb-3 text-foreground group-hover:text-primary transition-colors duration-300">
+      <h3 className="text-lg font-semibold text-zinc-950 transition-colors duration-300 group-hover:text-violet-700 dark:text-white dark:group-hover:text-violet-200">
         {title}
       </h3>
-
-      <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+      <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
         {desc}
       </p>
     </div>
@@ -361,26 +434,67 @@ function DemoRow({
   url: string;
 }) {
   return (
-    <Link
-      href={`https://${url}`}
-      target="_blank"
-      className="block"
-    >
-      <div className="flex items-center justify-between rounded-xl border bg-card px-4 sm:px-5 py-4 transition hover:bg-muted hover:shadow-sm active:scale-[0.98]">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-muted p-2 text-foreground">
+    <Link href={`https://${url}`} target="_blank" className="group block">
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 transition-colors duration-300 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-400/10 dark:text-violet-200">
             {icon}
           </div>
-          <span className="font-medium text-foreground">
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">
             {label}
           </span>
         </div>
-
-        <div className="flex items-center gap-2 font-mono text-xs sm:text-sm text-muted-foreground">
-          {url}
-          <ArrowUpRight className="h-4 w-4 opacity-50" />
+        <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+          <span className="truncate">{url}</span>
+          <ArrowUpRight className="h-4 w-4 shrink-0 opacity-50 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-violet-600 group-hover:opacity-100 dark:group-hover:text-violet-300" />
         </div>
       </div>
     </Link>
+  );
+}
+
+function FooterIcon({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      aria-label={label}
+      className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-200/70 bg-white/60 text-zinc-500 transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:text-violet-700 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:hover:text-violet-200"
+    >
+      {children}
+    </Link>
+  );
+}
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: Array<[string, string]>;
+}) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">{title}</h3>
+      <div className="space-y-3">
+        {links.map(([label, href]) => (
+          <Link
+            key={href}
+            href={href}
+            className="block text-sm text-zinc-600 transition-colors duration-300 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-200"
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
