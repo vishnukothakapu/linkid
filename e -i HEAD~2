@@ -1,0 +1,133 @@
+[33m956791e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfix-navbar-links[m[33m, [m[1;31morigin/fix-navbar-links[m[33m)[m Fix navbar navigation links on non-homepage routes
+[33m2ce750f[m Update copilot-review.yml
+[33m8f1b05a[m Create copilot-review.yml
+[33m223b88c[m Delete .github/copilot-review.yml
+[33md5671e5[m Create copilot-review.yml
+[33m332c7dc[m Delete .github/.github directory
+[33m61f1295[m Add GitHub Actions workflow for Copilot PR review
+[33m3d16405[m Merge pull request #91 from Amritasahu04/chore/add-env-example
+[33m1bd92bb[m Merge pull request #93 from deepikagandla7456/unique
+[33m9593e35[m [FEAT] Build Reliable Click Analytics Pipeline (Unique Visitors + Bot Filtering + Daily Aggregates)
+[33mb4114bc[m chore: add .env.example for local setup
+[33m7560d7b[m Refactor README formatting and section headers
+[33m44db20f[m Merge pull request #77 from prachimaskar/feature/username-reservation-vanity-redirect
+[33m6af1990[m feat: username history and vanity URL redirect (#42)
+[33m26febca[m Merge pull request #76 from prachimaskar/feat/qr-code-avatar-overlay
+[33m592bfc8[m feat(qrcode): add profile picture overlay in QR center #74
+[33m9098977[m chore: remove testimonials section from landing page
+[33me3f8e82[m docs: update PR template and contributor guide for GSSoC/NSoC 2026
+[33mb50c2e7[m Update README
+[33mf6c68d8[m Update README.md
+[33mc77dc61[m Merge pull request #72 from riddhismita06-cloud/fix-debounce
+[33m733a172[m updated save button's disabled logic
+[33m7974342[m  Replaced the checkUsername function with a debounced + race-safe useEffect
+[33m2eeb12d[m added a checking state and a latestRequestId ref
+[33ma2b993e[m added useRef and useEffect to imports
+[33me9fe5fe[m fix: import Metadata type to resolve Vercel build error
+[33m94d2ee3[m Merge pull request #69 from Shreyya-ux/patch-2
+[33mc9c8d71[m Merge pull request #68 from riddhismita06-cloud/link-api
+[33mbeea9f1[m Merge branch 'main' into link-api
+[33m553c431[m fix: resolve Vercel deploy issue by pinning prisma version and implement race condition fix
+[33m60ab683[m feat: add dynamic Open Graph meta tags for profile pages
+[33m76b30a1[m fix: extract userId securely from session to resolve username creation error
+[33m10a4dad[m Merge pull request #66 from deepikagandla7456/feat/link-visibility-csv-export
+[33m735ac98[m Merge branch 'main' into feat/link-visibility-csv-export
+[33meff040c[m fix: correct AccountInfoCard and ConnectedAccounts types for Prisma models
+[33mc503b06[m fix: resolve all lint errors for PR acceptance
+[33mc5f43bd[m fix: address review feedback for link visibility and dashboard typing
+[33m22dd02f[m fix: wrap link order assignment in a prisma transaction to prevent race condition
+[33m23f3353[m Potential fix for pull request finding
+[33m2862c0b[m feat(dashboard): add link visibility and CSV export
+[33mb0d6122[m Merge pull request #64 from Shree600/main
+[33m6a09913[m fix(auth): handle duplicate user signup using Prisma unique constraint
+[33m085a5a3[m Merge pull request #61 from riddhismita06-cloud/race-fix
+[33ma346dd4[m Merge pull request #60 from ayushlad9108/fix/profile-update-method-patch
+[33m6a7c798[m prevent stale availability state from race condition in checkUsername
+[33mad1ff8c[m update  checkUsername
+[33m11e4e98[m added useRef, useCallback to import and  declared abortRef and a checking state
+[33m01fca99[m fix: use PATCH method in EditProfileCard to match API route
+[33m6320e48[m Merge pull request #58 from Sanila-577/refactor/optimize-image-rendering
+[33m3010cae[m perf(qrcode): use Next.js Image for QR code rendering
+[33mfb7b0f9[m Merge pull request #57 from ankeeta-mohanty/feature/navbar-active-state
+[33m51254b4[m feat: add active state indicator in landing page navbar
+[33m709402c[m correct prisma imports in profile and username API routes
+[33mc47590c[m Merge pull request #52 from Shreyya-ux/patch-1
+[33mafe3746[m  fix: add validation to profile update
+[33m4ad6cbf[m Fix: add validation to username create
+[33m3f1647d[m Add username validation function and regex
+[33me425353[m fix: typos in not-found page
+[33m3271c74[m fix: links type error in profile page
+[33m7eda7bd[m Merge pull request #51 from priyam191/feat/page-not-found
+[33m9a650f3[m page-not-found page added
+[33ma5afc2c[m Merge pull request #48 from Itzzavdheshh/feature/avatar-upload
+[33mb775fdb[m feat: add custom avatar upload with Cloudinary and circular crop
+[33m162a01d[m Merge pull request #47 from parijin0/fix-password-toggle
+[33m987ecce[m Fix: password visibility toggle on register page
+[33m8399f89[m Merge pull request #38 from Itzzavdheshh/feature/Links_redirect
+[33ma8ff7dc[m feat: add Links redirect to wrong user's profiles
+[33mafd1950[m chore: add docker-compose.yml for local development
+[33m9f0e1a0[m fix: await params in platform redirect page
+[33m14b0b94[m Merge pull request #35 from krishan3333/feat/add-new-platforms
+[33m5e24b7a[m feat: add Hashnode, Dev.to, Medium, and Dribbble platforms
+[33meab282e[m Merge pull request #34 from Navyasree-ulava/feat/csrf-protection
+[33me2b1b07[m fix: prisma issues
+[33m4984fb2[m feat: add csrf protection
+[33m07aa7d6[m Merge pull request #33 from Namk-hub/bio
+[33m5cb88b0[m prevent bio overflow using break-words
+[33me08e339[m solved the errors!
+[33m00c5369[m added bio section
+[33me559f37[m Merge pull request #29 from Shreyya-ux/Shreyya-ux-patch-1
+[33mc5a957b[m refactor: replace iconify with lucide-react icons
+[33m3ecb0df[m Merge pull request #30 from Asutosh-1234/fix/types
+[33mc3b9f45[m Merge branch 'fix/types' of https://github.com/Asutosh-1234/linkid into fix/types
+[33m6cbff16[m fix: click bug fix
+[33mbe7279d[m Merge branch 'main' into fix/types
+[33madb21e0[m fix: add and correct types for User, Link, ProfileHeader and PlatformParams
+[33m7e25194[m shreyya/auth-ui-fix
+[33m1390724[m Merge pull request #28 from SrashtiChauhan/fix/url-validation
+[33m2b88353[m Merge pull request #27 from xplozion15/fix/profile-image-public
+[33m1aae7c8[m fix(validation): remove duplication and centralize validation logic
+[33m951b95b[m refactor(validation): remove duplicate checks and clean validation logic
+[33m1a2e86c[m feat(validation): prevent non-public URLs like messaging/feed links
+[33m57349d4[m fix: display profile image on public profile page
+[33ma651e9e[m Merge pull request #25 from Asutosh-1234/fix/count-bug
+[33m92e6f80[m fixed the click tracking
+[33m74ef15c[m Merge pull request #22 from Navyasree-ulava/fix/password-validation-regex
+[33mb8d5f53[m fix(auth): add password validation for credentials provider
+[33m8d46066[m Merge pull request #20 from Dipanita45/main
+[33m1fb5c5c[m Improved
+[33m816e470[m fix: prisma issues
+[33m40d0fc2[m Merge pull request #18 from tirth1356/feat/username-suggestions-click-analytics
+[33m24cb730[m feat: username suggestions and click analytics
+[33m7bf2f34[m Update README.md
+[33ma0a05db[m Update pull request template with NSoC'26 notice
+[33me1122c7[m Merge pull request #10 from Dipanita45/main
+[33md5aefd6[m fix: add missing qrCode prop to LinkIdCard
+[33mcfdb6dc[m Merge pull request #9 from Asutosh-1234/feature/qrcodeGenerator
+[33m4997996[m Improve
+[33m34f3f34[m revocked the changes in pisma.config.ts
+[33mb84007d[m made it dynamic
+[33maeb95ec[m added the button for popup show and download option
+[33m77a3689[m added the qr feature
+[33maa6cb52[m chore: add issue and PR templates
+[33m1da5613[m Add files via upload
+[33m95dc323[m Enhance README
+[33m3962411[m Update README.md
+[33m1f47200[m Add files via upload
+[33mcf90ae9[m Include example link in README
+[33ma25b9bd[m feat: improve mobile responsiveness
+[33m2bde532[m chore: update app URL
+[33mafeed39[m chore: update app URL
+[33mad3edb4[m Update README.md
+[33mf638992[m fix: remove Prisma import
+[33mb67ca50[m fix: update Prisma import
+[33mf61142e[m fix: resolve build command
+[33me339800[m fix: resolve prisma issues
+[33m12b5347[m fix: resolve build errors and prisma configuration
+[33md5f43e3[m fix: some fixes and improvements
+[33m8099b3a[m fix(ui): minor mobile responsiveness fixes
+[33m8ffabbd[m initial commit
+[33m872eeff[m initial commit
+[33m4013d8a[m Update README
+[33m2434af4[m Initial commit
+[33mc89d26a[m Initial commit from Create Next App
