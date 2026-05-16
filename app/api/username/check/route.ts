@@ -2,8 +2,12 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 async function isAvailable(username: string): Promise<boolean> {
-    const exists = await prisma.user.findUnique({ where: { username } });
-    return !exists;
+    const [user, alias] = await Promise.all([
+        prisma.user.findUnique({ where: { username } }),
+        prisma.userAlias.findUnique({ where: { username } }),
+    ]);
+
+    return !user && !alias;
 }
 
 export async function GET(req: Request) {
