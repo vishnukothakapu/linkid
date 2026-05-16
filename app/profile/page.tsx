@@ -32,7 +32,7 @@ export default async function ProfilePage() {
 
                 <AccountInfoCard user={user} />
 
-                <ProfileActionsCard />
+                <ProfileActionsCard hasPassword={!!user.password} />
 
                 <DangerZoneCard
                     userEmail={user.email}
