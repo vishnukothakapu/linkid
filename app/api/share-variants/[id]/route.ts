@@ -27,11 +27,56 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const body = await req.json();
   const { slug, title, description, linkIds, accentColor, logo, backgroundColor, isPublic, isActive, backgroundImage, customCss } = body;
 
-  if (slug && !isValidSlug(slug)) {
-    return NextResponse.json(
-      { error: "slug must be 2–40 lowercase letters, numbers, or hyphens" },
-      { status: 400 }
-    );
+  // Validate and sanitize field types before Prisma update
+  if (slug !== undefined) {
+    if (typeof slug !== "string" || !isValidSlug(slug)) {
+      return NextResponse.json(
+        { error: "slug must be a string with 2–40 lowercase letters, numbers, or hyphens" },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (title !== undefined && typeof title !== "string") {
+    return NextResponse.json({ error: "title must be a string" }, { status: 400 });
+  }
+
+  if (description !== undefined && typeof description !== "string") {
+    return NextResponse.json({ error: "description must be a string" }, { status: 400 });
+  }
+
+  if (logo !== undefined && typeof logo !== "string") {
+    return NextResponse.json({ error: "logo must be a string" }, { status: 400 });
+  }
+
+  if (backgroundImage !== undefined && typeof backgroundImage !== "string") {
+    return NextResponse.json({ error: "backgroundImage must be a string" }, { status: 400 });
+  }
+
+  if (customCss !== undefined && typeof customCss !== "string") {
+    return NextResponse.json({ error: "customCss must be a string" }, { status: 400 });
+  }
+
+  if (accentColor !== undefined && typeof accentColor !== "string") {
+    return NextResponse.json({ error: "accentColor must be a string" }, { status: 400 });
+  }
+
+  if (backgroundColor !== undefined && typeof backgroundColor !== "string") {
+    return NextResponse.json({ error: "backgroundColor must be a string" }, { status: 400 });
+  }
+
+  if (linkIds !== undefined) {
+    if (!Array.isArray(linkIds) || !linkIds.every((id) => typeof id === "string")) {
+      return NextResponse.json({ error: "linkIds must be an array of strings" }, { status: 400 });
+    }
+  }
+
+  if (isPublic !== undefined && typeof isPublic !== "boolean") {
+    return NextResponse.json({ error: "isPublic must be a boolean" }, { status: 400 });
+  }
+
+  if (isActive !== undefined && typeof isActive !== "boolean") {
+    return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
   }
 
   // Check slug uniqueness if it changed

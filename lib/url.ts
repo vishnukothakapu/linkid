@@ -24,12 +24,15 @@ export function isValidSlug(slug: string): boolean {
 
 /** Normalise a raw string into a URL-safe slug */
 export function toSlug(raw: string): string {
-  return raw
+  const slug = raw
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40);
+  
+  // Ensure slug meets minimum length requirement
+  return slug.length < 2 ? "" : slug;
 }
 
 export function isValidHttpUrl(value: string) {

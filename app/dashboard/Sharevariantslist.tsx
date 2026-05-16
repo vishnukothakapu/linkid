@@ -32,35 +32,60 @@ interface Props {
 export default function ShareVariantsList({ username, onEdit, onCreate, refreshSignal }: Props) {
   const [variants, setVariants] = useState<ShareVariant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const csrfToken = useCsrf();
 
   useEffect(() => {
+    setError(null);
     fetch("/api/share-variants")
-      .then((r) => r.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch variants: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(setVariants)
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to load variants";
+        setError(message);
+      })
       .finally(() => setLoading(false));
   }, [refreshSignal]);
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this share variant?")) return;
-    const token = csrfToken || await getCsrfToken();
 
-    const res = await fetch(`/api/share-variants/${id}`, {
-      method: "DELETE",
-      headers: {
-        "x-csrf-token": token,
-      },
-    });
-    if (res.ok) {
-      setVariants((prev) => prev.filter((v) => v.id !== id));
-      toast.success("Variant deleted");
-    } else {
-      toast.error("Failed to delete");
+    try {
+      const token = csrfToken || await getCsrfToken();
+
+      const res = await fetch(`/api/share-variants/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-csrf-token": token,
+        },
+      });
+
+      if (res.ok) {
+        setVariants((prev) => prev.filter((v) => v.id !== id));
+        toast.success("Variant deleted");
+      } else {
+        const errorText = await res.text();
+        console.error(`Delete failed with status ${res.status}:`, errorText);
+        toast.error("Failed to delete");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("Error deleting variant:", err);
+      toast.error(`Delete error: ${message}`);
     }
   }
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading variants…</p>;
+  }
+
+  if (error) {
+    return <p className="text-sm text-red-500">{error}</p>;
   }
 
   return (
@@ -89,7 +114,7 @@ export default function ShareVariantsList({ username, onEdit, onCreate, refreshS
           >
             <div className="flex items-center gap-3 min-w-0">
               <span
-                className="h-3 w-3 rounded-full flex-shrink-0"
+                className="h-3 w-3 rounded-full shrink-0"
                 style={{ backgroundColor: v.accentColor ?? "#6366f1" }}
               />
               <div className="min-w-0">
@@ -100,7 +125,7 @@ export default function ShareVariantsList({ username, onEdit, onCreate, refreshS
               </div>
             </div>
 
-            <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+            <div className="flex items-center gap-2 ml-4 shrink-0">
               {!v.isActive && (
                 <span className="text-xs rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
                   inactive
@@ -121,9 +146,14 @@ export default function ShareVariantsList({ username, onEdit, onCreate, refreshS
                 <Eye size={15} />
               </a>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(shareVariantUrl(username, v.slug));
-                  toast.success("Link copied!");
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(shareVariantUrl(username, v.slug));
+                    toast.success("Link copied!");
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : "Failed to copy link";
+                    toast.error(message);
+                  }
                 }}
                 className="rounded p-1.5 hover:bg-muted transition"
                 title="Copy link"

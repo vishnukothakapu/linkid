@@ -69,29 +69,34 @@ export default function ShareVariantEditor({ variant, userLinks, onClose, onSave
     }
     setSaving(true);
 
+    try {
       const payload = { title, slug, description, accentColor, logo, backgroundColor, isPublic, isActive, backgroundImage, customCss, linkIds: selectedLinkIds };
-    const url = isEdit ? `/api/share-variants/${variant.id}` : "/api/share-variants";
-    const method = isEdit ? "PUT" : "POST";
+      const url = isEdit ? `/api/share-variants/${variant.id}` : "/api/share-variants";
+      const method = isEdit ? "PUT" : "POST";
 
-    const token = csrfToken || await getCsrfToken();
+      const token = csrfToken || await getCsrfToken();
 
-    const res = await fetch(url, {
-      method,
-      headers: { 
-        "Content-Type": "application/json",
-        "x-csrf-token": token,
-      },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          "x-csrf-token": token,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setSaving(false);
-
-    if (res.ok) {
-      toast.success(isEdit ? "Variant updated" : "Variant created");
-      onSaved();
-    } else {
-      const data = await res.json();
-      toast.error(data.error ?? "Something went wrong");
+      if (res.ok) {
+        toast.success(isEdit ? "Variant updated" : "Variant created");
+        onSaved();
+      } else {
+        const data = await res.json();
+        toast.error(data.error ?? "Something went wrong");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
   }
 

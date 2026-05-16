@@ -1,4 +1,5 @@
 // app/[username]/share/[slug]/page.tsx
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { ExternalLink } from "lucide-react";
@@ -58,9 +59,7 @@ export default async function ShareVariantPage({ params }: Props) {
 
   return (
     <>
-      {variant.customCss && (
-        <style dangerouslySetInnerHTML={{ __html: variant.customCss }} />
-      )}
+      {/* TODO: Implement CSS validation/sanitization before enabling customCss rendering */}
       <main 
         className="min-h-screen bg-background flex flex-col items-center justify-start py-16 px-4"
         style={{
@@ -73,9 +72,12 @@ export default async function ShareVariantPage({ params }: Props) {
           <div className="text-center space-y-1">
             {variant.logo && (
               <div className="flex justify-center mb-4">
-                <img 
-                  src={variant.logo} 
-                  alt="Logo" 
+                <Image
+                  src={variant.logo}
+                  alt="Logo"
+                  width={64}
+                  height={64}
+                  unoptimized
                   className="h-16 w-16 rounded-lg object-contain"
                 />
               </div>
