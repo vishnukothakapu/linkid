@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { slug, title, description, linkIds, accentColor, logo, isPublic, backgroundImage, customCss } = body;
+    const { slug, title, description, linkIds, accentColor, logo, backgroundColor, isPublic, backgroundImage, customCss } = body;
 
     if (!slug || !title) {
       return NextResponse.json({ error: "slug and title are required" }, { status: 400 });
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         linkIds: linkIds ?? [],
         accentColor: accentColor ?? "#6366f1",
         logo: logo ?? null,
+        backgroundColor: backgroundColor ?? null,
         backgroundImage: backgroundImage ?? null,
         customCss: customCss ?? null,
         isPublic: isPublic ?? true,

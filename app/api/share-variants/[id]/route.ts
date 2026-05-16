@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!found) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await req.json();
-  const { slug, title, description, linkIds, accentColor, logo, isPublic, isActive, backgroundImage, customCss } = body;
+  const { slug, title, description, linkIds, accentColor, logo, backgroundColor, isPublic, isActive, backgroundImage, customCss } = body;
 
   if (slug && !isValidSlug(slug)) {
     return NextResponse.json(
@@ -53,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ...(linkIds !== undefined && { linkIds }),
       ...(accentColor !== undefined && { accentColor }),
       ...(logo !== undefined && { logo }),
+      ...(backgroundColor !== undefined && { backgroundColor }),
       ...(isPublic !== undefined && { isPublic }),
       ...(isActive !== undefined && { isActive }),
       ...(backgroundImage !== undefined && { backgroundImage }),

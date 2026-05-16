@@ -63,7 +63,10 @@ export default async function ShareVariantPage({ params }: Props) {
       )}
       <main 
         className="min-h-screen bg-background flex flex-col items-center justify-start py-16 px-4"
-        style={variant.backgroundImage ? { backgroundImage: `url(${variant.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+        style={{
+          ...(variant.backgroundColor ? { backgroundColor: variant.backgroundColor } : {}),
+          ...(variant.backgroundImage ? { backgroundImage: `url(${variant.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+        }}
       >
         <div className="w-full max-w-md space-y-6">
           {/* Header */}

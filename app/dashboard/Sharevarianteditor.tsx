@@ -19,6 +19,7 @@ type ShareVariant = {
   isActive: boolean;
   accentColor: string | null;
   logo: string | null;
+  backgroundColor: string | null;
   backgroundImage: string | null;
   customCss: string | null;
   linkIds: string[];
@@ -41,6 +42,7 @@ export default function ShareVariantEditor({ variant, userLinks, onClose, onSave
   const [slug, setSlug] = useState(variant?.slug ?? "");
   const [description, setDescription] = useState(variant?.description ?? "");
   const [accentColor, setAccentColor] = useState(variant?.accentColor ?? "#6366f1");
+  const [backgroundColor, setBackgroundColor] = useState(variant?.backgroundColor ?? "#f59e0b");
   const [isPublic, setIsPublic] = useState(variant?.isPublic ?? true);
   const [isActive, setIsActive] = useState(variant?.isActive ?? true);
   const [selectedLinkIds, setSelectedLinkIds] = useState<string[]>(variant?.linkIds ?? []);
@@ -67,7 +69,7 @@ export default function ShareVariantEditor({ variant, userLinks, onClose, onSave
     }
     setSaving(true);
 
-      const payload = { title, slug, description, accentColor, logo, isPublic, isActive, backgroundImage, customCss, linkIds: selectedLinkIds };
+      const payload = { title, slug, description, accentColor, logo, backgroundColor, isPublic, isActive, backgroundImage, customCss, linkIds: selectedLinkIds };
     const url = isEdit ? `/api/share-variants/${variant.id}` : "/api/share-variants";
     const method = isEdit ? "PUT" : "POST";
 
@@ -211,6 +213,28 @@ export default function ShareVariantEditor({ variant, userLinks, onClose, onSave
                 type="color"
                 value={accentColor}
                 onChange={(e) => setAccentColor(e.target.value)}
+                className="h-7 w-7 cursor-pointer rounded border"
+                title="Custom colour"
+              />
+            </div>
+              <label className="mb-2 block text-sm font-medium">Background Colour</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {ACCENT_PRESETS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setBackgroundColor(c)}
+                  className="h-7 w-7 rounded-full border-2 transition"
+                  style={{
+                    backgroundColor: c,
+                    borderColor: backgroundColor === c ? "white" : "transparent",
+                    outline: backgroundColor === c ? `2px solid ${c}` : "none",
+                  }}
+                />
+              ))}
+              <input
+                type="color"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
                 className="h-7 w-7 cursor-pointer rounded border"
                 title="Custom colour"
               />

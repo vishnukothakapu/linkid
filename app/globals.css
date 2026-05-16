@@ -132,6 +132,18 @@ html {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    min-height: 100vh;
+    background:
+      linear-gradient(135deg, rgba(245, 243, 255, 0.96), rgba(255, 255, 255, 0.96) 42%, rgba(224, 231, 255, 0.92)),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(124, 58, 237, 0.05));
+    background-attachment: fixed;
   }
+}
+
+.dark body {
+  background:
+    linear-gradient(135deg, #030304, #09090b 45%, rgba(30, 27, 75, 0.42)),
+    linear-gradient(to bottom, rgba(124, 58, 237, 0.08), rgba(0, 0, 0, 0));
+  background-attachment: fixed;
 }

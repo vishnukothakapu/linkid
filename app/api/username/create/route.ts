@@ -21,11 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { username },
-    });
+    const [existingUser, existingAlias] = await Promise.all([
+      prisma.user.findUnique({ where: { username } }),
+      prisma.userAlias.findUnique({ where: { username } }),
+    ]);
 
-    if (existing) {
+    if (existingUser || existingAlias) {
       return NextResponse.json(
         { error: "Username already taken" },
         { status: 409 }
