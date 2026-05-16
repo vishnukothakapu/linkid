@@ -22,7 +22,7 @@ export function DashboardNavbar() {
         <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                 {/* Logo */}
-                <Link href="/dashboard" className="text-xl font-bold">
+                <Link href="/dashboard" className="text-xl font-bold" aria-label="LinkID Dashboard">
                     LinkID
                 </Link>
 
@@ -34,6 +34,7 @@ export function DashboardNavbar() {
                             <Button
                                 variant="ghost"
                                 className="flex items-center gap-2 px-2 "
+                                aria-label="Open user menu"
                             >
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={user?.image ?? ""} />

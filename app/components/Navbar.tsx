@@ -32,7 +32,11 @@ export function Navbar() {
         <header className="sticky top-0 z-50 border-b border-violet-200/60 bg-white/70 shadow-sm shadow-violet-950/5 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 dark:shadow-black/20">
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 text-xl font-bold text-zinc-950 transition-opacity hover:opacity-80 dark:text-white">
+                <Link 
+                    href="/" 
+                    className="flex items-center gap-2 text-xl font-bold text-zinc-950 transition-opacity hover:opacity-80 dark:text-white"
+                    aria-label="LinkID Home"
+                >
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/20">
                         <Link2 className="h-4 w-4 text-white" />
                     </span>
@@ -57,7 +61,7 @@ export function Navbar() {
                     <ThemeToggle />
 
                     <Button asChild className="hidden rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 font-semibold text-white shadow-sm shadow-violet-500/25 transition-all hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 sm:inline-flex">
-                        <Link href="/login">Get Started</Link>
+                        <Link href="/login" aria-label="Get Started">Get Started</Link>
                     </Button>
                 </div>
             </div>
