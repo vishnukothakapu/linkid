@@ -18,7 +18,9 @@ type ShareVariant = {
   viewCount: number;
   accentColor: string | null;
   logo: string | null;
-  backgroundColor?: string | null;
+  backgroundColor: string | null;
+  backgroundImage: string | null;
+  customCss: string | null;
   linkIds: string[];
 };
 

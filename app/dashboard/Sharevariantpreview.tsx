@@ -48,7 +48,7 @@ export default function ShareVariantPreview({
           {selectedLinks.map((link) => (
             <li key={link.id} className="flex items-center gap-2 text-sm">
               <span
-                className="h-2 w-2 rounded-full flex-shrink-0"
+                className="h-2 w-2 rounded-full shrink-0"
                 style={{ backgroundColor: color }}
               />
               <span className="font-medium capitalize">{link.label ?? link.platform}</span>

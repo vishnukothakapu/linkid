@@ -18,6 +18,10 @@ type ShareVariant = {
     isPublic: boolean;
     isActive: boolean;
     accentColor: string | null;
+    logo: string | null;
+    backgroundColor: string | null;
+    backgroundImage: string | null;
+    customCss: string | null;
     linkIds: string[];
     viewCount: number;
 };
