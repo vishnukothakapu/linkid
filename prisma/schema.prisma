@@ -217,3 +217,27 @@ model ProfilePreviewToken {
 
   @@index([userId, expiresAt])
 }
+
+enum JobStatus {
+  PENDING
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Job {
+  id         String    @id @default(cuid())
+  type       String
+  payload    Json
+  status     JobStatus @default(PENDING)
+  scheduleAt DateTime?
+  attempts   Int       @default(0)
+  lastError  String?
+  runAfter   DateTime? // next eligible run time
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status, runAfter])
+  @@index([scheduleAt])
+}
