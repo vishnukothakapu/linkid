@@ -1,52 +1,37 @@
-import prisma from "@/lib/prisma";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ProfileCard } from "./ProfileCard";
 import { ProfileFooter } from "./ProfileFooter";
+import { resolveUserByUsername } from "@/lib/userLookup";
 
-import type { Link } from "./types/type";
-import type { Metadata } from "next";
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
+    const { username } = await params;
+    const resolved = await resolveUserByUsername(username);
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ username: string }> }
-): Promise<Metadata> {
-  const { username } = await params;
+    if (!resolved) {
+        return {
+            title: `${username} | LinkID`,
+            description: `Check out ${username}'s LinkID profile.`,
+            openGraph: {
+                title: `${username} | LinkID`,
+                description: `Check out ${username}'s LinkID profile.`,
+                url: `https://linkid.vercel.app/${username}`,
+            },
+        };
+    }
 
-  const user = await prisma.user.findUnique({
-    where: { username },
-    select: {
-      name: true,
-      bio: true,
-      image: true,
-    },
-  });
+    const canonicalUsername = resolved.canonicalUsername ?? username;
 
-  if (!user) {
     return {
-      title: 'Profile not found | LinkID',
-      description: 'This profile does not exist.',
+        title: `${canonicalUsername} | LinkID`,
+        description: `Check out ${canonicalUsername}'s LinkID profile.`,
+        openGraph: {
+            title: `${canonicalUsername} | LinkID`,
+            description: `Check out ${canonicalUsername}'s LinkID profile.`,
+            url: `https://linkid.vercel.app/${canonicalUsername}`,
+        },
     };
-  }
-
-  return {
-    title: `${user.name} | LinkID`,
-    description: user.bio || `Check out ${user.name}'s LinkID profile`,
-    openGraph: {
-      title: `${user.name} | LinkID`,
-      description: user.bio || `Check out ${user.name}'s LinkID profile`,
-      url: `https://linkid.qzz.io/${username}`,
-      siteName: 'LinkID',
-      images: user.image ? [{ url: user.image, width: 400, height: 400 }] : [],
-      type: 'profile',
-    },
-    twitter: {
-      card: 'summary',
-      title: `${user.name} | LinkID`,
-      description: user.bio || `Check out ${user.name}'s LinkID profile`,
-      images: user.image ? [user.image] : [],
-    },
-  };
 }
 
 export default async function PublicProfile({
@@ -56,56 +41,25 @@ export default async function PublicProfile({
 }) {
     const { username } = await params;
     const session = await getServerSession(authOptions);
-
-    let user:
-        | {
-              name: string | null;
-              username: string | null;
-              bio: string | null;
-              image: string | null;
-              links: Link[];
-          }
-        | null = null;
+    let resolved;
 
     try {
-        user = await prisma.user.findUnique({
-            where: { username },
-            select: {
-                name: true,
-                username: true,
-                bio: true,
-                image: true,
-                links: {
-                    where: { isPublic: true },
-                    orderBy: { order: "asc" },
-                },
-            },
-        });
+        resolved = await resolveUserByUsername(username);
     } catch {
         // If the DB isn't reachable in local OSS setups, fall back to 404 instead of a huge error page.
         notFound();
     }
 
-    if (!user) {
-        // Check username history for redirect
-        const history = await prisma.usernameHistory.findUnique({
-            where: { previousUsername: username },
-            include: { user: { select: { username: true } } },
-        });
+    if (!resolved) notFound();
 
-        if (history?.user?.username) {
-            redirect(`/${history.user.username}`);
-        }
-
-        notFound();
-    }
+    const user = resolved.user;
 
     return (
         <main className="min-h-screen px-4 py-16">
             <div className="mx-auto max-w-md">
                 <ProfileCard
-                    user={{ name: user.name, username: username, bio: user.bio, image: user.image, links: user.links }}
-                    username={username}
+                    user={{ name: user.name, username: user.username ?? resolved.canonicalUsername, bio: user.bio, image: user.image, links: user.links }}
+                    username={resolved.canonicalUsername}
                     showCTA={!session}
                 />
                 <ProfileFooter />

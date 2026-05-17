@@ -22,9 +22,21 @@ model User {
   links         Link[]
   accounts      Account[]
   sessions      Session[]
+  aliases       UserAlias[]
+  mergeRequests AccountMergeRequest[]
   createdAt     DateTime @default(now())
 
   usernameHistory UsernameHistory[]
+}
+
+model UserAlias {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 
@@ -81,6 +93,38 @@ model DailyLinkAnalytics {
   @@unique([linkId, date])
   @@index([userId, date])
   @@index([date])
+}
+
+model AccountMergeRequest {
+  id               String   @id @default(uuid())
+  codeHash         String   @unique
+  targetUserId     String
+  targetUser       User     @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  consumedAt       DateTime?
+  consumedByUserId String?
+
+  @@index([targetUserId, createdAt])
+  @@index([expiresAt])
+}
+
+model AccountMergeEvent {
+  id                String   @id @default(uuid())
+  sourceUserId      String
+  targetUserId      String
+  sourceEmail       String
+  targetEmail       String
+  sourceUsername    String?
+  targetUsername    String?
+  mergedLinks       Int      @default(0)
+  mergedAccounts    Int      @default(0)
+  transferredSessions Int    @default(0)
+  conflictsJson     String?
+  createdAt         DateTime @default(now())
+
+  @@index([sourceUserId])
+  @@index([targetUserId, createdAt])
 }
 model Account {
   id                String  @id @default(cuid())
