@@ -11,8 +11,17 @@ export default async function PlatformRedirect({
     params: Promise<PlatformParams>;
 }) {
     const { username, platform } = await params;
+
+    // "share" is a static route handled by app/[username]/share/[slug]/page.tsx.
+    // Calling notFound() here lets Next.js fall through to the nested dynamic
+    // route rather than handling this branch as a redirect.
+    if (platform === "share") {
+        notFound();
+    }
+
     const requestHeaders = await headers();
 
+    // Resolve username to handle redirects/aliases
     const resolved = await resolveUserByUsername(username);
     if (!resolved) {
         notFound();

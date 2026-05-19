@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"  
 }
 
 model User {
@@ -12,21 +12,17 @@ model User {
   email         String   @unique
   emailVerified DateTime?
   image         String?
-
   password      String?
-
   username      String?  @unique
-
-  bio            String?
-
+  bio           String?
   links         Link[]
   accounts      Account[]
   sessions      Session[]
   aliases       UserAlias[]
   mergeRequests AccountMergeRequest[]
   createdAt     DateTime @default(now())
-
   usernameHistory UsernameHistory[]
+  shareVariants ShareVariant[]
 }
 
 model UserAlias {
@@ -51,7 +47,7 @@ model Link {
   isPublic  Boolean  @default(true)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clickEvents ClickEvent[]
+  clickEvents    ClickEvent[]
   dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
 
@@ -59,18 +55,18 @@ model Link {
 }
 
 model ClickEvent {
-  id              String   @id @default(uuid())
-  linkId           String
-  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId           String
-  visitorKey       String?
-  userAgent        String?
-  referrer         String?
-  country          String?
-  deviceType       String?
-  isBot            Boolean  @default(false)
-  isUniqueVisitor  Boolean  @default(false)
-  createdAt        DateTime @default(now())
+  id             String   @id @default(uuid())
+  linkId          String
+  link            Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId          String
+  visitorKey      String?
+  userAgent       String?
+  referrer        String?
+  country         String?
+  deviceType      String?
+  isBot           Boolean  @default(false)
+  isUniqueVisitor Boolean  @default(false)
+  createdAt       DateTime @default(now())
 
   @@index([linkId, createdAt])
   @@index([userId, createdAt])
@@ -79,16 +75,16 @@ model ClickEvent {
 }
 
 model DailyLinkAnalytics {
-  id            String   @id @default(uuid())
-  linkId         String
-  link           Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId         String
-  date           DateTime
-  totalClicks    Int      @default(0)
-  uniqueClicks   Int      @default(0)
-  botClicks      Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(uuid())
+  linkId        String
+  link          Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId        String
+  date          DateTime
+  totalClicks   Int      @default(0)
+  uniqueClicks  Int      @default(0)
+  botClicks     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([linkId, date])
   @@index([userId, date])
@@ -139,7 +135,6 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -150,7 +145,6 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -167,6 +161,31 @@ model UsernameHistory {
   previousUsername String   @unique
   userId           String
   createdAt        DateTime @default(now())
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── NEW ───────────────────────────────────────────────────────────────────────
+
+model ShareVariant {
+  id              String   @id @default(uuid())
+  userId          String
+  slug            String
+  title           String
+  description     String?
+  linkIds         String[]
+  accentColor     String?  @default("#6366f1")
+  logo            String?
+  backgroundColor String?
+  backgroundImage String?
+  customCss       String?  @db.Text
+  isPublic        Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+  @@index([userId])
+  @@index([slug])
 }
