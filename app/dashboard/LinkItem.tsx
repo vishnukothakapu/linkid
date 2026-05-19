@@ -16,6 +16,7 @@ import {
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 
 export function LinkItem({
@@ -46,6 +47,11 @@ export function LinkItem({
     }
 
     async function save() {
+        const validation = validateUrl(url);
+        if (!validation.valid) {
+            return toast.error(validation.error);
+        }
+
         await onUpdate(link.id, url);
         setEditing(false);
     }

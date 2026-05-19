@@ -147,3 +147,29 @@ html {
     linear-gradient(to bottom, rgba(124, 58, 237, 0.08), rgba(0, 0, 0, 0));
   background-attachment: fixed;
 }
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.marquee-reverse {
+  animation: marquee-reverse 40s linear infinite;
+}
