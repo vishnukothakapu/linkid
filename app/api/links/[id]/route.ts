@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-import { validatePlatformUrl, normalizeUrl, detectPlatform } from "@/lib/platforms";
+import { validatePlatformUrl, detectPlatform } from "@/lib/platforms";
 import { validateUrlBackend } from "@/lib/urlValidation";
 
 export async function PUT(

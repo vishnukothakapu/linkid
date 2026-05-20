@@ -6,7 +6,6 @@ import { Prisma } from "@prisma/client";
 
 import {
     detectPlatform,
-    normalizeUrl,
     validatePlatformUrl,
 } from "@/lib/platforms";
 

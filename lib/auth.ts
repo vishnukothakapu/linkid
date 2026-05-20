@@ -8,27 +8,6 @@ import type { NextAuthOptions } from "next-auth";
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 
-const oauthProviders = new Set(["google", "github"]);
-
-function getOAuthProfileImage(profile: unknown): string | null {
-    if (!profile || typeof profile !== "object") return null;
-
-    const data = profile as Record<string, unknown>;
-    const candidates = [
-        data.image,
-        data.picture,
-        data.avatar_url,
-        data.avatarUrl,
-    ];
-
-    for (const candidate of candidates) {
-        if (typeof candidate === "string" && candidate.trim().length > 0) {
-            return candidate;
-        }
-    }
-
-    return null;
-}
 
 const oauthProviders = new Set(["google", "github"]);
 
