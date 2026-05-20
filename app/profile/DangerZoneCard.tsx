@@ -43,8 +43,9 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
       setStep("confirm");
       setDeleteText("");
       setPassword("");
@@ -56,7 +57,7 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
       setLoading(false);
       setOtpSending(false);
     }
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -172,7 +173,7 @@ export function DangerZoneCard({ userEmail, hasPassword }: DangerZoneCardProps) 
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md" showCloseButton={!loading}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">

@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { trackLinkClick } from "@/lib/analytics";
-
 export async function POST(req: Request) {
-    const { username, platform } = await req.json();
+    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const username = typeof body.username === "string" ? body.username : undefined;
+    const platform = typeof body.platform === "string" ? body.platform : undefined;
 
     if (!username || !platform) {
         return NextResponse.json({ error: "Missing params" }, { status: 400 });

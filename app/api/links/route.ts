@@ -17,10 +17,11 @@ export async function POST(req: Request) {
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const body = await req.json();
-    const rawUrl = body?.url?.trim();
-    const customLabel = body?.label?.trim();
+    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    const url = typeof body.url === "string" ? body.url : undefined;
+    const label = typeof body.label === "string" ? body.label : undefined;
+    const rawUrl = url?.trim();
+    const customLabel = label?.trim();
 
     if (!rawUrl) {
         return NextResponse.json(
