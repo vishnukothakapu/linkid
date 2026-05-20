@@ -86,9 +86,23 @@ export function Navbar() {
                     </Link>
 
                     {/* Desktop center nav */}
-                    <nav className="hidden items-center gap-0.5 md:flex">
+                    <nav className="hidden items-center gap-1 md:flex">
                         {NAV_LINKS.map(({ href, label, id }) => (
-                            <a key={id} href={href} className={activeSection === id ? activePill : inactivePill}>
+                            <a
+                                key={id}
+                                href={href}
+                                className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-300
+                                after:absolute after:left-1/2 after:bottom-0 after:h-[2px] after:w-2/5
+                                after:-translate-x-1/2 after:scale-x-0 after:rounded-full
+                                after:bg-gradient-to-r after:from-violet-500 after:via-fuchsia-500 after:to-indigo-500
+                                after:transition-transform after:duration-300 after:ease-out
+                                after:origin-center hover:after:scale-x-100
+                                ${
+                                    activeSection === id
+                                        ? "text-violet-700 dark:text-violet-300 after:scale-x-100"
+                                        : "text-zinc-600 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-300"
+                                }`}
+                            >
                                 {label}
                             </a>
                         ))}
