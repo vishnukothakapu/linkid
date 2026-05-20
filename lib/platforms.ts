@@ -33,7 +33,7 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
 
 export function normalizeUrl(url: string) {
     let u = url.trim();
-    if (!u.startsWith("http")) {
+    if (!/^https?:/i.test(u)) {
         u = "https://" + u;
     }
     return u.replace(/\/$/, "");
