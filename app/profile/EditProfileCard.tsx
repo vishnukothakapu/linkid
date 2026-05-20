@@ -91,6 +91,11 @@ export default function EditProfileCard({
         window.location.reload();
     }
 
+    const isDirty =
+        name.trim() !== initialName.trim() ||
+        username.trim() !== initialUsername.trim() ||
+        bio.trim() !== (initialBio || "").trim();
+
     return (
         <Card>
             <CardHeader>
@@ -163,6 +168,7 @@ export default function EditProfileCard({
                     disabled={
                         loading ||
                         checking ||
+                        !isDirty ||
                         username.length < 3 ||
                         (!available && username !== initialUsername)
                     }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast from "react-hot-toast";
 
+import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 
 export default function AddLinkBox({
@@ -19,8 +20,9 @@ export default function AddLinkBox({
     const [loading, setLoading] = useState(false);
 
     async function submit() {
-        if (!url.trim()) {
-            return toast.error("Please enter a URL");
+        const validation = validateUrl(url);
+        if (!validation.valid) {
+            return toast.error(validation.error);
         }
 
         if (needsLabel && !label.trim()) {

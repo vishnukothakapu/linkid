@@ -30,6 +30,28 @@ function getOAuthProfileImage(profile: unknown): string | null {
     return null;
 }
 
+const oauthProviders = new Set(["google", "github"]);
+
+function getOAuthProfileImage(profile: unknown): string | null {
+    if (!profile || typeof profile !== "object") return null;
+
+    const data = profile as Record<string, unknown>;
+    const candidates = [
+        data.image,
+        data.picture,
+        data.avatar_url,
+        data.avatarUrl,
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === "string" && candidate.trim().length > 0) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
 

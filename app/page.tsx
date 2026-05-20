@@ -8,10 +8,6 @@ import {
   Link2,
   Route,
   Zap,
-  Github,
-  Linkedin,
-  Code2,
-  ArrowUpRight,
   Wand2,
   User,
   BarChart3,
@@ -19,6 +15,10 @@ import {
   Moon,
   Shield,
   CheckCircle2,
+  ArrowUpRight,
+  Github,
+  Linkedin,
+  Code2,
 } from "lucide-react";
 import React from "react";
 
@@ -33,14 +33,29 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
   if (session) redirect("/dashboard");
 
+  // Split into two arrays if you want an asynchronous double-row marquee feel, 
+  // or keep it in one loop. Here all features are passed cleanly into the marquee track rows.
+  const featuresList = [
+    { icon: <Link2 className="h-5 w-5" />, title: "Resume-friendly links", desc: "Short, readable URLs that look clean and professional on resumes and portfolios." },
+    { icon: <Route className="h-5 w-5" />, title: "Platform routing", desc: "Predictable links like /github, /linkedin, /leetcode for every professional platform." },
+    { icon: <Zap className="h-5 w-5" />, title: "One-time setup", desc: "Add links once. Share everywhere. Update anytime without breaking existing links." },
+    { icon: <Wand2 className="h-5 w-5" />, title: "Auto platform detection", desc: "Paste any URL and LinkID automatically detects the platform and formats it correctly." },
+    { icon: <User className="h-5 w-5" />, title: "Public profile page", desc: "Shareable profile at linkid.qzz.io/username showcasing all your professional links." },
+    { icon: <BarChart3 className="h-5 w-5" />, title: "Real-time dashboard", desc: "Add, edit, and delete links instantly with a responsive, intuitive interface." },
+    { icon: <Globe className="h-5 w-5" />, title: "Multi-platform support", desc: "GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported." },
+    { icon: <Moon className="h-5 w-5" />, title: "Dark mode ready", desc: "Full system theme support with light and dark modes for comfortable viewing." },
+    { icon: <Shield className="h-5 w-5" />, title: "Secure & private", desc: "OAuth authentication with Google & GitHub. Your data stays secure and private." },
+  ];
+
   return (
     <>
       <Navbar />
 
       <main className="overflow-hidden">
-        <section className="relative flex min-h-[calc(100vh-4rem)] items-center border-b border-violet-200/60 px-4 py-16 dark:border-white/10 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <section className="relative flex min-h-screen items-center border-b border-violet-200/60 px-4 pb-16 pt-32 dark:border-white/10 sm:px-6 lg:px-8">
           <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
-          <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-violet-200/70 via-indigo-100/40 to-transparent blur-2xl dark:from-violet-700/20 dark:via-indigo-700/10" />
+          <div className="absolute inset-x-0 top-0 -z-10 h-96 bg-gradient-to-b from-violet-200/70 via-indigo-100/40 to-transparent blur-2xl dark:from-violet-700/20 dark:via-indigo-700/10" />
 
           <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.06fr_0.94fr]">
             <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
@@ -125,6 +140,7 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* Stats Section */}
         <section className="relative px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {stats.map((stat) => (
@@ -133,65 +149,57 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="features">
+        {/* Features Section (Marquee Implemented Here) */}
+        {/* Features Section */}
+        <section className="relative overflow-hidden py-16 md:py-24" id="features">
           <SectionWash />
-          <div className="mx-auto max-w-7xl">
+          <div className="px-4 sm:px-6 lg:px-8">
             <SectionHeader
               eyebrow="Features"
               title="Why developers love LinkID"
               desc="Built for developers, job seekers, and professionals who value clean, predictable links."
             />
+          </div>
 
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard
-                icon={<Link2 className="h-5 w-5" />}
-                title="Resume-friendly links"
-                desc="Short, readable URLs that look clean and professional on resumes and portfolios."
-              />
-              <FeatureCard
-                icon={<Route className="h-5 w-5" />}
-                title="Platform routing"
-                desc="Predictable links like /github, /linkedin, /leetcode for every professional platform."
-              />
-              <FeatureCard
-                icon={<Zap className="h-5 w-5" />}
-                title="One-time setup"
-                desc="Add links once. Share everywhere. Update anytime without breaking existing links."
-              />
-              <FeatureCard
-                icon={<Wand2 className="h-5 w-5" />}
-                title="Auto platform detection"
-                desc="Paste any URL and LinkID automatically detects the platform and formats it correctly."
-              />
-              <FeatureCard
-                icon={<User className="h-5 w-5" />}
-                title="Public profile page"
-                desc="Shareable profile at linkid.qzz.io/username showcasing all your professional links."
-              />
-              <FeatureCard
-                icon={<BarChart3 className="h-5 w-5" />}
-                title="Real-time dashboard"
-                desc="Add, edit, and delete links instantly with a responsive, intuitive interface."
-              />
-              <FeatureCard
-                icon={<Globe className="h-5 w-5" />}
-                title="Multi-platform support"
-                desc="GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported."
-              />
-              <FeatureCard
-                icon={<Moon className="h-5 w-5" />}
-                title="Dark mode ready"
-                desc="Full system theme support with light and dark modes for comfortable viewing."
-              />
-              <FeatureCard
-                icon={<Shield className="h-5 w-5" />}
-                title="Secure & private"
-                desc="OAuth authentication with Google & GitHub. Your data stays secure and private."
-              />
+          {/* Marquee Container Outer Wrapper */}
+          <div className="relative mt-16 flex flex-col gap-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,transparent_5%,black_20%,black_80%,transparent_95%,transparent)]">
+
+            {/* Row 1: Moving Track (Inlined keyframes) */}
+            <div className="marquee flex w-max gap-5">
+              {/* Original List */}
+              {featuresList.map((feat, index) => (
+                <div key={`r1-${index}`} className="w-[350px] shrink-0">
+                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                </div>
+              ))}
+              {/* Duplicated List */}
+              {featuresList.map((feat, index) => (
+                <div key={`r1-dup-${index}`} className="w-[350px] shrink-0">
+                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                </div>
+              ))}
             </div>
+
+            {/* Row 2: Reverse Moving Track (Inlined keyframes) */}
+            <div className="marquee-reverse flex w-max gap-5">
+              {/* Original List */}
+              {[...featuresList].reverse().map((feat, index) => (
+                <div key={`r2-${index}`} className="w-[350px] shrink-0">
+                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                </div>
+              ))}
+              {/* Duplicated List */}
+              {[...featuresList].reverse().map((feat, index) => (
+                <div key={`r2-dup-${index}`} className="w-[350px] shrink-0">
+                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                </div>
+              ))}
+            </div>
+
           </div>
         </section>
 
+        {/* Demo Section */}
         <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
             <SectionHeader
@@ -203,26 +211,15 @@ export default async function Home() {
 
             <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
               <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
-                <DemoRow
-                  icon={<Github className="h-5 w-5" />}
-                  label="GitHub"
-                  url="linkid.qzz.io/vishnu/github"
-                />
-                <DemoRow
-                  icon={<Linkedin className="h-5 w-5" />}
-                  label="LinkedIn"
-                  url="linkid.qzz.io/vishnu/linkedin"
-                />
-                <DemoRow
-                  icon={<Code2 className="h-5 w-5" />}
-                  label="LeetCode"
-                  url="linkid.qzz.io/vishnu/leetcode"
-                />
+                <DemoRow icon={<Github className="h-5 w-5" />} label="GitHub" url="linkid.qzz.io/vishnu/github" />
+                <DemoRow icon={<Linkedin className="h-5 w-5" />} label="LinkedIn" url="linkid.qzz.io/vishnu/linkedin" />
+                <DemoRow icon={<Code2 className="h-5 w-5" />} label="LeetCode" url="linkid.qzz.io/vishnu/leetcode" />
               </div>
             </div>
           </div>
         </section>
 
+        {/* Call To Action */}
         <section className="relative px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
           <div className="absolute inset-x-0 top-1/2 -z-10 h-44 -translate-y-1/2 bg-gradient-to-r from-transparent via-violet-200/45 to-transparent blur-3xl dark:via-violet-500/10" />
           <div className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-white/70 px-6 py-12 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:px-10">
@@ -245,6 +242,7 @@ export default async function Home() {
         </section>
       </main>
 
+      {/* Footer */}
       <footer className="border-t border-violet-200/60 bg-white/45 backdrop-blur-xl dark:border-white/10 dark:bg-black/10">
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
@@ -312,6 +310,7 @@ export default async function Home() {
   );
 }
 
+// Subcomponents definitions remain exactly identical
 function SparkDot() {
   return (
     <span className="relative flex h-2.5 w-2.5">
@@ -330,15 +329,7 @@ function ProofItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PreviewLink({
-  icon,
-  label,
-  path,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  path: string;
-}) {
+function PreviewLink({ icon, label, path }: { icon: React.ReactNode; label: string; path: string }) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-violet-100 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
       <div className="flex items-center gap-3">
@@ -371,19 +362,8 @@ function SectionWash() {
   );
 }
 
-function SectionHeader({
-  eyebrow,
-  title,
-  desc,
-  align = "center",
-}: {
-  eyebrow: string;
-  title: string;
-  desc: string;
-  align?: "left" | "center";
-}) {
+function SectionHeader({ eyebrow, title, desc, align = "center" }: { eyebrow: string; title: string; desc: string; align?: "left" | "center" }) {
   const alignment = align === "center" ? "mx-auto text-center" : "";
-
   return (
     <div className={`max-w-2xl ${alignment}`}>
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300">
@@ -399,15 +379,7 @@ function SectionHeader({
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  desc,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
+function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/70 bg-white/70 p-6 shadow-lg shadow-violet-950/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-200 hover:bg-white/90 hover:shadow-xl hover:shadow-violet-950/10 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07]">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -424,15 +396,7 @@ function FeatureCard({
   );
 }
 
-function DemoRow({
-  icon,
-  label,
-  url,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  url: string;
-}) {
+function DemoRow({ icon, label, url }: { icon: React.ReactNode; label: string; url: string }) {
   return (
     <Link href={`https://${url}`} target="_blank" className="group block">
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
@@ -453,15 +417,7 @@ function DemoRow({
   );
 }
 
-function FooterIcon({
-  href,
-  label,
-  children,
-}: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
-}) {
+function FooterIcon({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
@@ -474,13 +430,7 @@ function FooterIcon({
   );
 }
 
-function FooterColumn({
-  title,
-  links,
-}: {
-  title: string;
-  links: Array<[string, string]>;
-}) {
+function FooterColumn({ title, links }: { title: string; links: Array<[string, string]> }) {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">{title}</h3>
