@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-import { validatePlatformUrl, normalizeUrl, detectPlatform } from "@/lib/platforms";
+import { validatePlatformUrl, detectPlatform } from "@/lib/platforms";
+import { validateUrlBackend } from "@/lib/urlValidation";
 
 export async function PUT(
     req: Request,
@@ -32,7 +33,15 @@ export async function PUT(
     const data: { url?: string; isPublic?: boolean } = {};
 
     if (typeof url === "string") {
-        const finalUrl = normalizeUrl(url);
+        const validation = validateUrlBackend(url);
+        if (!validation.valid) {
+            return NextResponse.json(
+                { error: validation.error },
+                { status: 400 }
+            );
+        }
+
+        const finalUrl = validation.normalizedUrl;
 
         // Derive platform from the final URL for validation so custom user-defined
         // platform slugs (e.g. when platform was stored as a custom label) don't

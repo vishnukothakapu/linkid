@@ -1,3 +1,6 @@
+@import "react-image-crop/dist/ReactCrop.css";
+@import "tailwindcss";
+@import "tw-animate-css";
 * {
   transition: 
     background-color 0.25s ease,
@@ -8,9 +11,8 @@
 html {
   scroll-behavior: smooth;
 }
-@import "react-image-crop/dist/ReactCrop.css";
-@import "tailwindcss";
-@import "tw-animate-css";
+
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -146,4 +148,30 @@ html {
     linear-gradient(135deg, #030304, #09090b 45%, rgba(30, 27, 75, 0.42)),
     linear-gradient(to bottom, rgba(124, 58, 237, 0.08), rgba(0, 0, 0, 0));
   background-attachment: fixed;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.marquee-reverse {
+  animation: marquee-reverse 40s linear infinite;
 }

@@ -6,11 +6,10 @@ import { Prisma } from "@prisma/client";
 
 import {
     detectPlatform,
-    normalizeUrl,
     validatePlatformUrl,
 } from "@/lib/platforms";
 
-import { isValidHttpUrl } from "@/lib/url";
+import { validateUrlBackend } from "@/lib/urlValidation";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -30,14 +29,15 @@ export async function POST(req: Request) {
         );
     }
 
-    if (!isValidHttpUrl(rawUrl)) {
+    const validation = validateUrlBackend(rawUrl);
+    if (!validation.valid) {
         return NextResponse.json(
-            { error: "Please enter a valid URL (https://…)" },
+            { error: validation.error },
             { status: 400 }
         );
     }
 
-    const finalUrl = normalizeUrl(rawUrl);
+    const finalUrl = validation.normalizedUrl;
     const detectedPlatform = detectPlatform(finalUrl);
 
     if (!detectedPlatform) {

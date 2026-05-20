@@ -8,6 +8,7 @@ import { getProfileVersions } from "@/lib/profileWorkflow";
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
+import { DangerZoneCard } from "./DangerZoneCard";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);

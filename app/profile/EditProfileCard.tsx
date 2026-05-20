@@ -32,27 +32,41 @@ export default function EditProfileCard({
     }
 
     useEffect(() => {
-        if (username.length < 3 || username === initialUsername) {
-            setAvailable(null);
-            setChecking(false);
-            return;
-        }
-
-        setChecking(true);
         const requestId = ++latestRequestId.current;
 
         const timer = setTimeout(async () => {
-            const res = await fetch(`/api/username/check?username=${username}`);
-            const data = await res.json();
+            if (username.length < 3 || username === initialUsername) {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                    setChecking(false);
+                }
+                return;
+            }
 
             if (requestId === latestRequestId.current) {
-                setAvailable(data.available);
-                setChecking(false);
+                setChecking(true);
+            }
+
+            try {
+                const res = await fetch(`/api/username/check?username=${username}`);
+                const data = await res.json();
+
+                if (requestId === latestRequestId.current) {
+                    setAvailable(data.available);
+                }
+            } catch {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                }
+            } finally {
+                if (requestId === latestRequestId.current) {
+                    setChecking(false);
+                }
             }
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [username]);
+    }, [username, initialUsername]);
 
     async function saveChanges() {
         setLoading(true);
@@ -76,6 +90,11 @@ export default function EditProfileCard({
         if(onSuccess) onSuccess();
         window.location.reload();
     }
+
+    const isDirty =
+        name.trim() !== initialName.trim() ||
+        username.trim() !== initialUsername.trim() ||
+        bio.trim() !== (initialBio || "").trim();
 
     return (
         <Card>
@@ -149,6 +168,7 @@ export default function EditProfileCard({
                     disabled={
                         loading ||
                         checking ||
+                        !isDirty ||
                         username.length < 3 ||
                         (!available && username !== initialUsername)
                     }
