@@ -29,20 +29,30 @@ export default function CreateLinkId() {
         }
 
         abortRef.current?.abort();
-        abortRef.current = new AbortController();
+        const abortController = new AbortController();
+        abortRef.current = abortController;
         setChecking(true);
 
         try {
-        const res = await fetch(`/api/username/check?username=${value}`, {
-            signal: abortRef.current.signal,
-        });
-        const data = await res.json();
-        setAvailable(data.available);
-        setSuggestions(data.suggestions ?? []);
+            const res = await fetch(`/api/username/check?username=${value}`, {
+                signal: abortController.signal,
+            });
+            const data = await res.json();
+            
+            if (abortController.signal.aborted) return;
+            
+            setAvailable(data.available);
+            setSuggestions(data.suggestions ?? []);
         } catch (e) {
-        if ((e as Error).name !== "AbortError") throw e;
+            if (abortController.signal.aborted) return;
+            
+            console.error("Username check failed:", e);
+            setAvailable(null);
+            setSuggestions([]);
         } finally {
-        setChecking(false);
+            if (!abortController.signal.aborted) {
+                setChecking(false);
+            }
         }
     }, []);
 
