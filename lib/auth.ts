@@ -8,6 +8,28 @@ import type { NextAuthOptions } from "next-auth";
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 
+const oauthProviders = new Set(["google", "github"]);
+
+function getOAuthProfileImage(profile: unknown): string | null {
+    if (!profile || typeof profile !== "object") return null;
+
+    const data = profile as Record<string, unknown>;
+    const candidates = [
+        data.image,
+        data.picture,
+        data.avatar_url,
+        data.avatarUrl,
+    ];
+
+    for (const candidate of candidates) {
+        if (typeof candidate === "string" && candidate.trim().length > 0) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
 
@@ -58,7 +80,6 @@ export const authOptions: NextAuthOptions = {
 
     events: {
         async createUser({ user }) {
-            // OAuth providers already verify email
             await prisma.user.update({
                 where: { id: user.id },
                 data: { emailVerified: new Date() },
@@ -67,7 +88,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     callbacks: {
-        async jwt({ token, trigger, session, user }) {
+        async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted
             if (token.sub && (await isUserSessionInvalidated(token.sub))) {
                 return {} as typeof token;
@@ -75,6 +96,36 @@ export const authOptions: NextAuthOptions = {
 
             if (trigger === "update" && "image" in (session ?? {})) {
                 token.image = session.image ?? null;
+            }
+
+            if (account?.provider && oauthProviders.has(account.provider)) {
+                const oauthImage =
+                    getOAuthProfileImage(profile) ??
+                    (typeof user?.image === "string" ? user.image : null);
+
+                if (oauthImage) {
+                    const userId = user?.id ?? token.sub;
+                    if (userId) {
+                        try {
+                            const result = await prisma.user.updateMany({
+                                where: { id: userId, image: null },
+                                data: { image: oauthImage },
+                            });
+
+                            if (result.count > 0) {
+                                token.image = oauthImage;
+                            } else if (!token.image) {
+                                const existing = await prisma.user.findUnique({
+                                    where: { id: userId },
+                                    select: { image: true },
+                                });
+                                token.image = existing?.image ?? null;
+                            }
+                        } catch (error) {
+                            console.error("OAuth avatar sync failed", error);
+                        }
+                    }
+                }
             }
             if (!token.image && user && "image" in user && user.image) {
                 token.image = user.image;
@@ -96,7 +147,7 @@ export const authOptions: NextAuthOptions = {
                 return {} as typeof session;
             }
             if (session.user) {
-                session.user.image = token.image as string ?? null;
+                session.user.image = (token.image as string) ?? null;
                 session.user.id = token.sub as string;
             }
             return session;
@@ -104,7 +155,7 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
-        maxAge: 24 * 60 * 60, // 24 hours to align with invalidation TTL
+        maxAge: 24 * 60 * 60,
     },
     pages: {
         signIn: "/login",
