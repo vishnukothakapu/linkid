@@ -241,3 +241,23 @@ model Job {
   @@index([status, runAfter])
   @@index([scheduleAt])
 }
+
+model DeleteOtp {
+  userId      String   @id
+  otp         String?
+  expiresAt   DateTime?
+  attempts    Int      @default(0)
+  sendCount   Int      @default(0)
+  windowStart DateTime?
+
+  @@index([windowStart])
+  @@map("deleteOtp")
+}
+
+model InvalidatedSession {
+  userId    String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("invalidatedSession")
+}

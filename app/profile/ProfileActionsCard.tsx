@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Link2, LogOut, Copy, Check } from "lucide-react";
+import { KeyRound, Link2, LogOut, Copy, Check, Download, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -228,38 +228,14 @@ export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions 
                         className="w-full sm:w-auto"
                     >
                         <Button
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={() => setGenerateOpen(true)}
+                            variant="destructive"
+                            type="submit"
+                            className="w-full"
                         >
-                            <KeyRound className="h-4 w-4" />
-                            Generate Merge Code
+                            <LogOut className="h-4 w-4" />
+                            Logout
                         </Button>
-
-                        <Button
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={() => setMergeOpen(true)}
-                        >
-                            <Link2 className="h-4 w-4" />
-                            Merge Using Code
-                        </Button>
-
-                        <form
-                            action="/api/auth/signout"
-                            method="post"
-                            className="w-full sm:w-auto"
-                        >
-                            <Button
-                                variant="destructive"
-                                type="submit"
-                                className="w-full"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                Logout
-                            </Button>
-                        </form>
-                    </div>
+                    </form>
 
                     {/* Export Section */}
                     <div className="border-t pt-3">

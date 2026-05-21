@@ -93,7 +93,7 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   const now = new Date();
   const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
   
-  if (!entry || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
+  if (!entry || !entry.windowStart || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
     try {
       await prisma.deleteOtp.upsert({
         where: { userId },
