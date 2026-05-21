@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "postinstall": "node scripts/postinstall-prisma-generate.mjs",
+    "migrate:deploy:safe": "node scripts/safe-prisma-migrate-deploy.mjs",
     "lint": "eslint",
     "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts lib/accountMergeUtils.test.ts"
   },
