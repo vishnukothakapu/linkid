@@ -19,7 +19,7 @@ export function generateOtp(): string {
 export async function setOtp(userId: string, otp: string): Promise<void> {
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
   const otpHash = await bcrypt.hash(otp, 10);
-  await prisma.deleteOtp.upsert({
+  await (prisma as any).deleteOtp.upsert({
     where: { userId },
     update: {
       otp: otpHash,
@@ -36,7 +36,7 @@ export async function setOtp(userId: string, otp: string): Promise<void> {
 }
 
 export async function verifyOtp(userId: string, candidateOtp: string): Promise<{ valid: boolean; error?: string }> {
-  const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
+  const entry = await (prisma as any).deleteOtp.findUnique({ where: { userId } });
   
   if (!entry || !entry.otp || !entry.expiresAt) {
     return { valid: false, error: "Verification code expired or not requested" };
@@ -48,7 +48,7 @@ export async function verifyOtp(userId: string, candidateOtp: string): Promise<{
   }
 
   // Atomically increment attempts to prevent race conditions
-  const updatedEntry = await prisma.deleteOtp.update({
+  const updatedEntry = await (prisma as any).deleteOtp.update({
     where: { userId },
     data: { attempts: { increment: 1 } },
   });
@@ -77,25 +77,25 @@ export async function verifyOtp(userId: string, candidateOtp: string): Promise<{
 
 async function clearOtpFields(userId: string) {
   // Clear OTP but retain rate-limiting window
-  await prisma.deleteOtp.update({
+  await (prisma as any).deleteOtp.update({
     where: { userId },
     data: { otp: null, expiresAt: null, attempts: 0 },
   }).catch(() => {});
 }
 
 export async function clearOtp(userId: string): Promise<void> {
-  await prisma.deleteOtp.delete({
+  await (prisma as any).deleteOtp.delete({
     where: { userId },
   }).catch(() => {});
 }
 
 export async function checkRateLimit(userId: string): Promise<boolean> {
   const now = new Date();
-  const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
+  const entry = await (prisma as any).deleteOtp.findUnique({ where: { userId } });
   
   if (!entry || !entry.windowStart || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
     try {
-      await prisma.deleteOtp.upsert({
+      await (prisma as any).deleteOtp.upsert({
         where: { userId },
         update: { sendCount: 1, windowStart: now },
         create: { userId, sendCount: 1, windowStart: now }
@@ -107,7 +107,7 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   }
 
   // Atomically increment send count
-  const updatedEntry = await prisma.deleteOtp.update({
+  const updatedEntry = await (prisma as any).deleteOtp.update({
     where: { userId },
     data: { sendCount: { increment: 1 } },
   });
