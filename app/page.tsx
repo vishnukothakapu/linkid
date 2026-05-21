@@ -290,11 +290,11 @@ export default async function Home() {
               ["Get Started", "/login"],
             ]} />
             <FooterColumn title="Support" links={[
-              ["Report Issue", "https://github.com/vishnukothakapu/linkid/issues"],
-              ["Community", "https://github.com/vishnukothakapu/linkid/discussions"],
-              ["Documentation", "/docs"],
-              ["Contact Us", "mailto:support@linkid.qzz.io"],
-            ]} />
+  ["Report Issue", "https://github.com/vishnukothakapu/linkid/issues"],
+  ["Community", "https://github.com/vishnukothakapu/linkid/discussions"],
+  ["Documentation", "https://github.com/vishnukothakapu/linkid#readme"],
+  ["Contact Us", "mailto:support@linkid.qzz.io"],
+]} />           
             <FooterColumn title="Company" links={[
               ["About", "/about"],
               ["Privacy Policy", "/privacy"],
@@ -425,6 +425,8 @@ function DemoRow({
 
   const destination = href ? href : `https://${url}`;
   return (
+    <Link href={`https://${url}`} target="_blank" className="group block">
+      <div className="flex min-w-0 w-full overflow-hidden items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
     <Link href={destination} target="_blank" rel="noopener noreferrer" className="group block">
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
@@ -435,8 +437,8 @@ function DemoRow({
             {label}
           </span>
         </div>
-        <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-          <span className="truncate">{url}</span>
+        <div className="flex min-w-0 w-0 flex-1 items-center gap-2 overflow-hidden font-mono text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+          <span className="truncate block max-w-full">{url}</span>
           <ArrowUpRight className="h-4 w-4 shrink-0 opacity-50 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-violet-600 group-hover:opacity-100 dark:group-hover:text-violet-300" />
         </div>
       </div>

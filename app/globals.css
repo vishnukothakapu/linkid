@@ -172,6 +172,39 @@ html {
   animation: marquee 40s linear infinite;
 }
 
+.marquee:hover {
+  animation-play-state: paused;
+}
+
 .marquee-reverse {
   animation: marquee-reverse 40s linear infinite;
+}
+
+/* Global scrollbar style to cover the entire page */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent; /* Purple for Firefox */
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #7c3aed; /* Vibrant Purple */
+  border-radius: 9999px;
+  border: 2px solid transparent; 
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: #2563eb; /* Vibrant Blue on hover */
+}
+.marquee-reverse:hover {
+  animation-play-state: paused;
 }

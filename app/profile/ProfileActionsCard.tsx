@@ -228,18 +228,73 @@ export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions 
                         className="w-full sm:w-auto"
                     >
                         <Button
-                            variant="destructive"
-                            type="submit"
-                            className="w-full"
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() => setGenerateOpen(true)}
                         >
-                            <LogOut className="h-4 w-4" />
-                            Logout
+                            <KeyRound className="h-4 w-4" />
+                            Generate Merge Code
                         </Button>
-                    </form>
 
+                        <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() => setMergeOpen(true)}
+                        >
+                            <Link2 className="h-4 w-4" />
+                            Merge Using Code
+                        </Button>
+
+                        <form
+                            action="/api/auth/signout"
+                            method="post"
+                            className="w-full sm:w-auto"
+                        >
+                            <Button
+                                variant="destructive"
+                                type="submit"
+                                className="w-full"
+                            >
+                                <LogOut className="h-4 w-4" />
+                                Logout
+                            </Button>
+                        </form>
+                    </div>
+
+                    {/* Export Section */}
+                    <div className="border-t pt-3">
+                        <p className="text-sm text-muted-foreground mb-2">Export Profile</p>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                asChild
+                            >
+                                <a href="/api/export/vcard">
+                                    <Download className="h-4 w-4" />
+                                    Contact Card (.vcf)
+                                </a>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                asChild
+                            >
+                                <a href="/api/export/resume">
+                                    <FileText className="h-4 w-4" />
+                                    PDF Profile
+                                </a>
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Merge Summary */}
                     {mergeSummary?.success && (
                         <div className="w-full rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                            Merge complete: {mergeSummary.mergedLinks ?? 0} links, {mergeSummary.mergedAccounts ?? 0} connected accounts, and {mergeSummary.transferredSessions ?? 0} sessions were moved.
+                            Merge complete: {mergeSummary.mergedLinks ?? 0} links,{" "}
+                            {mergeSummary.mergedAccounts ?? 0} connected accounts, and{" "}
+                            {mergeSummary.transferredSessions ?? 0} sessions were moved.
                             {mergeSummary.conflicts?.length ? (
                                 <span className="block mt-1 text-amber-700">
                                     Conflicts were renamed: {mergeSummary.conflicts.join(", ")}.
