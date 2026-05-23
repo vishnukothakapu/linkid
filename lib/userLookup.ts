@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 export async function resolveUserByUsername(username: string) {
     const exactUser = await prisma.user.findUnique({
         where: { username },
-        include: { links: { where: { isPublic: true }, orderBy: { order: "asc" } } },
+        include: { links: { where: { isPublic: true }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] } },
     });
 
     if (exactUser) {
@@ -20,7 +20,7 @@ export async function resolveUserByUsername(username: string) {
 
     const user = await prisma.user.findUnique({
         where: { id: alias.userId },
-        include: { links: { where: { isPublic: true }, orderBy: { order: "asc" } } },
+        include: { links: { where: { isPublic: true }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] } },
     });
 
     if (!user) {
@@ -29,3 +29,4 @@ export async function resolveUserByUsername(username: string) {
 
     return { user, canonicalUsername: user.username ?? username };
 }
+

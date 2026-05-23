@@ -53,8 +53,7 @@ export default async function Home() {
 
       <main className="overflow-hidden">
         {/* Hero Section */}
-        <section className="relative flex min-h-screen items-center border-b border-violet-200/60 px-4 pb-16 pt-32 dark:border-white/10 sm:px-6 lg:px-8">
-          <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
+        <section id="hero" className="relative flex min-h-screen items-center border-b border-violet-200/60 px-4 pb-16 pt-32 dark:border-white/10 sm:px-6 lg:px-8">          <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
           <div className="absolute inset-x-0 top-0 -z-10 h-96 bg-gradient-to-b from-violet-200/70 via-indigo-100/40 to-transparent blur-2xl dark:from-violet-700/20 dark:via-indigo-700/10" />
 
           <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.06fr_0.94fr]">
@@ -211,9 +210,24 @@ export default async function Home() {
 
             <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
               <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
-                <DemoRow icon={<Github className="h-5 w-5" />} label="GitHub" url="linkid.qzz.io/vishnu/github" />
-                <DemoRow icon={<Linkedin className="h-5 w-5" />} label="LinkedIn" url="linkid.qzz.io/vishnu/linkedin" />
-                <DemoRow icon={<Code2 className="h-5 w-5" />} label="LeetCode" url="linkid.qzz.io/vishnu/leetcode" />
+                <DemoRow
+                  icon={<Github className="h-5 w-5" />}
+                  label="GitHub"
+                  url="linkid.qzz.io/vishnu/github"
+                  href="https://github.com/vishnukothakapu"
+                />
+                <DemoRow
+                  icon={<Linkedin className="h-5 w-5" />}
+                  label="LinkedIn"
+                  url="linkid.qzz.io/vishnu/linkedin"
+                  href="https://www.linkedin.com/in/kothakapuvishnukiran/"
+                />
+                <DemoRow
+                  icon={<Code2 className="h-5 w-5" />}
+                  label="LeetCode"
+                  url="linkid.qzz.io/vishnu/leetcode"
+                  href="https://leetcode.com"
+                />
               </div>
             </div>
           </div>
@@ -257,10 +271,10 @@ export default async function Home() {
                 One identity. Infinite professional links. Built for developers who value clean, predictable URLs.
               </p>
               <div className="flex items-center gap-3">
-                <FooterIcon href="https://github.com/your-repo" label="GitHub">
+                <FooterIcon href="https://github.com/vishnukothakapu/linkid" label="GitHub">
                   <Github className="h-5 w-5" />
                 </FooterIcon>
-                <FooterIcon href="https://twitter.com/your-handle" label="Twitter">
+                <FooterIcon href="https://twitter.com/vishnukothakapu" label="Twitter">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
@@ -275,11 +289,11 @@ export default async function Home() {
               ["Get Started", "/login"],
             ]} />
             <FooterColumn title="Support" links={[
-              ["Report Issue", "https://github.com/your-repo/issues"],
-              ["Community", "https://github.com/your-repo/discussions"],
-              ["Documentation", "/docs"],
-              ["Contact Us", "mailto:support@linkid.qzz.io"],
-            ]} />
+  ["Report Issue", "https://github.com/vishnukothakapu/linkid/issues"],
+  ["Community", "https://github.com/vishnukothakapu/linkid/discussions"],
+  ["Documentation", "https://github.com/vishnukothakapu/linkid#readme"],
+  ["Contact Us", "mailto:support@linkid.qzz.io"],
+]} />           
             <FooterColumn title="Company" links={[
               ["About", "/about"],
               ["Privacy Policy", "/privacy"],
@@ -396,10 +410,21 @@ function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: stri
   );
 }
 
-function DemoRow({ icon, label, url }: { icon: React.ReactNode; label: string; url: string }) {
+function DemoRow({
+  icon,
+  label,
+  url,
+  href, 
+}: {
+  icon: React.ReactNode;
+  label: string;
+  url: string;
+  href?: string;
+}) {
+  const destination = href ? href : `https://${url}`;
   return (
-    <Link href={`https://${url}`} target="_blank" className="group block">
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
+    <Link href={destination} target="_blank" rel="noopener noreferrer" className="group block">
+      <div className="flex min-w-0 w-full overflow-hidden items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 transition-colors duration-300 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-400/10 dark:text-violet-200">
             {icon}
@@ -408,8 +433,8 @@ function DemoRow({ icon, label, url }: { icon: React.ReactNode; label: string; u
             {label}
           </span>
         </div>
-        <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-          <span className="truncate">{url}</span>
+        <div className="flex min-w-0 w-0 flex-1 items-center gap-2 overflow-hidden font-mono text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+          <span className="truncate block max-w-full">{url}</span>
           <ArrowUpRight className="h-4 w-4 shrink-0 opacity-50 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-violet-600 group-hover:opacity-100 dark:group-hover:text-violet-300" />
         </div>
       </div>
@@ -422,6 +447,7 @@ function FooterIcon({ href, label, children }: { href: string; label: string; ch
     <Link
       href={href}
       target="_blank"
+      rel = "noopener noreferrer"
       aria-label={label}
       className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-200/70 bg-white/60 text-zinc-500 transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:text-violet-700 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04] dark:text-zinc-400 dark:hover:text-violet-200"
     >
@@ -435,15 +461,21 @@ function FooterColumn({ title, links }: { title: string; links: Array<[string, s
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">{title}</h3>
       <div className="space-y-3">
-        {links.map(([label, href]) => (
-          <Link
-            key={href}
-            href={href}
-            className="block text-sm text-zinc-600 transition-colors duration-300 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-200"
-          >
-            {label}
-          </Link>
-        ))}
+        {links.map(([label, href]) => {
+          const isExternal = href.startsWith('http');
+          
+          return (
+            <Link
+              key={href}
+              href={href}
+              target={isExternal ? "_blank" : undefined}
+              rel={isExternal ? "noopener noreferrer" : undefined}
+              className="block text-sm text-zinc-600 transition-colors duration-300 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-200"
+            >
+              {label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

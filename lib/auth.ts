@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 
 import prisma from "@/lib/prisma";
+import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
+
 
 const oauthProviders = new Set(["google", "github"]);
 
@@ -79,7 +81,6 @@ export const authOptions: NextAuthOptions = {
 
     events: {
         async createUser({ user }) {
-            // OAuth providers already verify email
             await prisma.user.update({
                 where: { id: user.id },
                 data: { emailVerified: new Date() },
@@ -89,6 +90,11 @@ export const authOptions: NextAuthOptions = {
 
     callbacks: {
         async jwt({ token, trigger, session, user, account, profile }) {
+            // Immediately invalidate token if user account was deleted
+            if (token.sub && (await isUserSessionInvalidated(token.sub))) {
+                return {} as typeof token;
+            }
+
             if (trigger === "update" && "image" in (session ?? {})) {
                 token.image = session.image ?? null;
             }
@@ -137,8 +143,12 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
         async session({ session, token }) {
+            // If token was invalidated (account deleted), force empty session
+            if (!token.sub) {
+                return {} as typeof session;
+            }
             if (session.user) {
-                session.user.image = token.image as string ?? null;
+                session.user.image = (token.image as string) ?? null;
                 session.user.id = token.sub as string;
             }
             return session;
@@ -146,6 +156,7 @@ export const authOptions: NextAuthOptions = {
     },
     session: {
         strategy: "jwt",
+        maxAge: 24 * 60 * 60,
     },
     pages: {
         signIn: "/login",

@@ -3,9 +3,6 @@
 let cachedCsrfToken: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
-/**
- * Fetches and memoizes a CSRF token for browser-side mutating requests.
- */
 export async function getCsrfToken(): Promise<string> {
     if (cachedCsrfToken) {
         return cachedCsrfToken;
@@ -40,9 +37,6 @@ export async function getCsrfToken(): Promise<string> {
     return csrfTokenPromise;
 }
 
-/**
- * Clears the memoized browser-side CSRF token.
- */
 export function clearCsrfToken(): void {
     cachedCsrfToken = null;
     csrfTokenPromise = null;

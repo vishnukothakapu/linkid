@@ -117,28 +117,28 @@ export default function RegisterPage() {
                         <input type="hidden" name="_csrf" value={csrfToken} />
 
                         <div className="relative mb-4 flex items-center">
-                            <User className="absolute left-3 text-gray-400" size={20} />
+                            <User className="absolute left-3 text-muted-foreground" size={20} />
                             <Input
                                 name="name"
                                 placeholder="Full name"
                                 required
-                                className="bg-[#1a1a1a] pl-10 border-gray-800 focus:border-purple-500"
+                                className="pl-10 transition-colors"
                             />
                         </div>
 
                         <div className="relative mb-4 flex items-center">
-                            <Mail className="absolute left-3 text-gray-400" width="20" />
+                            <Mail className="absolute left-3 text-muted-foreground" width="20" />
                             <Input
                                 name="email"
                                 type="email"
                                 placeholder="Email"
                                 required
-                                className="bg-[#1a1a1a] pl-10 border-gray-800 focus:border-purple-500"
+                                className="pl-10 transition-colors"
                             />
                         </div>
 
                         <div className="relative flex items-center">
-                            <Lock className="absolute left-3 text-gray-400" width="20" />
+                            <Lock className="absolute left-3 text-muted-foreground" width="20" />
                             <Input
                                 name="password"
                                 type={showPassword ? "text" : "password"}
@@ -146,21 +146,16 @@ export default function RegisterPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className={`bg-[#1a1a1a] pl-10 pr-10 border-gray-800 focus:border-purple-500 ${password && error ? "border-red-500" : ""}`}
+                                className={`pl-10 pr-10 transition-colors ${password && error ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30" : ""}`}
                             />
-                            {showPassword ? (
-                                <EyeOff
-                                    onClick={() => setShowPassword((prev) => !prev)}
-                                    className="absolute right-3 cursor-pointer text-gray-400 hover:text-white"
-                                    width="20"
-                                />
-                            ) : (
-                            <Eye
+                            <button
+                                type="button"
                                 onClick={() => setShowPassword((prev) => !prev)}
-                                className="absolute right-3 cursor-pointer text-gray-400 hover:text-white"
-                                width="20"
-                                />
-                            )}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff width="20" /> : <Eye width="20" />}
+                            </button>
                         </div>
 
                         {password && error && (

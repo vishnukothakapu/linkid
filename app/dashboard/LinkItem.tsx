@@ -18,14 +18,19 @@ import { useState } from "react";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
-
+import type { DraggableAttributes } from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 export function LinkItem({
+    dragListeners,
+    dragAttributes,
     link,
     username,
     onUpdate,
     onToggleVisibility,
     onDelete,
 }: {
+    dragListeners?: SyntheticListenerMap;
+    dragAttributes?: DraggableAttributes;
     link: ProfileLink;
     username: string;
     onUpdate: (id: string, url: string) => Promise<void>;
@@ -66,7 +71,7 @@ export function LinkItem({
 
                     <div className="min-w-0">
                         <p className="font-medium capitalize">
-                            {link.platform}
+                            {link.label || link.platform}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
                             {link.url}
@@ -122,6 +127,19 @@ export function LinkItem({
                         )}
                     </Button>
                 </div>
+            </div>
+
+            <div
+                {...dragListeners}
+                {...dragAttributes}
+                role="button"
+                aria-label="Drag to reorder"
+                tabIndex={0}
+                className="cursor-grab active:cursor-grabbing p-2 w-fit mx-auto text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+            >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 5h6M9 12h6M9 19h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
             </div>
 
             {editing && (

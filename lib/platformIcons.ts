@@ -4,12 +4,12 @@ import {
     Globe,
     Code2,
     Youtube,
-    Twitter,
     Facebook,
     Instagram,
     Twitch,
 } from "lucide-react";
 import { FaDiscord, FaDribbble, FaMedium } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 import { SiHashnode, SiDevdotto } from "react-icons/si";
 import type { ComponentType, SVGProps } from "react";
 
@@ -20,7 +20,7 @@ export const PLATFORM_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement
     website: Globe,
     portfolio: Globe,
     youtube: Youtube,
-    x: Twitter,
+    x: FaXTwitter,
     facebook: Facebook,
     instagram: Instagram,
     twitch: Twitch,

@@ -17,9 +17,6 @@ const CSRF_EXCLUDED_PATH_PREFIXES = [
 
 export type CsrfDecision = "skip" | "allow" | "reject";
 
-/**
- * Decides whether a request should be protected by CSRF validation.
- */
 export function getCsrfDecision(input: {
     method: string;
     pathname: string;
@@ -38,9 +35,6 @@ export function getCsrfDecision(input: {
     return validateCsrfToken(requestToken, storedToken) ? "allow" : "reject";
 }
 
-/**
- * Applies CSRF validation to a middleware request and returns a rejection response when needed.
- */
 export async function applyCsrfProtection(request: NextRequest): Promise<NextResponse | null> {
     const requestToken = await extractCsrfTokenFromRequest(request);
     const storedToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;

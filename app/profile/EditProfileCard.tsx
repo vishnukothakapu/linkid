@@ -32,27 +32,41 @@ export default function EditProfileCard({
     }
 
     useEffect(() => {
-        if (username.length < 3 || username === initialUsername) {
-            setAvailable(null);
-            setChecking(false);
-            return;
-        }
-
-        setChecking(true);
         const requestId = ++latestRequestId.current;
 
         const timer = setTimeout(async () => {
-            const res = await fetch(`/api/username/check?username=${username}`);
-            const data = await res.json();
+            if (username.length < 3 || username === initialUsername) {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                    setChecking(false);
+                }
+                return;
+            }
 
             if (requestId === latestRequestId.current) {
-                setAvailable(data.available);
-                setChecking(false);
+                setChecking(true);
+            }
+
+            try {
+                const res = await fetch(`/api/username/check?username=${username}`);
+                const data = await res.json();
+
+                if (requestId === latestRequestId.current) {
+                    setAvailable(data.available);
+                }
+            } catch {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                }
+            } finally {
+                if (requestId === latestRequestId.current) {
+                    setChecking(false);
+                }
             }
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [username]);
+    }, [username, initialUsername]);
 
     async function saveChanges() {
         setLoading(true);
@@ -70,7 +84,7 @@ export default function EditProfileCard({
         setLoading(false);
 
         if (!res.ok) {
-            alert("Failed to update profile");
+            alert("Failed to save draft");
             return;
         }
         if(onSuccess) onSuccess();
@@ -159,8 +173,13 @@ export default function EditProfileCard({
                         (!available && username !== initialUsername)
                     }
                 >
-                    {loading ? "Saving..." : "Save Changes"}
+                    {loading ? "Saving draft..." : "Save as Draft"}
                 </Button>
+
+                <p className="text-xs text-muted-foreground">
+                    Changes are saved as a draft. Go to{" "}
+                    <strong>Actions → Publish Draft</strong> to make them live on your public profile.
+                </p>
             </CardContent>
         </Card>
     );

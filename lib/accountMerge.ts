@@ -91,7 +91,7 @@ export async function completeAccountMerge(input: {
         prisma.user.findUnique({
             where: { id: input.sourceUserId },
             include: {
-                links: { orderBy: { order: "asc" } },
+                links: { orderBy: { position: "asc" } },
                 accounts: true,
                 sessions: true,
             },
@@ -99,7 +99,7 @@ export async function completeAccountMerge(input: {
         prisma.user.findUnique({
             where: { id: mergeRequest.targetUserId },
             include: {
-                links: { orderBy: { order: "asc" } },
+                links: { orderBy: { position: "asc" } },
                 accounts: true,
                 sessions: true,
             },
@@ -111,6 +111,10 @@ export async function completeAccountMerge(input: {
     }
 
     const targetPlatformSet = new Set(targetUser.links.map((link) => link.platform));
+    const basePosition = targetUser.links.reduce(
+        (maxPosition, link) => Math.max(maxPosition, link.position),
+        0
+    );
     const sourceIdentifier = sourceUser.username ?? sourceUser.id.slice(0, 8);
     const conflicts: string[] = [];
     let mergedLinks = 0;
@@ -164,7 +168,7 @@ export async function completeAccountMerge(input: {
                 data: {
                     userId: targetUser.id,
                     platform,
-                    order: targetUser.links.length + mergedLinks + 1,
+                    position: basePosition + mergedLinks + 1,
                 },
             });
             mergeCandidatePlatforms.add(platform);
@@ -216,3 +220,4 @@ export async function completeAccountMerge(input: {
         conflicts,
     };
 }
+

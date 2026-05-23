@@ -19,31 +19,34 @@ export default function LoginPage() {
 
   async function handleLogin() {
     const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
 
-    if (!trimmedEmail.length || !trimmedPassword.length) {
+    if (!trimmedEmail.length || !password.trim().length) {
       setError("Please fill in both email and password.");
       return;
     }
     setLoading(true);
     setError(null);
 
-    const response = await signIn("credentials", {
-      email: trimmedEmail,
-      password: trimmedPassword,
-      callbackUrl: "/dashboard",
-      redirect: false,
-    });
+    try {
+      const response = await signIn("credentials", {
+        email: trimmedEmail,
+        password: password,
+        callbackUrl: "/dashboard",
+        redirect: false,
+      });
 
-    setLoading(false);
+      if (response?.error) {
+        setError("Login failed. Check your email and password.");
+        return;
+      }
 
-    if (response?.error) {
-      setError("Login failed. Check your email and password.");
-      return;
-    }
-
-    if (response?.url) {
-      window.location.href = response.url;
+      if (response?.url) {
+        window.location.href = response.url;
+      }
+    } catch (err) {
+      setError("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -70,7 +73,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => signIn("google")}
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             >
               <FcGoogle className="h-5 w-5" />
               Continue with Google
@@ -79,7 +82,7 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => signIn("github")}
+              onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
             >
               <FaGithub className="h-5 w-5" />
               Continue with GitHub
@@ -146,7 +149,7 @@ export default function LoginPage() {
 
             <div className="flex justify-end">
               <Link
-                href="#"
+                href="/forgot-password"
                 className="text-sm text-muted-foreground hover:underline"
               >
                 Forgot password?

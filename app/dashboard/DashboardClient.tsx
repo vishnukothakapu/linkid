@@ -130,6 +130,7 @@ export default function DashboardClient({
                     onUpdate={updateLink}
                     onToggleVisibility={updateVisibility}
                     onDelete={deleteLink}
+                    onReorder={setLinks}
                 />
 
                 <footer className="pt-10 border-t text-center text-sm text-muted-foreground">

@@ -6,12 +6,21 @@ import { Prisma } from "@prisma/client";
 
 import {
     detectPlatform,
-    normalizeUrl,
     validatePlatformUrl,
 } from "@/lib/platforms";
 
 import { validateUrlBackend } from "@/lib/urlValidation";
+import { PLATFORM_ICONS } from "@/lib/platformIcons";
 
+/**
+ * Handles the creation of a new profile link via a POST request.
+ * It expects a JSON body containing `url`, `label`, and `platform`.
+ * Validates the inputs, determines the final platform mapping,
+ * and creates a new Link record for the authenticated user.
+ *
+ * @param {Request} req - The incoming HTTP POST request.
+ * @returns {Promise<NextResponse>} JSON response containing the created link or an error.
+ */
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
@@ -22,6 +31,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const rawUrl = body?.url?.trim();
     const customLabel = body?.label?.trim();
+    const rawExplicitPlatform = body?.platform?.trim();
+    const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform) 
+        ? rawExplicitPlatform 
+        : null;
 
     if (!rawUrl) {
         return NextResponse.json(
@@ -39,11 +52,11 @@ export async function POST(req: Request) {
     }
 
     const finalUrl = validation.normalizedUrl;
-    const detectedPlatform = detectPlatform(finalUrl);
+    const detectedPlatform = explicitPlatform || detectPlatform(finalUrl);
 
     if (!detectedPlatform) {
         return NextResponse.json(
-            { error: "Unsupported or unknown platform" },
+            { error: "Please select a platform" },
             { status: 400 }
         );
     }
@@ -65,9 +78,16 @@ export async function POST(req: Request) {
             .trim()
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
+
+        if (!finalPlatform) {
+            return NextResponse.json(
+                { error: "Please enter a valid alphanumeric name for this link" },
+                { status: 400 }
+            );
+        }
     } else {
         finalPlatform = detectedPlatform;
-        finalLabel =
+        finalLabel = customLabel ||
             detectedPlatform.charAt(0).toUpperCase() +
             detectedPlatform.slice(1);
     }
@@ -94,7 +114,7 @@ export async function POST(req: Request) {
         const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const maxOrder = await tx.link.aggregate({
                 where: { userId: user.id },
-                _max: { order: true },
+                _max: { position: true },
             });
 
             return tx.link.create({
@@ -103,7 +123,7 @@ export async function POST(req: Request) {
                     platform: finalPlatform,
                     label: finalLabel,
                     url: finalUrl,
-                    order: (maxOrder._max.order ?? 0) + 1,
+                    position: (maxOrder._max.position ?? 0) + 1,
                 },
             });
         });
@@ -125,4 +145,25 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
+}
+
+export async function GET(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    if (!user) return NextResponse.json({ links: [] });
+
+    const links = await prisma.link.findMany({
+        where: { userId: user.id },
+        orderBy: [
+            { position: 'asc' },
+            { createdAt: 'asc' }
+        ],
+    });
+
+    return NextResponse.json({ links });
 }

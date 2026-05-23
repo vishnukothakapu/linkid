@@ -12,7 +12,7 @@ export default async function DashboardPage() {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { links: { orderBy: { order: 'asc' } } },
+        include: { links: { orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] } },
     });
 
     if (!user?.username) return <CreateLinkId />;
@@ -25,3 +25,4 @@ export default async function DashboardPage() {
         />
     );
 }
+

@@ -6,64 +6,113 @@ import { ProfileFooter } from "./ProfileFooter";
 import { resolveUserByUsername } from "@/lib/userLookup";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
-    const { username } = await params;
-    const resolved = await resolveUserByUsername(username);
+    try {
+        const { username } = await params;
+        const resolved = await resolveUserByUsername(username);
 
-    if (!resolved) {
-        return {
-            title: `${username} | LinkID`,
-            description: `Check out ${username}'s LinkID profile.`,
-            openGraph: {
+        if (!resolved) {
+            return {
                 title: `${username} | LinkID`,
                 description: `Check out ${username}'s LinkID profile.`,
-                url: `https://linkid.vercel.app/${username}`,
-            },
-        };
-    }
+                openGraph: {
+                    title: `${username} | LinkID`,
+                    description: `Check out ${username}'s LinkID profile.`,
+                    url: `https://linkid.vercel.app/${username}`,
+                },
+            };
+        }
 
-    const canonicalUsername = resolved.canonicalUsername ?? username;
+        const canonicalUsername = resolved.canonicalUsername ?? username;
 
-    return {
-        title: `${canonicalUsername} | LinkID`,
-        description: `Check out ${canonicalUsername}'s LinkID profile.`,
-        openGraph: {
+        return {
             title: `${canonicalUsername} | LinkID`,
             description: `Check out ${canonicalUsername}'s LinkID profile.`,
-            url: `https://linkid.vercel.app/${canonicalUsername}`,
-        },
-    };
+            openGraph: {
+                title: `${canonicalUsername} | LinkID`,
+                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                url: `https://linkid.vercel.app/${canonicalUsername}`,
+            },
+        };
+    } catch {
+        return {
+            title: "LinkID",
+            description: "Check out profiles on LinkID.",
+        };
+    }
 }
 
 export default async function PublicProfile({
-    params,
+  params,
 }: {
-    params: Promise<{ username: string }>;
+  params: Promise<{ username: string }>;
 }) {
-    const { username } = await params;
-    const session = await getServerSession(authOptions);
-    let resolved;
+  const { username } = await params;
 
-    try {
-        resolved = await resolveUserByUsername(username);
-    } catch {
-        // If the DB isn't reachable in local OSS setups, fall back to 404 instead of a huge error page.
-        notFound();
-    }
+  const session = await getServerSession(authOptions);
 
-    if (!resolved) notFound();
+  let resolved;
 
-    const user = resolved.user;
+  try {
+    resolved = await resolveUserByUsername(username);
+  } catch {
+    notFound();
+  }
 
-    return (
-        <main className="min-h-screen px-4 py-16">
-            <div className="mx-auto max-w-md">
-                <ProfileCard
-                    user={{ name: user.name, username: user.username ?? resolved.canonicalUsername, bio: user.bio, image: user.image, links: user.links }}
-                    username={resolved.canonicalUsername}
-                    showCTA={!session}
-                />
-                <ProfileFooter />
-            </div>
-        </main>
-    );
+  if (!resolved) {
+    notFound();
+  }
+
+  const user = resolved.user;
+
+  const isOwner =
+    session?.user?.email?.toLowerCase() === user.email?.toLowerCase();
+
+  return (
+    <main className="min-h-screen px-4 py-16">
+      <div className="mx-auto max-w-md">
+        <ProfileCard
+          user={{
+            name: user.name,
+            username:
+              user.username ??
+              resolved.canonicalUsername,
+            bio: user.bio,
+            image: user.image,
+            links: user.links || [],
+          }}
+          username={resolved.canonicalUsername}
+          showCTA={!session}
+          isOwner={isOwner}
+        />
+
+        <div className="mt-4 flex justify-center gap-2">
+          <a
+            href={`/api/export/vcard/${encodeURIComponent(
+              resolved.canonicalUsername
+            )}`}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+
+            <span>Save Contact</span>
+          </a>
+        </div>
+        <ProfileFooter />
+      </div>
+    </main>
+  );
 }

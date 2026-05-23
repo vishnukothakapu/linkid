@@ -2,6 +2,16 @@ import { ArrowRight,Globe } from "lucide-react";
 import { PLATFORM_ICONS } from "../../lib/platformIcons";
 import { ProfileLinks } from "./types/type";
 
+/**
+ * ProfileLinkItem Component
+ * Renders a single link item on a user's public profile page.
+ * Displays the appropriate platform icon and custom link label.
+ *
+ * @param {ProfileLinks} props - The properties object.
+ * @param {Object} props.link - The link data from the database.
+ * @param {string} props.username - The profile owner's username for routing.
+ * @returns {JSX.Element} The rendered link item component.
+ */
 export function ProfileLinkItem({ link, username }: ProfileLinks) {
     const Icon =
         PLATFORM_ICONS[link.platform] ?? Globe;
@@ -19,7 +29,7 @@ export function ProfileLinkItem({ link, username }: ProfileLinks) {
                 </div>
 
                 <span className="font-medium capitalize">
-                    {link.label || link.platform}
+                    {link.label}
                 </span>
             </div>
 
