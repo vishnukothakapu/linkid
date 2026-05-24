@@ -178,13 +178,10 @@ describe("DashboardNavbar — sign out", () => {
 
   it("calls signOut() when the sign-out button is clicked", () => {
     render(<DashboardNavbar />);
-    const signOutBtn =
-      screen.queryByRole("button", { name: /sign out|logout|log out/i }) ||
-      screen.queryByText(/sign out|logout|log out/i);
-    if (signOutBtn) {
-      fireEvent.click(signOutBtn);
-      expect(mockSignOut).toHaveBeenCalledTimes(1);
-    }
+    fireEvent.click(screen.getByRole("button"));
+    const signOutBtn = screen.getByText(/sign out|logout|log out/i);
+    fireEvent.click(signOutBtn);
+    expect(mockSignOut).toHaveBeenCalledWith({ callbackUrl: "/login" });
   });
 });
 

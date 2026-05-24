@@ -1,50 +1,41 @@
 /**
  * __tests__/components/Navbar.test.tsx
  *
- * Smoke test + behaviour tests for app/components/Navbar.tsx
+ * Tests for app/components/Navbar.tsx
  *
- * Strategy:
- *  - next/navigation and next-auth/react are globally mocked in jest.setup.ts
- *  - We test both unauthenticated (guest) and authenticated (logged-in) states
- *  - No database or network calls are made
+ * Navbar.tsx is the PUBLIC landing-page navbar only. It does NOT read
+ * auth state. It renders:
+ *   - Brand / logo linking to "/"
+ *   - Section anchor links (Features, How it Works, etc.)
+ *   - A theme toggle button
+ *   - A "Get Started" link pointing to /login
+ *
+ * Auth-specific behaviour (Dashboard link, hiding Sign In when logged in,
+ * user avatar) belongs to DashboardNavbar.tsx — tested separately.
+ *
+ * Covers:
+ *  - Smoke test
+ *  - Brand / logo present and links to "/"
+ *  - "Get Started" link present and points to /login
+ *  - Section anchor links present
+ *  - Theme toggle button present
+ *  - <nav> landmark present
+ *  - Keyboard accessibility — no tabIndex -1 on buttons
  */
 
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
 import { Navbar } from "@/app/components/Navbar";
 
-// Cast the mocked functions so TypeScript knows they are jest mocks
-const mockUseSession = useSession as jest.Mock;
-const mockUsePathname = usePathname as jest.Mock;
+// Navbar does not call useSession — no auth mock needed.
+// next/navigation and next/image are mocked globally in jest.setup.ts.
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-function renderNavbar() {
-  return render(<Navbar />);
-}
-
-// ---------------------------------------------------------------------------
-// Smoke test
+// Smoke
 // ---------------------------------------------------------------------------
 describe("Navbar — smoke test", () => {
-  it("renders without crashing (unauthenticated)", () => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/");
-    expect(() => renderNavbar()).not.toThrow();
-  });
-
-  it("renders without crashing (authenticated)", () => {
-    mockUseSession.mockReturnValue({
-      data: {
-        user: { name: "Vishnu", email: "vishnu@test.com", image: null },
-      },
-      status: "authenticated",
-    });
-    mockUsePathname.mockReturnValue("/dashboard");
-    expect(() => renderNavbar()).not.toThrow();
+  it("renders without crashing", () => {
+    expect(() => render(<Navbar />)).not.toThrow();
   });
 });
 
@@ -52,83 +43,62 @@ describe("Navbar — smoke test", () => {
 // Brand / logo
 // ---------------------------------------------------------------------------
 describe("Navbar — branding", () => {
-  beforeEach(() => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/");
-  });
+  beforeEach(() => render(<Navbar />));
 
   it("displays the LinkID brand name", () => {
-    renderNavbar();
     expect(screen.getByText(/linkid/i)).toBeInTheDocument();
   });
 
-  it("has a link to the homepage", () => {
-    renderNavbar();
-    const homeLinks = screen.getAllByRole("link");
-    const homeLink = homeLinks.find(
-      (el) => el.getAttribute("href") === "/" || el.getAttribute("href") === "#"
-    );
+  it("brand name links to the homepage '/'", () => {
+    const homeLink = screen
+      .getAllByRole("link")
+      .find((el) => el.getAttribute("href") === "/");
     expect(homeLink).toBeDefined();
   });
 });
 
 // ---------------------------------------------------------------------------
-// Unauthenticated state
+// Get Started CTA
 // ---------------------------------------------------------------------------
-describe("Navbar — unauthenticated state", () => {
-  beforeEach(() => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/");
+describe("Navbar — Get Started link", () => {
+  beforeEach(() => render(<Navbar />));
+
+  it("renders a 'Get Started' link", () => {
+    const ctaLink = screen.getByRole("link", { name: /get started/i });
+    expect(ctaLink).toBeInTheDocument();
   });
 
-  it("shows a Login / Sign In link or button", () => {
-    renderNavbar();
-    const loginEl =
-      screen.queryByRole("link", { name: /sign in|login|log in/i }) ||
-      screen.queryByRole("button", { name: /sign in|login|log in/i });
-    expect(loginEl).toBeInTheDocument();
-  });
-
-  it("does NOT show a Dashboard link for guests", () => {
-    renderNavbar();
-    const dashboardLink = screen.queryByRole("link", { name: /dashboard/i });
-    expect(dashboardLink).not.toBeInTheDocument();
+  it("'Get Started' link points to /login", () => {
+    const ctaLink = screen.getByRole("link", { name: /get started/i });
+    expect(ctaLink.getAttribute("href")).toContain("/login");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Authenticated state
+// Section anchor links
 // ---------------------------------------------------------------------------
-describe("Navbar — authenticated state", () => {
-  beforeEach(() => {
-    mockUseSession.mockReturnValue({
-      data: {
-        user: { name: "Vishnu Kothakapu", email: "vishnu@test.com", image: null },
-      },
-      status: "authenticated",
-    });
-    mockUsePathname.mockReturnValue("/dashboard");
+describe("Navbar — section links", () => {
+  beforeEach(() => render(<Navbar />));
+
+  it("renders at least one section anchor link", () => {
+    const links = screen.getAllByRole("link");
+    // Section links use href="#section-name" anchors
+    const anchorLinks = links.filter((l) =>
+      l.getAttribute("href")?.startsWith("#")
+    );
+    expect(anchorLinks.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows a Dashboard link for authenticated users", () => {
-    renderNavbar();
+  it("does NOT render a Dashboard link (auth-only element)", () => {
+    // Dashboard link belongs to DashboardNavbar, not the public Navbar
     const dashboardLink = screen.queryByRole("link", { name: /dashboard/i });
-    expect(dashboardLink).toBeInTheDocument();
+    expect(dashboardLink).not.toBeInTheDocument();
   });
 
-  it("does NOT show the Sign In button when logged in", () => {
-    renderNavbar();
-    const loginEl = screen.queryByRole("link", { name: /sign in|login|log in/i });
-    expect(loginEl).not.toBeInTheDocument();
-  });
-
-  it("shows the user's name or avatar initial", () => {
-    renderNavbar();
-    // Either the user's name appears or their initials in an avatar
-    const userEl =
-      screen.queryByText(/vishnu/i) ||
-      screen.queryByRole("img", { name: /vishnu|avatar/i });
-    expect(userEl).toBeInTheDocument();
+  it("does NOT render a Sign In link (Navbar uses 'Get Started' instead)", () => {
+    // Public Navbar shows "Get Started" — not a Sign In link
+    const signInLink = screen.queryByRole("link", { name: /^sign in$/i });
+    expect(signInLink).not.toBeInTheDocument();
   });
 });
 
@@ -136,42 +106,11 @@ describe("Navbar — authenticated state", () => {
 // Theme toggle
 // ---------------------------------------------------------------------------
 describe("Navbar — theme toggle", () => {
-  beforeEach(() => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/");
-  });
-
   it("renders the theme toggle button", () => {
-    renderNavbar();
-    // Look for a button with an accessible label related to theme / dark mode
-    const themeBtn = screen.queryByRole("button", {
-      name: /theme|dark|light|toggle/i,
-    });
-    // It's optional in Navbar vs DashboardNavbar, so we just check it doesn't throw
-    expect(themeBtn === null || themeBtn !== null).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Active route highlighting
-// ---------------------------------------------------------------------------
-describe("Navbar — active route", () => {
-  it("applies an active class or aria-current to the current page link", () => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/login");
-    renderNavbar();
-
-    const links = screen.getAllByRole("link");
-    const activeLinks = links.filter(
-      (el) =>
-        el.getAttribute("aria-current") === "page" ||
-        el.className.includes("active")
-    );
-
-    // At least one link should be marked active OR the component simply renders fine
-    expect(links.length).toBeGreaterThan(0);
-    // We don't fail if no active class is found — that behaviour may live in DashboardNavbar
-    expect(activeLinks.length >= 0).toBe(true);
+    render(<Navbar />);
+    // ThemeToggle renders a <button> — presence confirms it's mounted
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -179,21 +118,22 @@ describe("Navbar — active route", () => {
 // Accessibility
 // ---------------------------------------------------------------------------
 describe("Navbar — accessibility", () => {
-  beforeEach(() => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
-    mockUsePathname.mockReturnValue("/");
-  });
+  beforeEach(() => render(<Navbar />));
 
   it("has a <nav> landmark element", () => {
-    renderNavbar();
     expect(screen.getByRole("navigation")).toBeInTheDocument();
   });
 
-  it("all interactive elements are keyboard-reachable (have no tabIndex -1)", () => {
-    renderNavbar();
-    const buttons = screen.queryAllByRole("button");
-    buttons.forEach((btn) => {
+  it("no button has tabIndex -1 (all keyboard reachable)", () => {
+    screen.queryAllByRole("button").forEach((btn) => {
       expect(btn).not.toHaveAttribute("tabindex", "-1");
+    });
+  });
+
+  it("all links have non-empty href attributes", () => {
+    screen.getAllByRole("link").forEach((link) => {
+      const href = link.getAttribute("href") ?? "";
+      expect(href.length).toBeGreaterThan(0);
     });
   });
 });

@@ -51,11 +51,8 @@ describe("applyCsrfProtection() — unsafe HTTP methods without CSRF token", () 
     it(`blocks a ${method} request with no CSRF headers`, async () => {
       const req = buildRequest(method, "https://linkid.qzz.io/api/links");
       const result = await applyCsrfProtection(req);
-      // Without the token the middleware should block (403) or return a response
-      if (result instanceof NextResponse) {
-        expect(result.status).toBeGreaterThanOrEqual(400);
-      }
-      // Some implementations return null for non-API routes — that is also acceptable
+      expect(result).toBeInstanceOf(NextResponse);
+      expect((result as NextResponse).status).toBe(403);
     });
   });
 });
@@ -63,25 +60,12 @@ describe("applyCsrfProtection() — unsafe HTTP methods without CSRF token", () 
 // ---------------------------------------------------------------------------
 // Vercel/browser sends Origin header — validate it matches the expected host
 // ---------------------------------------------------------------------------
-describe("applyCsrfProtection() — origin validation", () => {
-  it("allows a POST from the same origin", async () => {
-    const req = buildRequest("POST", "https://linkid.qzz.io/api/links", {
-      Origin: "https://linkid.qzz.io",
-      "x-csrf-token": "valid-token-placeholder",
-    });
-    // Should not throw regardless of token validity
+describe("applyCsrfProtection() — token-based decisions", () => {
+  it("rejects protected method when request token is missing", async () => {
+    const req = buildRequest("POST", "https://linkid.qzz.io/api/links");
     const result = await applyCsrfProtection(req);
-    expect(result === null || result instanceof NextResponse).toBe(true);
-  });
-
-  it("blocks a POST from a different origin (CSRF attack simulation)", async () => {
-    const req = buildRequest("POST", "https://linkid.qzz.io/api/links", {
-      Origin: "https://evil.com",
-    });
-    const result = await applyCsrfProtection(req);
-    if (result instanceof NextResponse) {
-      expect(result.status).toBeGreaterThanOrEqual(400);
-    }
+    expect(result).toBeInstanceOf(NextResponse);
+    expect((result as NextResponse).status).toBe(403);
   });
 });
 
@@ -91,6 +75,7 @@ describe("applyCsrfProtection() — origin validation", () => {
 describe("applyCsrfProtection() — robustness", () => {
   it("does not throw when the URL is a plain API route", async () => {
     const req = buildRequest("POST", "https://linkid.qzz.io/api/auth/session");
-    await expect(applyCsrfProtection(req)).resolves.not.toThrow();
+    const result = await applyCsrfProtection(req);
+    expect(result === null || result instanceof NextResponse).toBe(true);
   });
 });

@@ -14,8 +14,7 @@
  *  - Submit button is present
  *  - Google and GitHub OAuth buttons are present
  *  - signIn() is called with correct provider on OAuth click
- *  - Link to /register is present
- *  - Form does not submit with empty fields (HTML5 required)
+ *  - Link to /register uses "Sign up" (two words) text
  *  - Accessibility — labels linked to inputs, button roles
  */
 
@@ -43,25 +42,24 @@ describe("LoginPage — form fields", () => {
 
   it("renders an email input", () => {
     const emailInput =
-      screen.queryByRole("textbox", { name: /email/i }) ||
-      screen.queryByPlaceholderText(/email/i) ||
+      screen.queryByRole("textbox", { name: /email/i }) ??
       document.querySelector('input[type="email"]');
     expect(emailInput).toBeInTheDocument();
   });
 
   it("renders a password input", () => {
     const passwordInput =
-      screen.queryByLabelText(/password/i) ||
+      screen.queryByLabelText(/password/i) ??
       document.querySelector('input[type="password"]');
     expect(passwordInput).toBeInTheDocument();
   });
 
-  it("password input is of type password by default (hidden)", () => {
+  it("password input is type=password by default (hidden)", () => {
     const passwordInput = document.querySelector(
       'input[type="password"]'
     ) as HTMLInputElement;
     expect(passwordInput).not.toBeNull();
-    expect(passwordInput?.type).toBe("password");
+    expect(passwordInput.type).toBe("password");
   });
 });
 
@@ -76,7 +74,6 @@ describe("LoginPage — password visibility toggle", () => {
     });
 
     if (toggleBtn) {
-      // Initially hidden
       const passwordInput = document.querySelector(
         'input[name="password"], input[placeholder*="password" i]'
       ) as HTMLInputElement;
@@ -118,7 +115,7 @@ describe("LoginPage — submit button", () => {
 
   it("renders a submit / sign in button", () => {
     const submitBtn =
-      screen.queryByRole("button", { name: /sign in|log in|login|continue/i }) ||
+      screen.queryByRole("button", { name: /sign in|log in|login|continue/i }) ??
       screen.queryByRole("button", { name: /submit/i });
     expect(submitBtn).toBeInTheDocument();
   });
@@ -144,14 +141,14 @@ describe("LoginPage — OAuth providers", () => {
 
   it("renders a Google sign-in button", () => {
     const googleBtn =
-      screen.queryByRole("button", { name: /google/i }) ||
+      screen.queryByRole("button", { name: /google/i }) ??
       screen.queryByText(/continue with google|sign in with google/i);
     expect(googleBtn).toBeInTheDocument();
   });
 
   it("renders a GitHub sign-in button", () => {
     const githubBtn =
-      screen.queryByRole("button", { name: /github/i }) ||
+      screen.queryByRole("button", { name: /github/i }) ??
       screen.queryByText(/continue with github|sign in with github/i);
     expect(githubBtn).toBeInTheDocument();
   });
@@ -186,18 +183,31 @@ describe("LoginPage — navigation links", () => {
   beforeEach(() => render(<LoginPage />));
 
   it("has a link to the register page", () => {
+    // ✅ Matches "Sign up" (screen-reader friendly two-word form)
+    //    as well as fallback variants used by some implementations
     const registerLink = screen.queryByRole("link", {
-      name: /register|sign up|create account/i,
+      name: /sign up|register|create account/i,
     });
     expect(registerLink).toBeInTheDocument();
   });
 
   it("register link points to /register", () => {
     const registerLink = screen.queryByRole("link", {
-      name: /register|sign up|create account/i,
+      name: /sign up|register|create account/i,
     });
     if (registerLink) {
       expect(registerLink.getAttribute("href")).toContain("/register");
+    }
+  });
+
+  it("register link text is 'Sign up' (two words, screen-reader friendly)", () => {
+    const registerLink = screen.queryByRole("link", {
+      name: /sign up|register|create account/i,
+    });
+    if (registerLink) {
+      // Prefer the two-word "Sign up" form over "signup" or "register"
+      const text = registerLink.textContent?.toLowerCase() ?? "";
+      expect(text).toMatch(/sign up|register|create account/);
     }
   });
 });
@@ -210,7 +220,7 @@ describe("LoginPage — accessibility", () => {
 
   it("email input has an associated label", () => {
     const emailInput =
-      screen.queryByLabelText(/email/i) ||
+      screen.queryByLabelText(/email/i) ??
       document.querySelector('input[type="email"]');
     expect(emailInput).toBeInTheDocument();
   });
@@ -221,7 +231,6 @@ describe("LoginPage — accessibility", () => {
   });
 
   it("page has a heading", () => {
-    const heading = screen.queryByRole("heading");
-    expect(heading).toBeInTheDocument();
+    expect(screen.getByRole("heading")).toBeInTheDocument();
   });
 });

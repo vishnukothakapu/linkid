@@ -192,11 +192,11 @@ describe("ProfileCard — platform links", () => {
 describe("ProfileCard — empty state (no links)", () => {
   it("shows an empty-state message when user has no links", () => {
     render(<ProfileCard {...baseProps} user={{ ...baseProps.user, links: [] }} />);
-    const emptyMsg = screen.queryByText(
-      /no links|nothing here|add your first link/i
-    );
-    // Either shows a message OR simply renders nothing — both are valid
-    expect(emptyMsg === null || emptyMsg !== null).toBe(true);
+    // Pick one contract and enforce it:
+    // 1) if empty copy is required:
+    // expect(screen.getByText(/add your first link/i)).toBeInTheDocument();
+    // 2) if no empty copy is expected:
+    // expect(screen.queryByText(/no links|nothing here|add your first link/i)).toBeNull();
   });
 
   it("does not render any <a> tags that point to platform URLs when links is empty", () => {

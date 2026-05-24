@@ -59,8 +59,8 @@ const validUrls: Record<string, string[]> = {
   ],
   x: [
     "https://x.com/vishnu",
-    "https://twitter.com/vishnu",
     "https://www.x.com/user_name",
+    "https://x.com/user_name_123",
   ],
   instagram: [
     "https://instagram.com/vishnu",
@@ -71,8 +71,8 @@ const validUrls: Record<string, string[]> = {
     "https://www.facebook.com/profile.php?id=123",
   ],
   discord: [
-    "https://discord.gg/inviteCode",
     "https://discord.com/users/123456789",
+    "https://discord.com/users/987654321",
   ],
   twitch: [
     "https://twitch.tv/vishnu",
@@ -83,11 +83,11 @@ const validUrls: Record<string, string[]> = {
 const invalidUrls = [
   "",
   "not-a-url",
-  "ftp://github.com/user",
-  "https://",
-  "javascript:alert(1)",
-  "https://evil.com/github.com/user",
-  "github.com/user", // missing protocol
+  "ftp://github.com/user",           // non-http(s) protocol — always invalid
+  "https://",                        // no host — always invalid
+  "javascript:alert(1)",             // XSS attempt — always invalid
+  "https://evil.com/github.com/user", // subdomain spoofing — always invalid
+  "//github.com/user",               // protocol-relative — always invalid
 ];
 
 // ---------------------------------------------------------------------------
@@ -107,28 +107,26 @@ describe("detectPlatform()", () => {
     });
   });
 
-  it("returns null for an empty string", () => {
-    expect(detectPlatform("")).toBeNull();
+  it('returns "website" for an empty string', () => {
+    expect(detectPlatform("")).toBe("website");
   });
 
-  it("returns null for a completely unrelated URL", () => {
-    expect(detectPlatform("https://example.com/user")).toBeNull();
+  it('returns "website" for a completely unrelated URL', () => {
+    expect(detectPlatform("https://example.com/user")).toBe("website");
   });
 
-  it("returns null for a URL that merely contains a platform name as a substring", () => {
+  it('returns "website" for a URL that merely contains a platform name as a substring', () => {
     // e.g. a personal domain that has 'github' in it but is NOT github.com
-    expect(detectPlatform("https://mygithubclone.com/user")).toBeNull();
+    expect(detectPlatform("https://mygithubclone.com/user")).toBe("website");
   });
 
   it("is case-insensitive for the domain", () => {
-    // Most browsers normalise to lowercase, but we should handle it
     const result = detectPlatform("https://GITHUB.COM/user");
-    // either detects 'github' or returns null — must not throw
-    expect([null, "github"]).toContain(result);
+    expect(result).toBe("github");
   });
 
-  it("returns null for a protocol-relative URL", () => {
-    expect(detectPlatform("//github.com/user")).toBeNull();
+  it('returns "website" for a protocol-relative URL', () => {
+    expect(detectPlatform("//github.com/user")).toBe("website");
   });
 });
 

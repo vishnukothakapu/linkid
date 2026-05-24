@@ -11,7 +11,7 @@ import "@testing-library/jest-dom";
 
 // Silence Next.js router warnings in tests
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),
     prefetch: jest.fn(),
@@ -20,9 +20,9 @@ jest.mock("next/navigation", () => ({
     refresh: jest.fn(),
     pathname: "/",
     query: {},
-  }),
-  usePathname: () => "/",
-  useSearchParams: () => new URLSearchParams(),
+  })),
+  usePathname: jest.fn(() => "/"),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
 }));
 
 // Mock next-auth so components that call useSession don't need a real provider
@@ -60,8 +60,7 @@ beforeAll(() => {
     if (
       typeof msg === "string" &&
       (msg.includes("ReactDOM.render") ||
-        msg.includes("act(") ||
-        msg.includes("Warning:"))
+        msg.includes("not wrapped in act"))
     ) {
       return;
     }

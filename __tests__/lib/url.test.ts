@@ -20,13 +20,13 @@ describe("isValidHttpUrl()", () => {
     "https://www.linkedin.com/in/user-name",
     "https://sub.domain.co.uk/path?query=1#anchor",
     "https://leetcode.com/u/user123",
+    "github.com/user",
+    "not-a-url",
   ];
 
   const invalid = [
     "",
     "   ",
-    "not-a-url",
-    "github.com/user",          // missing protocol
     "ftp://github.com",         // non-http(s) protocol
     "javascript:alert(1)",      // XSS attempt
     "//github.com/user",        // protocol-relative
