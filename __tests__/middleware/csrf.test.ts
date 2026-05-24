@@ -76,6 +76,6 @@ describe("applyCsrfProtection() — robustness", () => {
   it("does not throw when the URL is a plain API route", async () => {
     const req = buildRequest("POST", "https://linkid.qzz.io/api/auth/session");
     const result = await applyCsrfProtection(req);
-    expect(result === null || result instanceof NextResponse).toBe(true);
+    expect(result).toBeNull();
   });
 });

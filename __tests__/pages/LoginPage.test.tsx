@@ -185,19 +185,17 @@ describe("LoginPage — navigation links", () => {
   it("has a link to the register page", () => {
     // ✅ Matches "Sign up" (screen-reader friendly two-word form)
     //    as well as fallback variants used by some implementations
-    const registerLink = screen.queryByRole("link", {
-      name: /sign up|register|create account/i,
+    const registerLink = screen.getByRole("link", {
+      name: /sign ?up|register|create account/i,
     });
     expect(registerLink).toBeInTheDocument();
   });
 
   it("register link points to /register", () => {
-    const registerLink = screen.queryByRole("link", {
-      name: /sign up|register|create account/i,
+    const registerLink = screen.getByRole("link", {
+      name: /sign ?up|register|create account/i,
     });
-    if (registerLink) {
-      expect(registerLink.getAttribute("href")).toContain("/register");
-    }
+    expect(registerLink.getAttribute("href")).toContain("/register");
   });
 
   it("register link text is 'Sign up' (two words, screen-reader friendly)", () => {
@@ -219,10 +217,7 @@ describe("LoginPage — accessibility", () => {
   beforeEach(() => render(<LoginPage />));
 
   it("email input has an associated label", () => {
-    const emailInput =
-      screen.queryByLabelText(/email/i) ??
-      document.querySelector('input[type="email"]');
-    expect(emailInput).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 
   it("password input has an associated label", () => {

@@ -82,9 +82,9 @@ describe("Navbar — section links", () => {
 
   it("renders at least one section anchor link", () => {
     const links = screen.getAllByRole("link");
-    // Section links use href="#section-name" anchors
+    // Section links use href="/#section-name" anchors
     const anchorLinks = links.filter((l) =>
-      l.getAttribute("href")?.startsWith("#")
+      l.getAttribute("href")?.includes("/#")
     );
     expect(anchorLinks.length).toBeGreaterThanOrEqual(1);
   });
