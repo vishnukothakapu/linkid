@@ -1,4 +1,5 @@
 import { Navbar } from "@/app/components/Navbar";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
 import { Button } from "@/components/ui/button";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -142,8 +143,10 @@ export default async function Home() {
         {/* Stats Section */}
         <section className="relative px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <StatCard key={stat.label} value={stat.value} label={stat.label} />
+            {stats.map((stat, i) => (
+              <ScrollReveal key={stat.label} delay={i * 100}>
+                <StatCard value={stat.value} label={stat.label} />
+              </ScrollReveal>
             ))}
           </div>
         </section>
@@ -153,11 +156,13 @@ export default async function Home() {
         <section className="relative overflow-hidden py-16 md:py-24" id="features">
           <SectionWash />
           <div className="px-4 sm:px-6 lg:px-8">
-            <SectionHeader
-              eyebrow="Features"
-              title="Why developers love LinkID"
-              desc="Built for developers, job seekers, and professionals who value clean, predictable links."
-            />
+            <ScrollReveal>
+              <SectionHeader
+                eyebrow="Features"
+                title="Why developers love LinkID"
+                desc="Built for developers, job seekers, and professionals who value clean, predictable links."
+              />
+            </ScrollReveal>
           </div>
 
           {/* Marquee Container Outer Wrapper */}
@@ -200,59 +205,63 @@ export default async function Home() {
 
         {/* Demo Section */}
         <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
-            <SectionHeader
-              align="left"
-              eyebrow="Demo"
-              title="Clean links. Everywhere."
-              desc="One username gives you predictable links for every platform your audience already knows."
-            />
+          <ScrollReveal>
+            <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
+              <SectionHeader
+                align="left"
+                eyebrow="Demo"
+                title="Clean links. Everywhere."
+                desc="One username gives you predictable links for every platform your audience already knows."
+              />
 
-            <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
-              <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
-                <DemoRow
-                  icon={<Github className="h-5 w-5" />}
-                  label="GitHub"
-                  url="linkid.qzz.io/vishnu/github"
-                  href="https://github.com/vishnukothakapu"
-                />
-                <DemoRow
-                  icon={<Linkedin className="h-5 w-5" />}
-                  label="LinkedIn"
-                  url="linkid.qzz.io/vishnu/linkedin"
-                  href="https://www.linkedin.com/in/kothakapuvishnukiran/"
-                />
-                <DemoRow
-                  icon={<Code2 className="h-5 w-5" />}
-                  label="LeetCode"
-                  url="linkid.qzz.io/vishnu/leetcode"
-                  href="https://leetcode.com"
-                />
+              <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
+                <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
+                  <DemoRow
+                    icon={<Github className="h-5 w-5" />}
+                    label="GitHub"
+                    url="linkid.qzz.io/vishnu/github"
+                    href="https://github.com/vishnukothakapu"
+                  />
+                  <DemoRow
+                    icon={<Linkedin className="h-5 w-5" />}
+                    label="LinkedIn"
+                    url="linkid.qzz.io/vishnu/linkedin"
+                    href="https://www.linkedin.com/in/kothakapuvishnukiran/"
+                  />
+                  <DemoRow
+                    icon={<Code2 className="h-5 w-5" />}
+                    label="LeetCode"
+                    url="linkid.qzz.io/vishnu/leetcode"
+                    href="https://leetcode.com"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </section>
 
         {/* Call To Action */}
         <section className="relative px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
           <div className="absolute inset-x-0 top-1/2 -z-10 h-44 -translate-y-1/2 bg-gradient-to-r from-transparent via-violet-200/45 to-transparent blur-3xl dark:via-violet-500/10" />
-          <div className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-white/70 px-6 py-12 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:px-10">
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
-              Your professional identity, simplified.
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-              Create your LinkID in under a minute and share one memorable URL everywhere.
-            </p>
-            <div className="mt-8">
-              <Button
-                size="lg"
-                asChild
-                className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-violet-500/30"
-              >
-                <Link href="/login">Get Started</Link>
-              </Button>
+          <ScrollReveal>
+            <div className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-white/70 px-6 py-12 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:px-10">
+              <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
+                Your professional identity, simplified.
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
+                Create your LinkID in under a minute and share one memorable URL everywhere.
+              </p>
+              <div className="mt-8">
+                <Button
+                  size="lg"
+                  asChild
+                  className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-6 text-base font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-violet-500/30"
+                >
+                  <Link href="/login">Get Started</Link>
+                </Button>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </section>
       </main>
 
