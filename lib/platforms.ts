@@ -51,6 +51,10 @@ export function detectPlatform(url: string): Platform {
     return "website";
 }
 
+export function isKnownPlatform(p: string): p is Platform {
+    return p in PLATFORM_PATTERNS;
+}
+
 export function validatePlatformUrl(
     platform: Platform,
     url: string
