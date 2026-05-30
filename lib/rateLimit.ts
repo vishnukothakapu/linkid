@@ -16,6 +16,22 @@ type WindowEntry = {
 
 const store = new Map<string, WindowEntry>();
 
+// Periodic full-store sweep so keys added by one-off or rotating IPs do not
+// accumulate indefinitely. A sweep removes every key whose window has fully
+// expired, bounding Map growth to the number of distinct keys seen within one
+// rolling window rather than the lifetime of the process.
+let requestsSinceCleanup = 0;
+const CLEANUP_INTERVAL = 500; // sweep after every N requests
+
+function sweepExpiredKeys(windowMs: number): void {
+    const cutoff = Date.now() - windowMs;
+    for (const [key, entry] of store.entries()) {
+        if (entry.timestamps.every((t) => t <= cutoff)) {
+            store.delete(key);
+        }
+    }
+}
+
 /**
  * Check whether `key` has exceeded `limit` requests in the last
  * `windowMs` milliseconds.
@@ -29,6 +45,14 @@ export function checkRateLimit(
 ): boolean {
     const now = Date.now();
     const cutoff = now - windowMs;
+
+    // Periodic sweep to prevent unbounded Map growth from rotating or
+    // one-off keys (e.g. rotating attacker IPs on an unauthenticated endpoint).
+    requestsSinceCleanup++;
+    if (requestsSinceCleanup >= CLEANUP_INTERVAL) {
+        requestsSinceCleanup = 0;
+        sweepExpiredKeys(windowMs);
+    }
 
     let entry = store.get(key);
     if (!entry) {

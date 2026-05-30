@@ -14,7 +14,10 @@ export async function POST(req: Request) {
     if (!allowed) {
         return NextResponse.json(
             { error: "Too many requests. Please slow down." },
-            { status: 429 },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil(CLICK_RATE_WINDOW_MS / 1000)) },
+            },
         );
     }
 
