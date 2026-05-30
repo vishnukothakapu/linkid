@@ -1,12 +1,13 @@
 export function isValidHttpUrl(value: string) {
     try {
-        const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//i.test(value);
-        if (hasScheme && !/^https?:/i.test(value)) {
-            return false;
-        }
-        const url = new URL(hasScheme ? value : `https://${value}`);
+        // 1. Add https:// if the user didn't provide a protocol
+        const urlString = value.includes("://") ? value : `https://${value}`;
+        const url = new URL(urlString);
+        
+        // 2. Validate it's either http or https
         return url.protocol === "http:" || url.protocol === "https:";
     } catch {
+        // If the URL constructor throws an error, it's invalid
         return false;
     }
 }
