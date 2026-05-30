@@ -7,6 +7,7 @@ import { LinksSection } from "./LinksSection";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import { LinkIdCard } from "./LinkIdCard";
 import { AnalyticsOverview } from "./AnalyticsOverview";
+import { isValidHttpUrl } from "@/lib/url"; // Importing our fix from #270
 
 export default function DashboardClient({
     username,
@@ -19,15 +20,53 @@ export default function DashboardClient({
 }) {
     const [links, setLinks] = useState(initialLinks);
     const [showAdd, setShowAdd] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    /**
+     * PRO-LEVEL VALIDATION: Ensures we don't save empty junk to the DB.
+     * This directly addresses issue #267.
+     */
+    async function validateAndAddLink(link: { url: string; label: string }) {
+        const trimmedUrl = link.url.trim();
+        const trimmedLabel = link.label.trim();
+
+        if (!trimmedUrl || !trimmedLabel) {
+            toast.error("URL and Label fields cannot be empty");
+            return false;
+        }
+
+        if (!isValidHttpUrl(trimmedUrl)) {
+            toast.error("Please provide a valid URL (must start with http/https)");
+            return false;
+        }
+
+        return true;
+    }
 
     async function addLink(link: ProfileLink) {
+        setIsProcessing(true);
+        
+        const isValid = await validateAndAddLink({ url: link.url, label: link.label });
+        
+        if (!isValid) {
+            setIsProcessing(false);
+            return;
+        }
+
+        // Proceed with adding the link if valid
         setLinks((prev) => [...prev, link]);
         setShowAdd(false);
+        toast.success("Link added successfully!");
+        setIsProcessing(false);
     }
 
     async function updateLink(id: string, url: string) {
-        const csrfToken = await getCsrfToken();
+        if (!url.trim()) {
+            toast.error("URL cannot be empty");
+            return;
+        }
 
+        const csrfToken = await getCsrfToken();
         await fetch(`/api/links/${id}`, {
             method: "PUT",
             headers: {
@@ -36,18 +75,15 @@ export default function DashboardClient({
             },
             body: JSON.stringify({ url }),
         });
-        toast.success("Link updated");
-
+        
+        toast.success("Link updated successfully");
         setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, url } : l
-            )
+            prev.map((l) => (l.id === id ? { ...l, url } : l))
         );
     }
 
     async function updateVisibility(id: string, isPublic: boolean) {
         const csrfToken = await getCsrfToken();
-
         const response = await fetch(`/api/links/${id}`, {
             method: "PUT",
             headers: {
@@ -63,19 +99,15 @@ export default function DashboardClient({
         }
 
         toast.success(isPublic ? "Link set to public" : "Link set to private");
-
         setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, isPublic } : l
-            )
+            prev.map((l) => (l.id === id ? { ...l, isPublic } : l))
         );
     }
 
     async function exportCsv() {
         const response = await fetch("/api/links/export");
-
         if (!response.ok) {
-            toast.error("Unable to export CSV");
+            toast.error("Unable to export CSV data");
             return;
         }
 
@@ -84,23 +116,28 @@ export default function DashboardClient({
         const a = document.createElement("a");
         a.href = url;
         a.download = `linkid-links-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        toast.success("CSV exported successfully");
     }
 
     async function deleteLink(id: string) {
-        if (!confirm("Delete this link?")) return;
+        if (!confirm("Are you sure you want to delete this link? This action cannot be undone.")) return;
 
         const csrfToken = await getCsrfToken();
-
-        await fetch(`/api/links/${id}`, {
-            headers: {
-                "x-csrf-token": csrfToken,
-            },
+        const res = await fetch(`/api/links/${id}`, {
+            headers: { "x-csrf-token": csrfToken },
             method: "DELETE",
         });
-        toast.success("Link deleted");
-        setLinks((prev) => prev.filter((l) => l.id !== id));
+
+        if (res.ok) {
+            toast.success("Link removed");
+            setLinks((prev) => prev.filter((l) => l.id !== id));
+        } else {
+            toast.error("Failed to delete link");
+        }
     }
 
     return (
@@ -108,11 +145,11 @@ export default function DashboardClient({
             <DashboardNavbar />
             <Toaster position="bottom-center" />
 
-            <main className="mx-auto max-w-6xl px-6 py-10 space-y-10">
+            <main className="mx-auto max-w-6xl px-6 py-10 space-y-10 animate-in fade-in duration-500">
                 <section>
-                    <h1 className="text-3xl font-bold">Welcome, {username}</h1>
-                    <p className="text-muted-foreground">
-                        Manage and share your professional links
+                    <h1 className="text-3xl font-bold tracking-tight">Welcome back, {username}</h1>
+                    <p className="text-muted-foreground mt-1">
+                        Manage your professional links, track analytics, and customize your profile.
                     </p>
                 </section>
 
@@ -133,8 +170,9 @@ export default function DashboardClient({
                     onReorder={setLinks}
                 />
 
-                <footer className="pt-10 border-t text-center text-sm text-muted-foreground">
-                    © {new Date().getFullYear()} LinkID · Built for developers
+                <footer className="pt-10 mt-10 border-t border-border text-center text-sm text-muted-foreground">
+                    <p>© {new Date().getFullYear()} LinkID. All rights reserved.</p>
+                    <p className="mt-1">Built with passion for the developer community.</p>
                 </footer>
             </main>
         </>
