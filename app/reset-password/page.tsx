@@ -14,6 +14,20 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  if (!token) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Invalid Link</h1>
+          <p className="text-muted-foreground">This password reset link is invalid.</p>
+          <Link href="/forgot-password" className="text-sm hover:underline">
+            Request a new link
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
@@ -23,20 +37,23 @@ function ResetPasswordForm() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Something went wrong");
-    } else {
-      setSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json();
+      setLoading(false);
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setSuccess(true);
+        setTimeout(() => router.push("/login"), 2000);
+      }
+    } catch {
+      setLoading(false);
+      setError("Network error. Please try again.");
     }
   };
 

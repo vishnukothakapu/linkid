@@ -14,19 +14,22 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Something went wrong");
-    } else {
-      setSubmitted(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setLoading(false);
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      setLoading(false);
+      setError("Network error. Please try again.");
     }
   };
 
@@ -36,7 +39,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Check your email</h1>
           <p className="text-muted-foreground">
-            If that email exists, we've sent a password reset link.
+            If that email exists, we&apos;ve sent a password reset link.
           </p>
           <Link href="/login" className="text-sm hover:underline">
             Back to login
@@ -51,7 +54,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md space-y-6 p-6">
         <h1 className="text-2xl font-bold">Forgot Password</h1>
         <p className="text-muted-foreground">
-          Enter your email and we'll send you a reset link.
+          Enter your email and we&apos;ll send you a reset link.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
