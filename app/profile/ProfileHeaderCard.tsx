@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import EditProfileModal from "./EditProfileModal";
-import { useRef, useState ,useEffect} from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useSession } from "next-auth/react";
@@ -41,6 +41,11 @@ export function ProfileHeaderCard({
     const [rawImageSrc, setRawImageSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { update } = useSession();
+     const [pickerInstance, setPickerInstance] = useState(0);
+    const handlePickerOpen= () => {
+        setPickerInstance((n) => n + 1);
+        setPickerOpen(true);
+};
 
     function openUploadPicker() {
         setPickerOpen(false);
@@ -171,6 +176,7 @@ export function ProfileHeaderCard({
     return (
         <>
             <AvatarPickerModal
+                key={`${avatarUrl ?? "none"}-${pickerInstance}`}
                 currentAvatar={avatarUrl}
                 open={pickerOpen}
                 uploading={uploading}
@@ -202,7 +208,7 @@ export function ProfileHeaderCard({
                         <div className="absolute bottom-0 right-0 flex gap-1">
                             <button
                                 type="button"
-                                onClick={() => setPickerOpen(true)}
+                                onClick={handlePickerOpen}
                                 disabled={uploading}
                                 className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
                                 aria-label="Edit avatar"
@@ -289,12 +295,6 @@ function AvatarPickerModal({
 }) {
     const categories = Array.from(new Set(presetAvatars.map((avatar) => avatar.category)));
     const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
-    useEffect(() => {
-        if (open) {
-            setSelectedAvatar(currentAvatar);
-        }
-    }, [open, currentAvatar]);
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl">
