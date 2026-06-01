@@ -11,7 +11,7 @@
     "postinstall": "node scripts/postinstall-prisma-generate.mjs",
     "migrate:deploy:safe": "node scripts/safe-prisma-migrate-deploy.mjs",
     "lint": "eslint",
-    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts lib/accountMergeUtils.test.ts"
+    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts lib/accountMergeUtils.test.ts lib/imageValidation.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -33,6 +33,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",

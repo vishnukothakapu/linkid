@@ -100,8 +100,8 @@ export default async function Home() {
 
             <div className="relative mx-auto w-full max-w-xl">
               <div className="absolute inset-x-8 -top-6 -z-10 h-32 bg-gradient-to-r from-violet-500/25 via-indigo-500/20 to-blue-500/20 blur-3xl" />
-              <div className="rounded-3xl border border-white/70 bg-white/75 p-3 shadow-2xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 dark:shadow-black/30">
-                <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50/70 p-5 dark:border-white/10 dark:from-zinc-900 dark:to-indigo-950/30 sm:p-6">
+              <div className="rounded-3xl border border-violet-200/60 bg-white/40 p-3 shadow-2xl shadow-violet-500/15 ring-1 ring-violet-300/30 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/70 dark:shadow-black/30 dark:ring-0">
+                <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-br from-white/80 to-violet-50/60 p-5 shadow-inner shadow-violet-100/50 dark:border-white/10 dark:from-zinc-900 dark:to-indigo-950/30 dark:shadow-none sm:p-6">
                   <div className="flex items-center justify-between gap-4 border-b border-violet-100 pb-4 dark:border-white/10">
                     <div>
                       <p className="text-sm font-semibold text-zinc-900 dark:text-white">
@@ -122,7 +122,7 @@ export default async function Home() {
                     <PreviewLink icon={<Code2 className="h-4 w-4" />} label="LeetCode" path="/leetcode" />
                   </div>
 
-                  <div className="mt-5 rounded-2xl border border-violet-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                  <div className="mt-5 rounded-2xl border border-violet-200/60 bg-white/60 p-4 shadow-sm shadow-violet-100/40 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                         Share one clean identity
@@ -150,7 +150,7 @@ export default async function Home() {
 
         {/* Features Section (Marquee Implemented Here) */}
         {/* Features Section */}
-        <section className="relative overflow-hidden py-16 md:py-24" id="features">
+        <section className="relative scroll-mt-28 overflow-hidden py-16 md:py-24" id="features">
           <SectionWash />
           <div className="px-4 sm:px-6 lg:px-8">
             <SectionHeader
@@ -199,7 +199,7 @@ export default async function Home() {
         </section>
 
         {/* Demo Section */}
-        <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
+        <section className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
             <SectionHeader
               align="left"
@@ -208,8 +208,8 @@ export default async function Home() {
               desc="One username gives you predictable links for every platform your audience already knows."
             />
 
-            <div className="rounded-3xl border border-white/70 bg-white/70 p-3 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
-              <div className="space-y-3 rounded-2xl border border-violet-100/80 bg-white/80 p-4 dark:border-white/10 dark:bg-zinc-950/70 sm:p-5">
+            <div className="rounded-3xl border border-violet-200/60 bg-white/40 p-3 shadow-xl shadow-violet-500/15 ring-1 ring-violet-300/30 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 dark:ring-0">
+              <div className="space-y-3 rounded-2xl border border-violet-200/70 bg-gradient-to-br from-white/80 to-violet-50/50 p-4 shadow-inner shadow-violet-100/40 dark:border-white/10 dark:bg-zinc-950/70 dark:from-transparent dark:to-transparent dark:shadow-none sm:p-5">
                 <DemoRow
                   icon={<Github className="h-5 w-5" />}
                   label="GitHub"
@@ -234,9 +234,9 @@ export default async function Home() {
         </section>
 
         {/* Call To Action */}
-        <section className="relative px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
+        <section className="relative scroll-mt-28 px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
           <div className="absolute inset-x-0 top-1/2 -z-10 h-44 -translate-y-1/2 bg-gradient-to-r from-transparent via-violet-200/45 to-transparent blur-3xl dark:via-violet-500/10" />
-          <div className="mx-auto max-w-3xl rounded-3xl border border-white/70 bg-white/70 px-6 py-12 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:px-10">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-violet-200/60 bg-white/40 px-6 py-12 shadow-xl shadow-violet-500/15 ring-1 ring-violet-300/30 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 dark:ring-0 sm:px-10">
             <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
               Your professional identity, simplified.
             </h2>
@@ -291,8 +291,8 @@ export default async function Home() {
             <FooterColumn title="Support" links={[
   ["Report Issue", "https://github.com/vishnukothakapu/linkid/issues"],
   ["Community", "https://github.com/vishnukothakapu/linkid/discussions"],
-  ["Documentation", "https://github.com/vishnukothakapu/linkid#readme"],
-  ["Contact Us", "mailto:support@linkid.qzz.io"],
+  ["Documentation", "/documentation"],
+  ["Contact Us", "/contact-us"],
 ]} />           
             <FooterColumn title="Company" links={[
               ["About", "/about"],
@@ -345,7 +345,7 @@ function ProofItem({ children }: { children: React.ReactNode }) {
 
 function PreviewLink({ icon, label, path }: { icon: React.ReactNode; label: string; path: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-violet-100 bg-white/80 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+    <div className="flex items-center justify-between rounded-xl border border-violet-200/60 bg-white/60 px-4 py-3 shadow-sm shadow-violet-100/50 backdrop-blur-sm transition-all duration-200 hover:border-violet-300/70 hover:bg-white/80 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-white/20 dark:hover:bg-white/[0.06] dark:hover:shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-200">
           {icon}
@@ -359,7 +359,7 @@ function PreviewLink({ icon, label, path }: { icon: React.ReactNode; label: stri
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/65 p-5 text-center shadow-lg shadow-violet-950/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-950/10 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
+    <div className="rounded-2xl border border-violet-200/60 bg-white/40 p-5 text-center shadow-lg shadow-violet-500/10 ring-1 ring-violet-200/30 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-violet-300/70 hover:bg-white/60 hover:shadow-xl hover:shadow-violet-500/15 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 dark:ring-0 dark:hover:border-violet-200 dark:hover:shadow-xl dark:hover:shadow-violet-950/10">
       <div className="text-2xl font-black tracking-tight text-violet-700 dark:text-violet-200 sm:text-3xl">
         {value}
       </div>
@@ -395,7 +395,7 @@ function SectionHeader({ eyebrow, title, desc, align = "center" }: { eyebrow: st
 
 function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/70 bg-white/70 p-6 shadow-lg shadow-violet-950/5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-200 hover:bg-white/90 hover:shadow-xl hover:shadow-violet-950/10 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07]">
+    <div className="group relative overflow-hidden rounded-2xl border border-violet-200/60 bg-white/40 p-6 shadow-lg shadow-violet-500/10 ring-1 ring-violet-200/30 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-300/70 hover:bg-white/65 hover:shadow-xl hover:shadow-violet-500/15 dark:border-white/10 dark:bg-white/[0.04] dark:ring-0 dark:shadow-violet-950/5 dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07] dark:hover:shadow-violet-950/10">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 text-violet-700 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:from-violet-400/15 dark:to-indigo-400/10 dark:text-violet-200">
         {icon}
@@ -424,7 +424,7 @@ function DemoRow({
   const destination = href ? href : `https://${url}`;
   return (
     <Link href={destination} target="_blank" rel="noopener noreferrer" className="group block">
-      <div className="flex min-w-0 w-full overflow-hidden items-center justify-between gap-4 rounded-2xl border border-violet-100 bg-white/80 px-4 py-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.07] sm:px-5">
+      <div className="flex min-w-0 w-full overflow-hidden items-center justify-between gap-4 rounded-2xl border border-violet-200/60 bg-white/60 px-4 py-4 shadow-sm shadow-violet-100/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/70 hover:bg-white/85 hover:shadow-lg hover:shadow-violet-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-white/10 dark:hover:bg-white/[0.07] dark:hover:shadow-none sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 transition-colors duration-300 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-400/10 dark:text-violet-200">
             {icon}

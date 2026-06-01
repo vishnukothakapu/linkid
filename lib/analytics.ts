@@ -113,7 +113,7 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
     });
 
     const counters = new Map<
-        string,
+    string,
         {
             linkId: string;
             userId: string;
@@ -180,16 +180,21 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
 
 export async function getUserAnalyticsSummary(input: {
     userId: string;
-    days: number;
+    days: number | null;
 }) {
-    const days = Number.isFinite(input.days) ? Math.max(1, Math.min(365, input.days)) : 30;
-    const start = utcDayStart(new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000));
+    const rangeDays = input.days === null
+        ? null
+        : Math.max(1, Math.min(365, input.days));
+
+    const start = rangeDays === null
+        ? null
+        : utcDayStart(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
 
     const [totals, perLink] = await Promise.all([
         prisma.dailyLinkAnalytics.aggregate({
             where: {
                 userId: input.userId,
-                date: { gte: start },
+                ...(start !== null && { date: { gte: start } }),
             },
             _sum: {
                 totalClicks: true,
@@ -201,7 +206,7 @@ export async function getUserAnalyticsSummary(input: {
             by: ["linkId"],
             where: {
                 userId: input.userId,
-                date: { gte: start },
+                ...(start !== null && { date: { gte: start } }),
             },
             _sum: {
                 totalClicks: true,
@@ -213,7 +218,7 @@ export async function getUserAnalyticsSummary(input: {
 
     if (perLink.length === 0) {
         return {
-            rangeDays: days,
+            rangeDays,
             totals: {
                 totalClicks: 0,
                 uniqueClicks: 0,
@@ -241,7 +246,7 @@ export async function getUserAnalyticsSummary(input: {
     const linksById = new Map(links.map((link) => [link.id, link]));
 
     return {
-        rangeDays: days,
+        rangeDays,
         totals: {
             totalClicks: totals._sum.totalClicks ?? 0,
             uniqueClicks: totals._sum.uniqueClicks ?? 0,

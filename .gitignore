@@ -1,4 +1,4 @@
-﻿# Logs
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -84,3 +84,6 @@ dist/
 dev.db
 *.sqlite
 *.sqlite3
+
+# Prisma generated client (auto-generated at build time)
+app/generated/

@@ -3,9 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 type AnalyticsSummary = {
-    rangeDays: number;
+    rangeDays: number | null ;
     totals: {
         totalClicks: number;
         uniqueClicks: number;
@@ -14,15 +21,17 @@ type AnalyticsSummary = {
 };
 
 export function AnalyticsOverview() {
+    const [days, setDays] = useState<"7" | "30" | "90" | "all">("30");
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
 
         async function loadSummary() {
             try {
-                const response = await fetch("/api/analytics/summary?days=30");
+                const response = await fetch(`/api/analytics/summary?days=${days}`);
                 if (!response.ok) return;
 
                 const payload = (await response.json()) as { summary?: AnalyticsSummary };
@@ -41,7 +50,7 @@ export function AnalyticsOverview() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [days]);
 
     const cards = useMemo(() => {
         if (!summary) {
@@ -61,11 +70,24 @@ export function AnalyticsOverview() {
 
     return (
         <section className="space-y-3">
-            <div>
-                <h2 className="text-lg font-semibold">Analytics (last 30 days)</h2>
-                <p className="text-sm text-muted-foreground">
-                    Bot traffic is filtered from totals and unique visitor counts.
-                </p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-lg font-semibold">Analytics</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Bot traffic is filtered from totals and unique visitor counts.
+                    </p>
+                </div>
+                <Select value={days} onValueChange={(val) => { setDays(val as "7" | "30" | "90" | "all"); setLoading(true); }}>
+                    <SelectTrigger className="w-[160px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="7">Last 7 days</SelectItem>
+                        <SelectItem value="30">Last 30 days</SelectItem>
+                        <SelectItem value="90">Last 90 days</SelectItem>
+                        <SelectItem value="all">All time</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

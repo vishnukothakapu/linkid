@@ -1,5 +1,5 @@
 "use client";
-
+import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { validateUrl } from "@/lib/urlValidation";
+import { validatePlatformUrl, isKnownPlatform } from "@/lib/platforms";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
@@ -57,6 +58,10 @@ export function LinkItem({
             return toast.error(validation.error);
         }
 
+        if (isKnownPlatform(link.platform) && !validatePlatformUrl(link.platform, url)) {
+            return toast.error(`Enter valid link for chosen platform`);
+        }
+
         await onUpdate(link.id, url);
         setEditing(false);
     }
@@ -79,7 +84,15 @@ export function LinkItem({
                         <p className="text-xs text-muted-foreground mt-0.5">
                             {link.clicks} {link.clicks === 1 ? "click" : "clicks"}
                         </p>
-                        <p className="mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                        {link.updatedAt && (
+                        <p className="text-xs text-muted-foreground">
+                                Updated{" "}
+                                {formatDistanceToNow(new Date(link.updatedAt), {
+                                    addSuffix: true,
+                                })}
+                        </p>
+                    )}
+                            <p className="mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
                             {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                             {link.isPublic ? "Public" : "Private"}
                         </p>
