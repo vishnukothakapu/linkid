@@ -1,6 +1,13 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import AddLinkBox from "../AddLinkBox";
 import toast from "react-hot-toast";
+
+// Explicitly declare Jest types to kill any VS Code red squiggly errors
+declare const jest: any;
+declare const describe: any;
+declare const it: any;
+declare const expect: any;
 
 jest.mock("react-hot-toast", () => ({
     error: jest.fn(),
