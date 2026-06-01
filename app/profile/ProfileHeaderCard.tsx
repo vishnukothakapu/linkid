@@ -2,12 +2,22 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import EditProfileModal from "./EditProfileModal";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useSession } from "next-auth/react";
 import { AvatarCropModal } from "./AvatarCropModal";
+import { Camera, Check, Pencil, X } from "lucide-react";
+import { presetAvatars } from "../../lib/presetAvatars";
 
 export function ProfileHeaderCard({
     user,
@@ -26,10 +36,16 @@ export function ProfileHeaderCard({
         user.image ?? sessionImage ?? null
     );
     const [uploading, setUploading] = useState(false);
+    const [pickerOpen, setPickerOpen] = useState(false);
     const [cropModalOpen, setCropModalOpen] = useState(false);
     const [rawImageSrc, setRawImageSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { update } = useSession();
+
+    function openUploadPicker() {
+        setPickerOpen(false);
+        fileInputRef.current?.click();
+    }
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -93,35 +109,76 @@ export function ProfileHeaderCard({
             setUploading(false);
         }
     }
-    async function handleRemoveAvatar() {
-    console.log("Remove avatar clicked!");
-    setUploading(true);
-    try {
-        const csrfToken = await getCsrfToken();
-        const res = await fetch("/api/profile/avatar", {
-            method: "DELETE",
-            headers: {
-                "x-csrf-token": csrfToken,
-            },
-        });
 
-        if (!res.ok) {
-            toast.error("Failed to remove avatar");
-            return;
+    async function handlePresetSelect(src: string) {
+        setUploading(true);
+
+        try {
+            const csrfToken = await getCsrfToken();
+            const res = await fetch("/api/profile/avatar", {
+                method: "PATCH",
+                headers: {
+                    "content-type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({ avatar: src }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.error ?? "Failed to update avatar");
+                return;
+            }
+
+            setAvatarUrl(src);
+            await update({ image: src });
+            setPickerOpen(false);
+            toast.success("Avatar updated!");
+        } catch {
+            toast.error("Something went wrong");
+        } finally {
+            setUploading(false);
         }
-
-        setAvatarUrl(null);
-        await update({ image: null });
-        toast.success("Avatar removed!");
-    } catch {
-        toast.error("Something went wrong");
-    } finally {
-        setUploading(false);
     }
-}
+
+    async function handleRemoveAvatar() {
+        setUploading(true);
+        try {
+            const csrfToken = await getCsrfToken();
+            const res = await fetch("/api/profile/avatar", {
+                method: "DELETE",
+                headers: {
+                    "x-csrf-token": csrfToken,
+                },
+            });
+
+            if (!res.ok) {
+                toast.error("Failed to remove avatar");
+                return;
+            }
+
+            setAvatarUrl(null);
+            await update({ image: null });
+            toast.success("Avatar removed!");
+        } catch {
+            toast.error("Something went wrong");
+        } finally {
+            setUploading(false);
+        }
+    }
 
     return (
         <>
+            <AvatarPickerModal
+                currentAvatar={avatarUrl}
+                open={pickerOpen}
+                uploading={uploading}
+                onOpenChange={setPickerOpen}
+                onPresetSelect={handlePresetSelect}
+                onUploadClick={openUploadPicker}
+            />
+
             <AvatarCropModal
                 open={cropModalOpen}
                 imageSrc={rawImageSrc}
@@ -144,31 +201,30 @@ export function ProfileHeaderCard({
                         {/* Pencil icon at bottom right */}
                         <div className="absolute bottom-0 right-0 flex gap-1">
                             <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
-                            className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-colors cursor-pointer"
+                                type="button"
+                                onClick={() => setPickerOpen(true)}
+                                disabled={uploading}
+                                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                                aria-label="Edit avatar"
                             >
                                 {uploading ? (
                                     <span className="text-[10px]">...</span>
                                 ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                    </svg>
+                                    <Pencil className="h-3 w-3" />
                                 )}
-                                </button>
-                                {avatarUrl && (
-                                    <button
+                            </button>
+                            {avatarUrl && (
+                                <button
+                                    type="button"
                                     onClick={handleRemoveAvatar}
                                     disabled={uploading}
-                                    className="flex items-center justify-center h-6 w-6 rounded-full bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 transition-colors cursor-pointer"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M18 6L6 18M6 6l12 12"/>
-                                        </svg>
-                                        </button>
-                                    )}
-                                    </div>
+                                    className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-70"
+                                    aria-label="Remove avatar"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            )}
+                        </div>
 
                         <input
                             ref={fileInputRef}
@@ -213,5 +269,111 @@ export function ProfileHeaderCard({
                 </CardContent>
             </Card>
         </>
+    );
+}
+
+function AvatarPickerModal({
+    currentAvatar,
+    open,
+    uploading,
+    onOpenChange,
+    onPresetSelect,
+    onUploadClick,
+}: {
+    currentAvatar: string | null;
+    open: boolean;
+    uploading: boolean;
+    onOpenChange: (open: boolean) => void;
+    onPresetSelect: (src: string) => void;
+    onUploadClick: () => void;
+}) {
+    const categories = Array.from(new Set(presetAvatars.map((avatar) => avatar.category)));
+    const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Choose an avatar</DialogTitle>
+                    <DialogDescription>
+                        Pick a built-in avatar or upload and crop your own photo.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-5">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-center gap-2"
+                        onClick={onUploadClick}
+                        disabled={uploading}
+                    >
+                        <Camera className="h-4 w-4" />
+                        Upload photo
+                    </Button>
+
+                    <div className="max-h-[55vh] space-y-5 overflow-y-auto pr-1">
+                        {categories.map((category) => (
+                            <section key={category} className="space-y-2">
+                                <h3 className="text-sm font-medium text-muted-foreground">
+                                    {category}
+                                </h3>
+                                <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
+                                    {presetAvatars
+                                        .filter((avatar) => avatar.category === category)
+                                        .map((avatar) => {
+                                            const selected = selectedAvatar === avatar.src;
+
+                                            return (
+                                                <button
+                                                    key={avatar.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedAvatar(avatar.src)}
+                                                    disabled={uploading}
+                                                    aria-label={`Select ${avatar.name} avatar`}
+                                                    aria-pressed={selected}
+                                                    className="group relative flex aspect-square items-center justify-center rounded-lg border bg-background p-1 transition hover:border-primary hover:bg-accent disabled:cursor-not-allowed disabled:opacity-70 data-[selected=true]:border-primary data-[selected=true]:ring-2 data-[selected=true]:ring-primary/30"
+                                                    data-selected={selected}
+                                                >
+                                                    <Avatar className="h-full w-full">
+                                                        <AvatarImage src={avatar.src} alt="" />
+                                                        <AvatarFallback>
+                                                            {avatar.name[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    {selected && (
+                                                        <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                                            <Check className="h-3.5 w-3.5" />
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                </div>
+                            </section>
+                        ))}
+                    </div>
+                     <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    >
+                    Cancel
+                    </Button>
+
+                    <Button
+                    disabled={!selectedAvatar || selectedAvatar === currentAvatar || uploading}
+                    onClick={() => {
+                        if (selectedAvatar) {
+                            onPresetSelect(selectedAvatar);
+                        }
+                    }}
+                    >
+                    Save Avatar
+                    </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }
