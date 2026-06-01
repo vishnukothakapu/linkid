@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import EditProfileModal from "./EditProfileModal";
-import { useRef, useState } from "react";
+import { useRef, useState ,useEffect} from "react";
 import toast from "react-hot-toast";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useSession } from "next-auth/react";
@@ -289,6 +289,11 @@ function AvatarPickerModal({
 }) {
     const categories = Array.from(new Set(presetAvatars.map((avatar) => avatar.category)));
     const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
+    useEffect(() => {
+        if (open) {
+            setSelectedAvatar(currentAvatar);
+        }
+    }, [open, currentAvatar]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
