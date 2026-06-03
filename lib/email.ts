@@ -18,6 +18,49 @@ function createTransporter() {
   });
 }
 
+export async function sendSupportEmail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text?: string;
+  html: string;
+}): Promise<void> {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || "noreply@linkid.app";
+
+  if (!transporter) {
+    const msg = "SMTP is not configured for support-email delivery.";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(msg);
+    }
+    throw new Error(msg);
+  }
+
+  try {
+    await transporter.sendMail({
+      from,
+      to,
+      subject,
+      text,
+      html,
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.warn(`⚠️ DEV FALLBACK: Failed to send email to ${to}`);
+      console.warn(`📧 EMAIL SUBJECT: ${subject}`);
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.error("SMTP Error:", (error as Error).message);
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function sendDeleteOtpEmail(
   to: string,
   otp: string

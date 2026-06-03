@@ -2,6 +2,7 @@ export type Link = {
     label: string;
     id: string;
     createdAt: Date;
+    updatedAt: Date;
     platform: string;
     url: string;
     position: number;

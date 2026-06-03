@@ -143,6 +143,7 @@ export default function RegisterPage() {
                             <Input
                                 name="name"
                                 placeholder="Full name"
+                                autoComplete="name"
                                 required
                                 className="pl-10 transition-colors"
                             />
@@ -154,6 +155,7 @@ export default function RegisterPage() {
                                 name="email"
                                 type="email"
                                 placeholder="Email"
+                                autoComplete="email"
                                 required
                                 className="pl-10 transition-colors"
                             />
@@ -165,6 +167,7 @@ export default function RegisterPage() {
                                 name="password"
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Password"
+                                autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required

@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { Check, X } from "lucide-react";
+
+const USERNAME_REGEX = /^[a-zA-Z0-9-]+$/;
+
 export default function EditProfileCard({
     initialName,
     initialUsername,
@@ -68,7 +71,23 @@ export default function EditProfileCard({
         return () => clearTimeout(timer);
     }, [username, initialUsername]);
 
+    function validate(): string | null {
+      if (!name.trim())
+        return "Name cannot be empty.";
+      if (name.trim().length < 2)
+        return "Name must be ≥ 2 chars.";
+      if (username.trim().length < 3)
+        return "Username must be ≥ 3 chars.";
+      if (!USERNAME_REGEX.test(username.trim()))
+        return "Letters, numbers, _ - only.";
+      if (bio.trim().length > 160)
+        return "Bio max 160 characters.";
+      return null;
+    }
+
     async function saveChanges() {
+        const err = validate();
+        if (err) { alert(err); return; }
         setLoading(true);
         const csrfToken = await getCsrfToken();
 
@@ -78,7 +97,11 @@ export default function EditProfileCard({
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
             },
-            body: JSON.stringify({ name, username,bio }),
+            body: JSON.stringify({ 
+                name: name.trim(), 
+                username: username.trim(),
+                bio: bio.trim()
+            }),
         });
 
         setLoading(false);
@@ -134,33 +157,40 @@ export default function EditProfileCard({
                             ⚠️ <strong>Heads up:</strong> Changing your username may affect existing shared links. Old links will automatically redirect to your new username.
                         </div>
                     )}
+                    
+                    <div role="status" aria-live="polite" aria-atomic="true">
+                        {checking && (
+                            <p className="text-sm text-muted-foreground">
+                                Checking availability...
+                            </p>
+                        )}
 
-                    <div className="space-y-1">
-                        <Label>Bio</Label>
-                        <textarea
-                            className="w-full rounded-md border p-2 text-sm"
-                            maxLength={160}
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            placeholder="Tell something about yourself..."
-                        />
-                        <p className="text-xs text-muted-foreground text-right">
-                            {bio.length}/160
-                        </p>
+                        {available === true && (
+                            <p className="flex items-center gap-1 text-sm text-green-600">
+                                <Check className="h-4 w-4" /> Username available
+                            </p>
+                        )}
+
+                        {!checking && available === false && (
+                            <p className="flex items-center gap-1 text-sm text-red-600">
+                                <X className="h-4 w-4" /> Username already taken
+                            </p>
+                        )}
                     </div>
-
-
-                    {available === true && (
-                        <p className="flex items-center gap-1 text-sm text-green-600">
-                            <Check className="h-4 w-4" /> Username available
-                        </p>
-                    )}
-
-                    {available === false && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                            <X className="h-4 w-4" /> Username already taken
-                        </p>
-                    )}
+                </div>
+                
+                <div className="space-y-1">
+                    <Label>Bio</Label>
+                    <textarea
+                        className="w-full rounded-md border p-2 text-sm"
+                        maxLength={160}
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        placeholder="Tell something about yourself..."
+                    />
+                    <p className="text-xs text-muted-foreground text-right">
+                        {bio.length}/160
+                    </p>
                 </div>
 
                 <Button
@@ -170,6 +200,7 @@ export default function EditProfileCard({
                         checking ||
                         !isDirty ||
                         username.length < 3 ||
+                        !USERNAME_REGEX.test(username) ||
                         (!available && username !== initialUsername)
                     }
                 >

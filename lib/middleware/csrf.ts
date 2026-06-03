@@ -8,14 +8,23 @@ import {
 } from "@/lib/csrf";
 
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const CSRF_EXCLUDED_PATH_PREFIXES = [
+const CSRF_EXCLUDED_PATHS = [
     "/api/auth",
     "/api/csrf",
+    "/api/contact-us",
     "/api/links/click",
     "/api/analytics/aggregate",
 ];
 
 export type CsrfDecision = "skip" | "allow" | "reject";
+
+/**
+ * Helper to ensure an exact path match or strict path-segment boundary matching.
+ * This prevents partial matching vulnerabilities (e.g., /api/contact-us-admin).
+ */
+function matchesExcludedPrefix(pathname: string, prefix: string): boolean {
+    return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
 
 export function getCsrfDecision(input: {
     method: string;
@@ -27,7 +36,7 @@ export function getCsrfDecision(input: {
 
     if (
         !CSRF_PROTECTED_METHODS.has(method) ||
-        CSRF_EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+        CSRF_EXCLUDED_PATHS.some((prefix) => matchesExcludedPrefix(pathname, prefix))
     ) {
         return "skip";
     }

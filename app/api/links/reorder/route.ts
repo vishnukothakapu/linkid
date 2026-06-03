@@ -63,8 +63,9 @@ export async function POST(req: Request) {
     const currentMap = new Map(current.map((c) => [c.id, c.position]));
 
     type UpdatePayload = { id: string; newOrder: number };
+    // Use 1-based positions to remain consistent with creation/backfill logic
     const updates: UpdatePayload[] = ids
-      .map((id, idx) => ({ id, newOrder: idx }))
+      .map((id, idx) => ({ id, newOrder: idx + 1 }))
       .filter(({ id, newOrder }) => currentMap.get(id) !== newOrder);
 
     if (updates.length === 0) return NextResponse.json({ ok: true, changed: 0 });

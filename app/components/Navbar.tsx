@@ -5,41 +5,85 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { Link2, Menu, X } from "lucide-react";
 
-const NAV_LINKS = [
+// Page section order (must match DOM order on app/page.tsx)
+const SECTION_IDS = ["features", "demo", "how"] as const;
+type SectionId = (typeof SECTION_IDS)[number];
+
+const NAV_LINKS: { href: string; label: string; id: SectionId }[] = [
     { href: "/#features", label: "Features", id: "features" },
-    { href: "/#how", label: "How it works", id: "how" },
     { href: "/#demo", label: "Demo", id: "demo" },
+    { href: "/#how", label: "How it works", id: "how" },
 ];
+
+const ACTIVATION_OFFSET = 140;
+
+function resolveActiveSection(pendingId: SectionId | null): SectionId | "" {
+    if (pendingId) return pendingId;
+
+    for (let i = SECTION_IDS.length - 1; i >= 0; i--) {
+        const id = SECTION_IDS[i];
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const { top, bottom } = el.getBoundingClientRect();
+        if (top <= ACTIVATION_OFFSET && bottom > ACTIVATION_OFFSET) return id;
+    }
+
+    let current: SectionId | "" = "";
+    for (const id of SECTION_IDS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= ACTIVATION_OFFSET) current = id;
+    }
+    return current;
+}
 
 export function Navbar() {
     const [activeSection, setActiveSection] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const pendingSectionRef = useRef<SectionId | null>(null);
+    const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const selectSection = (id: SectionId) => {
+        if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+        pendingSectionRef.current = id;
+        setActiveSection(id);
+        pendingTimerRef.current = setTimeout(() => {
+            pendingSectionRef.current = null;
+            setActiveSection(resolveActiveSection(null));
+        }, 500);
+    };
 
     useEffect(() => {
-        const sectionIds = NAV_LINKS.map((l) => l.id);
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const activeEntry = entries
-                    .filter((entry) => entry.isIntersecting)
-                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const syncActiveSection = () => {
+            setActiveSection(resolveActiveSection(pendingSectionRef.current));
+        };
 
-                if (activeEntry) setActiveSection(activeEntry.target.id);
-            },
-            { threshold: 0.25 }
-        );
-        sectionIds.forEach((id) => {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
-        return () => observer.disconnect();
-    }, []);
+        const onScroll = () => {
+            setScrolled(window.scrollY > 20);
+            syncActiveSection();
+        };
 
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener("scroll", onScroll, { passive: true });
-        return () => window.removeEventListener("scroll", onScroll);
+        window.addEventListener("hashchange", syncActiveSection);
+        window.addEventListener("resize", syncActiveSection);
+        syncActiveSection();
+        requestAnimationFrame(syncActiveSection);
+
+        const hash = window.location.hash.slice(1) as SectionId;
+        const hashTimer =
+            hash && SECTION_IDS.includes(hash)
+                ? window.setTimeout(syncActiveSection, 150)
+                : undefined;
+
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("hashchange", syncActiveSection);
+            window.removeEventListener("resize", syncActiveSection);
+            if (hashTimer !== undefined) window.clearTimeout(hashTimer);
+            if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+        };
     }, []);
 
     useEffect(() => {
@@ -72,8 +116,8 @@ export function Navbar() {
                 <div
                     className={`flex h-12 items-center justify-between gap-4 rounded-full border px-3 transition-all duration-300 sm:h-13 sm:px-4 ${
                         scrolled
-                            ? "border-violet-300/20 bg-white/80 shadow-lg shadow-violet-950/10 backdrop-blur-2xl dark:border-violet-500/15 dark:bg-transparent dark:shadow-violet-950/30 dark:backdrop-blur-2xl"
-                            : "border-violet-200/25 bg-white/65 shadow-md shadow-violet-950/[0.06] backdrop-blur-xl dark:border-violet-500/10 dark:bg-transparent dark:shadow-none dark:backdrop-blur-xl"
+                            ? "border-white/20 bg-white/10 shadow-xl shadow-violet-500/10 ring-1 ring-white/15 backdrop-blur-3xl dark:border-violet-500/15 dark:bg-transparent dark:shadow-violet-950/30 dark:ring-0 dark:backdrop-blur-2xl"
+                            : "border-white/15 bg-white/8 shadow-lg shadow-violet-500/[0.07] ring-1 ring-white/10 backdrop-blur-2xl dark:border-violet-500/10 dark:bg-transparent dark:shadow-none dark:ring-0 dark:backdrop-blur-xl"
                     }`}
                 >
                     {/* Logo */}
@@ -93,6 +137,7 @@ export function Navbar() {
                             <Link
                                 key={id}
                                 href={href}
+                                onClick={() => selectSection(id)}
                                 className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-300
                                 after:absolute after:left-1/2 after:bottom-0 after:h-[2px] after:w-2/5
                                 after:-translate-x-1/2 after:scale-x-0 after:rounded-full
@@ -127,7 +172,7 @@ export function Navbar() {
                         <button
                             onClick={() => setMobileOpen((o) => !o)}
                             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-200/60 bg-white/80 text-zinc-700 shadow-sm transition-colors hover:bg-violet-50 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-violet-300"
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-200/50 bg-white/30 text-zinc-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/50 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-violet-300"
                         >
                             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </button>
@@ -140,7 +185,7 @@ export function Navbar() {
                         mobileOpen
                             ? "max-h-80 border-violet-300/20 opacity-100 shadow-lg shadow-violet-950/20 dark:border-violet-500/20 dark:shadow-violet-950/40"
                             : "max-h-0 border-transparent opacity-0"
-                    } bg-white/90 backdrop-blur-2xl dark:bg-violet-950/60`}
+                    } bg-white/15 backdrop-blur-3xl dark:bg-violet-950/60`}
                 >
                     <div className="px-3 pb-4 pt-3">
                         <nav className="mb-3 flex flex-col gap-1">
@@ -149,7 +194,7 @@ export function Navbar() {
                                     key={id}
                                     href={href}
                                     onClick={() => {
-                                        setActiveSection(id);
+                                        selectSection(id);
                                         setMobileOpen(false);
                                     }}
                                     className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition-colors ${

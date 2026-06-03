@@ -65,13 +65,28 @@ export async function getEditableProfileState(
   const draft = await prisma.profileDraft.findUnique({
     where: { userId },
   });
-
   if (draft) {
+    // Merge draft with live user values so missing draft fields fall back
+    // to the current live profile (avoids returning nulls when only
+    // a subset of fields are being edited in the draft).
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, username: true, bio: true, image: true },
+    });
+
+    // If a draft exists but the live user record is missing, the system
+    // is in an inconsistent state. Remove the stale draft and surface
+    // a clear error so callers don't operate on orphaned drafts.
+    if (!user) {
+      await prisma.profileDraft.deleteMany({ where: { userId } });
+      throw new Error("User not found");
+    }
+
     return {
-      name: draft.name,
-      username: draft.username,
-      bio: draft.bio,
-      image: draft.image,
+      name: draft.name ?? user.name ?? null,
+      username: draft.username ?? user.username ?? null,
+      bio: draft.bio ?? user.bio ?? null,
+      image: draft.image ?? user.image ?? null,
     };
   }
 
@@ -101,7 +116,7 @@ export async function getEditableProfileState(
  * Helper: Ensure username aliases are created for previous usernames
  */
 async function ensureUsernameAliases(
-  tx: any,
+  tx: TransactionClient,
   userId: string,
   previousUsername: string | null
 ): Promise<void> {
