@@ -28,7 +28,7 @@ type LinksSectionProps = {
     setShowAdd: React.Dispatch<React.SetStateAction<boolean>>;
     onExport: () => void;
     onAdd: (link: ProfileLink) => void | Promise<void>;
-    onUpdate: (id: string, url: string) => Promise<void>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
     onReorder: (links: ProfileLink[]) => void;
@@ -182,7 +182,7 @@ export function LinksSection({
             </CardHeader>
 
             <CardContent className="space-y-4">
-                {showAdd && <AddLinkBox onAdded={onAdd} />}
+                {showAdd && <AddLinkBox onAdded={onAdd} onCancel={() => setShowAdd(false)} />}
 
                 {localLinks.length === 0 && !showAdd && (
                     <EmptyLinksState onAdd={() => setShowAdd(true)} />

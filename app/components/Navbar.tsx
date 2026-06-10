@@ -128,7 +128,7 @@ export function Navbar() {
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 shadow-md shadow-violet-500/30">
                             <Link2 className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                         </span>
-                        Link<span className="text-violet-600 dark:text-violet-400">ID</span>
+                        <span>Link<span className="text-violet-600 dark:text-violet-400">ID</span></span>
                     </Link>
 
                     {/* Desktop center nav */}

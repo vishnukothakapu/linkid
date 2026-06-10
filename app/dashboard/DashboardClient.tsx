@@ -25,24 +25,43 @@ export default function DashboardClient({
         setShowAdd(false);
     }
 
-    async function updateLink(id: string, url: string) {
+    async function updateLink(id: string, url: string, label?: string, platform?: string): Promise<boolean> {
         const csrfToken = await getCsrfToken();
 
-        await fetch(`/api/links/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "x-csrf-token": csrfToken,
-            },
-            body: JSON.stringify({ url }),
-        });
-        toast.success("Link updated");
+        try {
+            const response = await fetch(`/api/links/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({ url, label, platform }),
+            });
 
-        setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, url } : l
-            )
-        );
+            if (!response.ok) {
+                try {
+                    const data = await response.json();
+                    toast.error(data.error ?? "Failed to update link");
+                } catch {
+                    toast.error("Failed to update link");
+                }
+                return false;
+            }
+
+            const responseData = await response.json();
+            toast.success("Link updated");
+
+            setLinks((prev) =>
+                prev.map((l) =>
+                    l.id === id ? { ...l, ...responseData.link } : l
+                )
+            );
+            return true;
+        } catch (error) {
+            console.error("Link update failed:", error);
+            toast.error("Failed to update link");
+            return false;
+        }
     }
 
     async function updateVisibility(id: string, isPublic: boolean) {

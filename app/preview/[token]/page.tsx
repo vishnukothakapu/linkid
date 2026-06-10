@@ -40,6 +40,7 @@ export default async function PreviewPage({ params }: PageProps) {
     },
     username: snapshot.username || "unknown",
     showCTA: false,
+    isOwner: false,
   };
 
   return (

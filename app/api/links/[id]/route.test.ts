@@ -124,7 +124,9 @@ test("PUT 200 — valid URL matching stored platform updates the link", async ()
     capturedUpdateArgs = null;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { success: true });
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(data.link, "expected link object in response");
     assert.ok(capturedUpdateArgs, "prisma.link.update should have been called");
 });
 
@@ -134,7 +136,9 @@ test("PUT 200 — isPublic boolean update without URL", async () => {
     capturedUpdateArgs = null;
     const res = await PUT(putRequest({ isPublic: false }), ctx());
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { success: true });
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(data.link, "expected link object in response");
     assert.ok(capturedUpdateArgs, "prisma.link.update should have been called");
 });
 

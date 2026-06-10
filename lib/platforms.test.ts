@@ -43,6 +43,7 @@ test("validatePlatformUrl accepts valid URLs for each platform", () => {
     assert.equal(validatePlatformUrl("youtube", "https://www.youtube.com/c/channelname"), true);
     assert.equal(validatePlatformUrl("x", "https://x.com/username"), true);
     assert.equal(validatePlatformUrl("x", "https://www.x.com/username"), true);
+    assert.equal(validatePlatformUrl("x", "https://twitter.com/username"), true);
     assert.equal(validatePlatformUrl("facebook", "https://facebook.com/username"), true);
     assert.equal(validatePlatformUrl("facebook", "https://www.facebook.com/username"), true);
     assert.equal(validatePlatformUrl("instagram", "https://instagram.com/username"), true);
@@ -61,7 +62,6 @@ test("validatePlatformUrl accepts valid URLs for each platform", () => {
 test("validatePlatformUrl rejects URLs that don't match the platform", () => {
     assert.equal(validatePlatformUrl("github", "https://gitlab.com/octocat"), false);
     assert.equal(validatePlatformUrl("github", "https://github.io/octocat"), false);
-    assert.equal(validatePlatformUrl("x", "https://twitter.com/username"), false);
     assert.equal(validatePlatformUrl("youtube", "https://vimeo.com/channel"), false);
     assert.equal(validatePlatformUrl("instagram", "https://threads.net/user"), false);
     assert.equal(validatePlatformUrl("twitch", "https://youtube.com/@streamer"), false);

@@ -127,3 +127,12 @@ import { getDeepLink as resolveDeepLink } from "./deeplink";
 export function getDeepLink(platform: string, webUrl: string): DeepLinkResult {
     return resolveDeepLink(platform, webUrl);
 }
+
+export function slugifyPlatform(label: string | null | undefined): string {
+    if (!label) return "";
+    return label
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+}

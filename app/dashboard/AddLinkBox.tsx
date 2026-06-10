@@ -15,26 +15,7 @@ import toast from "react-hot-toast";
 
 import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
-import { PLATFORM_ICONS } from "@/lib/platformIcons";
-
-const formatLabel = (key: string) => {
-    const exceptions: Record<string, string> = {
-        github: "GitHub",
-        linkedin: "LinkedIn",
-        x: "X (Twitter)",
-        youtube: "YouTube",
-        leetcode: "LeetCode",
-        devto: "Dev.to",
-    };
-    return exceptions[key] || key.charAt(0).toUpperCase() + key.slice(1);
-};
-
-const POPULAR_PLATFORMS = [
-    ...Object.keys(PLATFORM_ICONS)
-        .filter((key) => key !== "website" && key !== "portfolio")
-        .map((key) => ({ value: key, label: formatLabel(key) })),
-    { value: "website", label: "Personal Website / Other" },
-];
+import { formatLabel, POPULAR_PLATFORMS } from "@/lib/platformHelpers";
 
 /**
  * AddLinkBox Component
@@ -46,13 +27,22 @@ const POPULAR_PLATFORMS = [
  */
 export default function AddLinkBox({
     onAdded,
+    onCancel,
 }: {
     onAdded: (link: ProfileLink) => void;
+    onCancel?: () => void;
 }) {
     const [url, setUrl] = useState("");
     const [label, setLabel] = useState("");
     const [platform, setPlatform] = useState("");
     const [loading, setLoading] = useState(false);
+
+    function handleCancel() {
+        setUrl("");
+        setLabel("");
+        setPlatform("");
+        onCancel?.();
+    }
 
     /**
      * Handles the form submission to add a link.
@@ -143,9 +133,14 @@ export default function AddLinkBox({
                 onChange={(e) => setUrl(e.target.value)}
             />
 
-            <Button onClick={submit} disabled={loading} className="w-full">
-                {loading ? "Adding…" : "Add link"}
-            </Button>
+            <div className="flex gap-2">
+                <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1">
+                    Cancel
+                </Button>
+                <Button onClick={submit} disabled={loading} className="flex-1">
+                    {loading ? "Adding…" : "Add link"}
+                </Button>
+            </div>
         </div>
     );
 }
