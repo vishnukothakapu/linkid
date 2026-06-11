@@ -30,3 +30,22 @@ export async function resolveUserByUsername(username: string) {
     return { user, canonicalUsername: user.username ?? username };
 }
 
+/**
+ * Get public user data including resume URL
+ */
+export async function getPublicUserData(username: string) {
+    const user = await prisma.user.findUnique({
+        where: { username },
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            bio: true,
+            image: true,
+            resumeUrl: true,
+        },
+    });
+
+    return user;
+}
+

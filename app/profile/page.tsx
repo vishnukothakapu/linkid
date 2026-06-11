@@ -9,6 +9,7 @@ import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
 import { DangerZoneCard } from "./DangerZoneCard";
+import { ResumeCard } from "./ResumeCard";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -39,6 +40,11 @@ export default async function ProfilePage() {
                 />
 
                 <AccountInfoCard user={user} />
+
+                <ResumeCard
+                    initialResumeUrl={user.resumeUrl}
+                    initialDownloadCount={user.resumeDownloadCount}
+                />
 
                 <ProfileActionsCard
                     hasPassword={Boolean(user.password)}

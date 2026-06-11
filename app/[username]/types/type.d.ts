@@ -23,6 +23,7 @@ export type User = {
         bio: string | null;
         image: string | null;
         links?: Link[];
+        resumeUrl?: string | null;
     };
     username: string;
     showCTA: boolean;

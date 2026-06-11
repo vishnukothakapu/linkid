@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import OnboardingTour from "@/app/components/OnboardingTour";
+import TourHelpButton from "@/app/components/TourHelpButton";
+
 import {
   Link2,
   Route,
@@ -33,29 +36,70 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
   if (session) redirect("/dashboard");
 
-  // Split into two arrays if you want an asynchronous double-row marquee feel, 
+  // Split into two arrays if you want an asynchronous double-row marquee feel,
   // or keep it in one loop. Here all features are passed cleanly into the marquee track rows.
   const featuresList = [
-    { icon: <Link2 className="h-5 w-5" />, title: "Resume-friendly links", desc: "Short, readable URLs that look clean and professional on resumes and portfolios." },
-    { icon: <Route className="h-5 w-5" />, title: "Platform routing", desc: "Predictable links like /github, /linkedin, /leetcode for every professional platform." },
-    { icon: <Zap className="h-5 w-5" />, title: "One-time setup", desc: "Add links once. Share everywhere. Update anytime without breaking existing links." },
-    { icon: <Wand2 className="h-5 w-5" />, title: "Auto platform detection", desc: "Paste any URL and LinkID automatically detects the platform and formats it correctly." },
-    { icon: <User className="h-5 w-5" />, title: "Public profile page", desc: "Shareable profile at linkid.qzz.io/username showcasing all your professional links." },
-    { icon: <BarChart3 className="h-5 w-5" />, title: "Real-time dashboard", desc: "Add, edit, and delete links instantly with a responsive, intuitive interface." },
-    { icon: <Globe className="h-5 w-5" />, title: "Multi-platform support", desc: "GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported." },
-    { icon: <Moon className="h-5 w-5" />, title: "Dark mode ready", desc: "Full system theme support with light and dark modes for comfortable viewing." },
-    { icon: <Shield className="h-5 w-5" />, title: "Secure & private", desc: "OAuth authentication with Google & GitHub. Your data stays secure and private." },
+    {
+      icon: <Link2 className="h-5 w-5" />,
+      title: "Resume-friendly links",
+      desc: "Short, readable URLs that look clean and professional on resumes and portfolios.",
+    },
+    {
+      icon: <Route className="h-5 w-5" />,
+      title: "Platform routing",
+      desc: "Predictable links like /github, /linkedin, /leetcode for every professional platform.",
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "One-time setup",
+      desc: "Add links once. Share everywhere. Update anytime without breaking existing links.",
+    },
+    {
+      icon: <Wand2 className="h-5 w-5" />,
+      title: "Auto platform detection",
+      desc: "Paste any URL and LinkID automatically detects the platform and formats it correctly.",
+    },
+    {
+      icon: <User className="h-5 w-5" />,
+      title: "Public profile page",
+      desc: "Shareable profile at linkid.qzz.io/username showcasing all your professional links.",
+    },
+    {
+      icon: <BarChart3 className="h-5 w-5" />,
+      title: "Real-time dashboard",
+      desc: "Add, edit, and delete links instantly with a responsive, intuitive interface.",
+    },
+    {
+      icon: <Globe className="h-5 w-5" />,
+      title: "Multi-platform support",
+      desc: "GitHub, LinkedIn, LeetCode, YouTube, Twitter, and 10+ other platforms supported.",
+    },
+    {
+      icon: <Moon className="h-5 w-5" />,
+      title: "Dark mode ready",
+      desc: "Full system theme support with light and dark modes for comfortable viewing.",
+    },
+    {
+      icon: <Shield className="h-5 w-5" />,
+      title: "Secure & private",
+      desc: "OAuth authentication with Google & GitHub. Your data stays secure and private.",
+    },
   ];
 
   return (
     <>
       <Navbar />
-
+      <OnboardingTour />
+      <TourHelpButton />
       <main className="overflow-hidden">
         {/* Hero Section */}
-        <section id="hero" className="relative flex min-h-screen items-center px-4 pb-16 pt-32 sm:px-6 lg:px-8">          <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
+        <section
+          id="hero"
+          className="relative flex min-h-screen items-center border-b border-violet-200/60 px-4 pb-16 pt-32 dark:border-white/10 sm:px-6 lg:px-8"
+        >
+          {" "}
+          <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
           <div className="absolute inset-x-0 top-0 -z-10 h-96 bg-gradient-to-b from-violet-200/70 via-indigo-100/40 to-transparent blur-2xl dark:from-violet-700/20 dark:via-indigo-700/10" />
-
           <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.06fr_0.94fr]">
             <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/70 bg-white/70 px-4 py-2 text-sm font-medium text-violet-700 shadow-sm backdrop-blur-xl dark:border-violet-400/20 dark:bg-white/5 dark:text-violet-200">
@@ -90,7 +134,7 @@ export default async function Home() {
                   <a href="#demo">View Demo</a>
                 </Button>
               </div>
-
+            
               <div className="mt-8 flex flex-col items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 sm:flex-row sm:justify-center lg:justify-start">
                 <ProofItem>OAuth-ready</ProofItem>
                 <ProofItem>Dark mode</ProofItem>
@@ -117,9 +161,21 @@ export default async function Home() {
                   </div>
 
                   <div className="mt-5 space-y-3">
-                    <PreviewLink icon={<Github className="h-4 w-4" />} label="GitHub" path="/github" />
-                    <PreviewLink icon={<Linkedin className="h-4 w-4" />} label="LinkedIn" path="/linkedin" />
-                    <PreviewLink icon={<Code2 className="h-4 w-4" />} label="LeetCode" path="/leetcode" />
+                    <PreviewLink
+                      icon={<Github className="h-4 w-4" />}
+                      label="GitHub"
+                      path="/github"
+                    />
+                    <PreviewLink
+                      icon={<Linkedin className="h-4 w-4" />}
+                      label="LinkedIn"
+                      path="/linkedin"
+                    />
+                    <PreviewLink
+                      icon={<Code2 className="h-4 w-4" />}
+                      label="LeetCode"
+                      path="/leetcode"
+                    />
                   </div>
 
                   <div className="mt-5 rounded-2xl border border-violet-200/60 bg-white/60 p-4 shadow-sm shadow-violet-100/40 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
@@ -145,14 +201,21 @@ export default async function Home() {
         <section className="relative px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {stats.map((stat) => (
-              <StatCard key={stat.label} value={stat.value} label={stat.label} />
+              <StatCard
+                key={stat.label}
+                value={stat.value}
+                label={stat.label}
+              />
             ))}
           </div>
         </section>
 
         {/* Features Section (Marquee Implemented Here) */}
         {/* Features Section */}
-        <section className="relative scroll-mt-28 overflow-hidden py-16 md:py-24" id="features">
+        <section
+          className="relative scroll-mt-28 overflow-hidden py-16 md:py-24"
+          id="features"
+        >
           <SectionWash />
           <div className="px-4 sm:px-6 lg:px-8">
             <SectionHeader
@@ -164,19 +227,26 @@ export default async function Home() {
 
           {/* Marquee Container Outer Wrapper */}
           <div className="relative mt-16 flex flex-col gap-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,transparent_5%,black_20%,black_80%,transparent_95%,transparent)]">
-
             {/* Row 1: Moving Track (Inlined keyframes) */}
             <div className="marquee flex w-max gap-5">
               {/* Original List */}
               {featuresList.map((feat, index) => (
                 <div key={`r1-${index}`} className="w-[350px] shrink-0">
-                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                  <FeatureCard
+                    icon={feat.icon}
+                    title={feat.title}
+                    desc={feat.desc}
+                  />
                 </div>
               ))}
               {/* Duplicated List */}
               {featuresList.map((feat, index) => (
                 <div key={`r1-dup-${index}`} className="w-[350px] shrink-0">
-                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                  <FeatureCard
+                    icon={feat.icon}
+                    title={feat.title}
+                    desc={feat.desc}
+                  />
                 </div>
               ))}
             </div>
@@ -186,22 +256,32 @@ export default async function Home() {
               {/* Original List */}
               {[...featuresList].reverse().map((feat, index) => (
                 <div key={`r2-${index}`} className="w-[350px] shrink-0">
-                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                  <FeatureCard
+                    icon={feat.icon}
+                    title={feat.title}
+                    desc={feat.desc}
+                  />
                 </div>
               ))}
               {/* Duplicated List */}
               {[...featuresList].reverse().map((feat, index) => (
                 <div key={`r2-dup-${index}`} className="w-[350px] shrink-0">
-                  <FeatureCard icon={feat.icon} title={feat.title} desc={feat.desc} />
+                  <FeatureCard
+                    icon={feat.icon}
+                    title={feat.title}
+                    desc={feat.desc}
+                  />
                 </div>
               ))}
             </div>
-
           </div>
         </section>
 
         {/* Demo Section */}
-        <section className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
+        <section
+          className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8"
+          id="demo"
+        >
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.86fr_1.14fr]">
             <SectionHeader
               align="left"
@@ -230,21 +310,24 @@ export default async function Home() {
                   url="linkid.qzz.io/vishnu/leetcode"
                   href="https://leetcode.com"
                 />
-
               </div>
             </div>
           </div>
         </section>
 
         {/* Call To Action */}
-        <section className="relative scroll-mt-28 px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8" id="how">
+        <section
+          className="relative scroll-mt-28 px-4 py-16 text-center sm:px-6 md:py-24 lg:px-8"
+          id="how"
+        >
           <div className="absolute inset-x-0 top-1/2 -z-10 h-44 -translate-y-1/2 bg-gradient-to-r from-transparent via-violet-200/45 to-transparent blur-3xl dark:via-violet-500/10" />
           <div className="mx-auto max-w-3xl rounded-3xl border border-violet-200/60 bg-white/40 px-6 py-12 shadow-xl shadow-violet-500/15 ring-1 ring-violet-300/30 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 dark:ring-0 sm:px-10">
             <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
               Your professional identity, simplified.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-              Create your LinkID in under a minute and share one memorable URL everywhere.
+              Create your LinkID in under a minute and share one memorable URL
+              everywhere.
             </p>
             <div className="mt-8">
               <Button
@@ -268,50 +351,81 @@ export default async function Home() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/20">
                   <Link2 className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-xl font-bold text-zinc-950 dark:text-white">LinkID</span>
+                <span className="text-xl font-bold text-zinc-950 dark:text-white">
+                  LinkID
+                </span>
               </div>
               <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                One identity. Infinite professional links. Built for developers who value clean, predictable URLs.
+                One identity. Infinite professional links. Built for developers
+                who value clean, predictable URLs.
               </p>
               <div className="flex items-center gap-3">
-                <FooterIcon href="https://github.com/vishnukothakapu/linkid" label="GitHub">
+                <FooterIcon
+                  href="https://github.com/vishnukothakapu/linkid"
+                  label="GitHub"
+                >
                   <Github className="h-5 w-5" />
                 </FooterIcon>
                 <FooterIcon href="https://discord.gg/jydRT5jK" label="Discord">
                   <DiscordIcon className="h-5 w-5" />
                 </FooterIcon>
-                <FooterIcon href="https://twitter.com/vishnukothakapu" label="Twitter">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <FooterIcon
+                  href="https://twitter.com/vishnukothakapu"
+                  label="Twitter"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
                 </FooterIcon>
               </div>
             </div>
 
-            <FooterColumn title="Product" links={[
-              ["Dashboard", "/dashboard"],
-              ["Features", "#features"],
-              ["Demo", "#demo"],
-              ["Get Started", "/login"],
-            ]} />
-            <FooterColumn title="Support" links={[
-              ["Report Issue", "https://github.com/vishnukothakapu/linkid/issues"],
-              ["Community", "https://github.com/vishnukothakapu/linkid/discussions"],
-              ["Documentation", "/documentation"],
-              ["Contact Us", "/contact-us"],
-            ]} />
-            <FooterColumn title="Company" links={[
-              ["About", "/about"],
-              ["Privacy Policy", "/privacy"],
-              ["Terms of Service", "/terms"],
-              ["Status", "/status"],
-            ]} />
+            <FooterColumn
+              title="Product"
+              links={[
+                ["Dashboard", "/dashboard"],
+                ["Features", "#features"],
+                ["Demo", "#demo"],
+                ["Get Started", "/login"],
+              ]}
+            />
+            <FooterColumn
+              title="Support"
+              links={[
+                [
+                  "Report Issue",
+                  "https://github.com/vishnukothakapu/linkid/issues",
+                ],
+                [
+                  "Community",
+                  "https://github.com/vishnukothakapu/linkid/discussions",
+                ],
+                ["Documentation", "/documentation"],
+                ["Contact Us", "/contact-us"],
+              ]}
+            />
+            <FooterColumn
+              title="Company"
+              links={[
+                ["About", "/about"],
+                ["Privacy Policy", "/privacy"],
+                ["Terms of Service", "/terms"],
+                ["Status", "/status"],
+              ]}
+            />
           </div>
 
           <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-violet-200/60 pt-8 text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400 md:flex-row">
             <p>
               &copy; {new Date().getFullYear()} LinkID. Built by{" "}
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">Vishnu Kothakapu</span>
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                Vishnu Kothakapu
+              </span>
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <span className="flex items-center gap-1.5">
@@ -333,7 +447,12 @@ export default async function Home() {
 // Discord SVG icon (not in lucide-react)
 function DiscordIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
     </svg>
   );
@@ -358,16 +477,28 @@ function ProofItem({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PreviewLink({ icon, label, path }: { icon: React.ReactNode; label: string; path: string }) {
+function PreviewLink({
+  icon,
+  label,
+  path,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+}) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-violet-200/60 bg-white/60 px-4 py-3 shadow-sm shadow-violet-100/50 backdrop-blur-sm transition-all duration-200 hover:border-violet-300/70 hover:bg-white/80 hover:shadow-md dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-white/20 dark:hover:bg-white/[0.06] dark:hover:shadow-sm">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-200">
           {icon}
         </div>
-        <span className="font-medium text-zinc-800 dark:text-zinc-100">{label}</span>
+        <span className="font-medium text-zinc-800 dark:text-zinc-100">
+          {label}
+        </span>
       </div>
-      <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">{path}</span>
+      <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+        {path}
+      </span>
     </div>
   );
 }
@@ -391,7 +522,17 @@ function SectionWash() {
   );
 }
 
-function SectionHeader({ eyebrow, title, desc, align = "center" }: { eyebrow: string; title: string; desc: string; align?: "left" | "center" }) {
+function SectionHeader({
+  eyebrow,
+  title,
+  desc,
+  align = "center",
+}: {
+  eyebrow: string;
+  title: string;
+  desc: string;
+  align?: "left" | "center";
+}) {
   const alignment = align === "center" ? "mx-auto text-center" : "";
   return (
     <div className={`max-w-2xl ${alignment}`}>
@@ -408,7 +549,15 @@ function SectionHeader({ eyebrow, title, desc, align = "center" }: { eyebrow: st
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function FeatureCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-violet-200/60 bg-white/40 p-6 shadow-lg shadow-violet-500/10 ring-1 ring-violet-200/30 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-300/70 hover:bg-white/65 hover:shadow-xl hover:shadow-violet-500/15 dark:border-white/10 dark:bg-white/[0.04] dark:ring-0 dark:shadow-violet-950/5 dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07] dark:hover:shadow-violet-950/10">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -438,7 +587,12 @@ function DemoRow({
 }) {
   const destination = href ? href : `https://${url}`;
   return (
-    <Link href={destination} target="_blank" rel="noopener noreferrer" className="group block">
+    <Link
+      href={destination}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block"
+    >
       <div className="flex min-w-0 w-full overflow-hidden items-center justify-between gap-4 rounded-2xl border border-violet-200/60 bg-white/60 px-4 py-4 shadow-sm shadow-violet-100/50 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/70 hover:bg-white/85 hover:shadow-lg hover:shadow-violet-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none dark:hover:border-white/10 dark:hover:bg-white/[0.07] dark:hover:shadow-none sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 transition-colors duration-300 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-400/10 dark:text-violet-200">
@@ -457,7 +611,15 @@ function DemoRow({
   );
 }
 
-function FooterIcon({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+function FooterIcon({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
@@ -471,13 +633,21 @@ function FooterIcon({ href, label, children }: { href: string; label: string; ch
   );
 }
 
-function FooterColumn({ title, links }: { title: string; links: Array<[string, string]> }) {
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: Array<[string, string]>;
+}) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">{title}</h3>
+      <h3 className="text-sm font-semibold text-zinc-950 dark:text-white">
+        {title}
+      </h3>
       <div className="space-y-3">
         {links.map(([label, href]) => {
-          const isExternal = href.startsWith('http');
+          const isExternal = href.startsWith("http");
 
           return (
             <Link
