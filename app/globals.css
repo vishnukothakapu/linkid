@@ -210,3 +210,9 @@ html::-webkit-scrollbar-thumb:hover {
 .marquee-reverse:hover {
   animation-play-state: paused;
 }
+@media (prefers-reduced-motion: reduce) {
+  .marquee,
+  .marquee-reverse {
+    animation: none;
+  }
+}
