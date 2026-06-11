@@ -21,7 +21,8 @@ import {
   Code2,
 } from "lucide-react";
 import React from "react";
-
+import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import PlatformShowcase from "@/components/PlatformShowcase";
 const stats = [
   { value: "10+", label: "Platforms Supported" },
   { value: "Unlimited", label: "Custom Links" },
@@ -138,6 +139,8 @@ export default async function Home() {
             </div>
           </div>
         </section>
+
+        <PlatformShowcase />
 
         {/* Stats Section */}
         <section className="relative px-4 py-14 sm:px-6 lg:px-8">
