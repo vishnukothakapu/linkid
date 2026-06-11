@@ -21,7 +21,6 @@ import {
   Code2,
 } from "lucide-react";
 import React from "react";
-import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import PlatformShowcase from "@/components/PlatformShowcase";
 const stats = [
   { value: "10+", label: "Platforms Supported" },

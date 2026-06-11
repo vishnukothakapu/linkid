@@ -1,5 +1,5 @@
 // lib/platform.test.ts
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert";
 import { detectPlatform, validatePlatformUrl, getDeepLink } from "./platforms.js"; // Added .js suffix for native resolution
 

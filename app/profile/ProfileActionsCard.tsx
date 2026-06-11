@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { KeyRound, Link2, LogOut, Copy, Check, Download, FileText } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -11,14 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { ProfileDraft } from "@prisma/client";
-
-type ProfileVersion = {
-    id: string;
-    snapshot: { name: string | null; username: string | null; bio: string | null; image: string | null };
-    changeType: string;
-    diff: Record<string, unknown>;
-    createdAt: Date;
-};
 
 type MergeResult = {
     success?: boolean;
@@ -34,10 +27,9 @@ type MergeResult = {
 interface ProfileActionsCardProps {
     hasPassword: boolean;
     profileDraft?: ProfileDraft | null;
-    profileVersions?: ProfileVersion[];
 }
 
-export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions = [] }: ProfileActionsCardProps) {
+export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActionsCardProps) {
     const [generateOpen, setGenerateOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
@@ -184,7 +176,7 @@ export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions 
         try {
             await navigator.clipboard.writeText(generatedCode);
             toast.success("Merge code copied");
-        } catch (error) {
+        } catch {
             toast.error("Unable to copy merge code");
         }
     }
@@ -270,10 +262,10 @@ export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions 
                                 className="w-full sm:w-auto font-medium"
                                 asChild
                             >
-                                <a href="/api/export/vcard">
+                                <Link href="/api/export/vcard">
                                     <Download className="h-4 w-4" />
                                     Contact Card (.vcf)
-                                </a>
+                                </Link>
                             </Button>
 
                             <Button
@@ -281,10 +273,10 @@ export function ProfileActionsCard({ hasPassword, profileDraft, profileVersions 
                                 className="w-full sm:w-auto font-medium"
                                 asChild
                             >
-                                <a href="/api/export/resume">
+                                <Link href="/api/export/resume">
                                     <FileText className="h-4 w-4" />
                                     PDF Profile
-                                </a>
+                                </Link>
                             </Button>
                         </div>
                     </div>

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     const job = await enqueueJob(type, payload ?? {}, scheduleAt ? { scheduleAt: new Date(scheduleAt) } : undefined);
     return NextResponse.json({ id: job.id });
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

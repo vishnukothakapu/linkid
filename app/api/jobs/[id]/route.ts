@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { getJob } from "../../../../lib/jobs";
 
-export async function GET(_req: Request, ctx: any) {
+export async function GET(_req: Request, ctx: { params: { id: string } }) {
   try {
-    const params = ctx?.params ? ctx.params : (await ctx?.params);
-    const id = params?.id;
+    const id = ctx.params.id;
     const job = await getJob(id);
     if (!job) return NextResponse.json({ error: "not found" }, { status: 404 });
     return NextResponse.json(job);
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

@@ -106,9 +106,6 @@ export function Navbar() {
         return () => document.removeEventListener("mousedown", handler);
     }, [mobileOpen]);
 
-    const activePill = "rounded-full bg-violet-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm shadow-violet-500/30";
-    const inactivePill = "rounded-full px-4 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-violet-300";
-
     return (
         <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4 sm:px-6">
             <div ref={menuRef} className="pointer-events-auto w-full max-w-4xl">

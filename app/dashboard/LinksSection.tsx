@@ -126,14 +126,14 @@ export function LinksSection({
                     updateLocalLinks(data.links || []);
                     onReorder(data.links || []);
                 }
-            } catch (e) {
+            } catch {
                 // Network error: refetch to reconcile
                 try {
                     const refresh = await fetch("/api/links");
                     const data = await refresh.json();
                     updateLocalLinks(data.links || []);
                     onReorder(data.links || []);
-                } catch (_) {
+                } catch {
                     // ignore
                 }
             }

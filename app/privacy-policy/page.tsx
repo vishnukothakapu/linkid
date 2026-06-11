@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
                   <li><strong>GitHub OAuth:</strong> We receive your GitHub username, email, and profile information</li>
                 </ul>
                 <p className="text-muted-foreground leading-relaxed mt-3">
-                  We do NOT store OAuth tokens beyond what's necessary for session management.
+                  We do NOT store OAuth tokens beyond what&apos;s necessary for session management.
                 </p>
               </section>
 

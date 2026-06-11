@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { upsertProfileDraft } from "@/lib/profileWorkflow";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";

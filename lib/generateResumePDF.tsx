@@ -118,12 +118,6 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-type UserLink = {
-  id: string;
-  platform: string;
-  url: string;
-};
-
 export function generateResumePDF({
   user,
   links,
