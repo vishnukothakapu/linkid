@@ -30,3 +30,21 @@ export const PLATFORM_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement
     medium: FaMedium,
     dribbble: FaDribbble,
 };
+
+export const PLATFORM_NAMES: Record<string, string> = {
+    github: "GitHub",
+    linkedin: "LinkedIn",
+    leetcode: "LeetCode",
+    website: "Website",
+    portfolio: "Portfolio",
+    youtube: "YouTube",
+    x: "X",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    twitch: "Twitch",
+    discord: "Discord",
+    hashnode: "Hashnode",
+    devto: "Dev.to",
+    medium: "Medium",
+    dribbble: "Dribbble",
+};
