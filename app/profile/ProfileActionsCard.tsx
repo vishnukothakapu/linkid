@@ -24,9 +24,23 @@ type MergeResult = {
     error?: string;
 };
 
+type ProfileVersion = {
+    id: string;
+    snapshot: {
+        name: string | null;
+        username: string | null;
+        bio: string | null;
+        image: string | null;
+    };
+    changeType: string;
+    diff: Record<string, unknown>;
+    createdAt: Date;
+};
+
 interface ProfileActionsCardProps {
     hasPassword: boolean;
     profileDraft?: ProfileDraft | null;
+    profileVersions?: ProfileVersion[];
 }
 
 export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActionsCardProps) {

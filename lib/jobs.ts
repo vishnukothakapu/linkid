@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
-export type JobPayload = Prisma.JsonValue;
+export type JobPayload = Exclude<Prisma.JsonValue, null>;
 
 export async function enqueueJob(type: string, payload: JobPayload, opts?: { scheduleAt?: Date }) {
   const runAfter = opts?.scheduleAt ?? null;
@@ -64,13 +64,15 @@ export async function claimNextJob() {
   }
 }
 
-type JobRecord = { id: string; type: string; payload: JobPayload };
+type JobRecord = { id: string; type: string; payload: Prisma.JsonValue };
 
 export async function processJobWithHandler(job: JobRecord, handlers: Record<string, (payload: JobPayload) => Promise<void> | void>) {
   try {
     const handler = handlers[job.type];
     if (!handler) throw new Error(`no handler for job type ${job.type}`);
-    await handler(job.payload);
+    // Cast payload to JobPayload, excluding null values that shouldn't exist
+    const payload = job.payload as JobPayload;
+    await handler(payload);
     await markJobCompleted(job.id);
   } catch (err: unknown) {
     await markJobFailed(job.id, err instanceof Error ? err.message : String(err));
