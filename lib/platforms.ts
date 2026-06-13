@@ -20,18 +20,17 @@ export type Platform =
 
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     github:     /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    
-    // Catch-all domain suffixes force immediate platform identification for paths like /feed or /jobs,
-    // stopping links from bypassing validation filters as generic website URLs.
-    linkedin:   /^https?:\/\/(www\.)?linkedin\.com\/.*$/i,
-    
+
+    // Tightened to only allow public profile paths: /in/username or /company/name
+    linkedin:   /^https?:\/\/(www\.)?linkedin\.com\/(in|company|school|pub)\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+
     leetcode:   /^https?:\/\/(www\.)?leetcode\.com\/u\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
     youtube:    /^https?:\/\/(www\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
     x:          /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
-    
-    // Generic domain catching ensures subpaths like /groups or /marketplace map to Facebook before validation.
-    facebook:   /^https?:\/\/(www\.)?facebook\.com\/.*$/i,
-    
+
+    // Tightened to only allow public profile usernames or profile.php?id= format
+    facebook:   /^https?:\/\/(www\.)?facebook\.com\/(?!(?:gaming|watch|business|marketplace|groups|events|pages|help|policies|legal|about|login|checkpoint)\b)([A-Za-z0-9._-]{1,50}|profile\.php\?id=\d+)\/?(\?.*)?$/i,
+
     instagram:  /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     discord:    /^https?:\/\/(www\.)?discord\.com\/(users\/\d{17,20}|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     twitch:     /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
@@ -45,8 +44,8 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
 // ─── Platform Blocklists ─────────────────────────────────────────────────────
 // Catches unauthorized feeds, internal app views, and search frames right after domain mapping.
 const PLATFORM_BLOCKLIST: Partial<Record<Platform, RegExp>> = {
-    linkedin:  /\/(messaging|feed|jobs|notifications|search)\b/i,
-    facebook:  /\/(messaging|feed|groups|events|marketplace)\b/i,
+    linkedin:  /\/(messaging|feed|jobs|notifications|search|mynetwork|learning|checkpoint|sales)\b/i,
+    facebook:  /\/(messaging|feed|groups|events|marketplace|gaming|watch|business|pages|help|policies|legal|about|login|checkpoint)\b/i,
     youtube:   /\/results\b/i,
     instagram: /\/(explore|stories)\b/i,
 };
