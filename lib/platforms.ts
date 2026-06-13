@@ -29,7 +29,7 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     x:          /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
 
     // Tightened to only allow public profile usernames or profile.php?id= format
-    facebook:   /^https?:\/\/(www\.)?facebook\.com\/(?!(?:gaming|watch|business|marketplace|groups|events|pages|help|policies|legal|about|login|checkpoint)\b)([A-Za-z0-9._-]{1,50}|profile\.php\?id=\d+)\/?(\?.*)?$/i,
+    facebook:   /^https?:\/\/(www\.)?facebook\.com\/(?!(?:gaming|watch|business|marketplace|groups|events|pages|help|policies|legal|about|login|checkpoint)\b)([A-Za-z0-9._-]{1,50}(?<!\.php)|profile\.php\?id=\d+)\/?(\?.*)?$/i,
 
     instagram:  /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     discord:    /^https?:\/\/(www\.)?discord\.com\/(users\/\d{17,20}|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
