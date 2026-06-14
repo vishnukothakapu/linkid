@@ -7,6 +7,10 @@ import { Prisma } from "@prisma/client";
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { checkRateLimit } from "@/lib/rateLimit";
+
+const LINK_MUTATE_LIMIT = 20;
+const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 20 updates/deletes per minute per user
 
 export async function PUT(
   req: Request,
@@ -16,6 +20,19 @@ export async function PUT(
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const allowed = checkRateLimit(
+    `link-mutate:${session.user.email}`,
+    LINK_MUTATE_LIMIT,
+    LINK_MUTATE_WINDOW_MS
+  );
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429 }
+    );
   }
 
   const { id } = await context.params;
@@ -137,6 +154,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const allowed = checkRateLimit(
+    `link-mutate:${session.user.email}`,
+    LINK_MUTATE_LIMIT,
+    LINK_MUTATE_WINDOW_MS
+  );
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429 }
+    );
+  }
+
   const { id } = await context.params;
 
   const link = await prisma.link.findUnique({
@@ -154,4 +184,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-

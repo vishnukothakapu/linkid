@@ -11,21 +11,29 @@ import {
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { checkRateLimit } from "@/lib/rateLimit";
 
-/**
- * Handles the creation of a new profile link via a POST request.
- * It expects a JSON body containing `url`, `label`, and `platform`.
- * Validates the inputs, determines the final platform mapping,
- * and creates a new Link record for the authenticated user.
- *
- * @param {Request} req - The incoming HTTP POST request.
- * @returns {Promise<NextResponse>} JSON response containing the created link or an error.
- */
+const LINK_CREATE_LIMIT = 10;
+const LINK_CREATE_WINDOW_MS = 60 * 1000; // 10 creations per minute per user
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const allowed = checkRateLimit(
+        `link-create:${session.user.email}`,
+        LINK_CREATE_LIMIT,
+        LINK_CREATE_WINDOW_MS
+    );
+
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please slow down." },
+            { status: 429 }
+        );
     }
 
     const body = await req.json();
