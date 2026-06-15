@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import PlatformShowcase from "@/components/PlatformShowcase";
+import { SectionHeader } from "@/components/SectionHeader";
 const stats = [
   { value: "10+", label: "Platforms Supported" },
   { value: "Unlimited", label: "Custom Links" },
@@ -519,33 +520,6 @@ function StatCard({ value, label }: { value: string; label: string }) {
 function SectionWash() {
   return (
     <div className="absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-white/50 to-transparent dark:from-white/[0.03]" />
-  );
-}
-
-function SectionHeader({
-  eyebrow,
-  title,
-  desc,
-  align = "center",
-}: {
-  eyebrow: string;
-  title: string;
-  desc: string;
-  align?: "left" | "center";
-}) {
-  const alignment = align === "center" ? "mx-auto text-center" : "";
-  return (
-    <div className={`max-w-2xl ${alignment}`}>
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300">
-        {eyebrow}
-      </p>
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">
-        {title}
-      </h2>
-      <p className="mt-4 text-base leading-7 text-zinc-600 dark:text-zinc-300">
-        {desc}
-      </p>
-    </div>
   );
 }
 
