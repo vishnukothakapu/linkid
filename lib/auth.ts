@@ -79,23 +79,19 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
 events: {
-  async createUser({ user }) {
-            // Only auto-verify OAuth users — their email is already verified by the provider.
-            // Credential signups go through email verification flow instead.
-            if (user.emailVerified) return;
+    async createUser({ user }) {
+        const account = await prisma.account.findFirst({
+            where: { userId: user.id },
+        });
 
-            const account = await prisma.account.findFirst({
-                where: { userId: user.id },
+        if (account && oauthProviders.has(account.provider)) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: new Date() },
             });
-
-            if (account && oauthProviders.has(account.provider)) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { emailVerified: new Date() },
-                });
-            }
-        },
+        }
     },
+},
     callbacks: {
         async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted

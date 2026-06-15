@@ -23,14 +23,14 @@ export async function GET(req: Request) {
         return NextResponse.redirect(new URL("/login?error=token-expired", req.url));
     }
 
-    // Mark email as verified
-    await prisma.user.update({
-        where: { email: verificationToken.identifier },
-        data: { emailVerified: new Date() },
-    });
-
-    // Clean up used token
-    await prisma.verificationToken.delete({ where: { token } });
+    // Mark email as verified and clean up token atomically
+    await prisma.$transaction([
+        prisma.user.updateMany({
+            where: { email: verificationToken.identifier },
+            data: { emailVerified: new Date() },
+        }),
+        prisma.verificationToken.delete({ where: { token } }),
+    ]);
 
     return NextResponse.redirect(new URL("/login?verified=true", req.url));
 }

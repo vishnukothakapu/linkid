@@ -114,7 +114,10 @@ export async function sendVerificationEmail(
 ): Promise<void> {
   const transporter = createTransporter();
   const from = process.env.EMAIL_FROM || "noreply@linkid.app";
-  const baseUrl = process.env.NEXTAUTH_URL || "https://linkid.qzz.io";
+  const baseUrl = process.env.NEXTAUTH_URL;
+  if (!baseUrl) {
+      throw new Error("NEXTAUTH_URL environment variable is not set");
+  }
   const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
 
   if (!transporter) {
