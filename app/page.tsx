@@ -96,7 +96,7 @@ export default async function Home() {
         {/* Hero Section */}
         <section
           id="hero"
-          className="relative flex min-h-screen items-center px-4 pb-16 pt-32 sm:px-6 lg:px-8"
+          className="relative flex min-h-screen items-center border-b border-violet-200/60 px-4 pb-16 pt-32 sm:px-6 lg:px-8 dark:border-white/10"
         >
           {" "}
           <div className="absolute inset-0 -z-20 bg-[linear-gradient(to_right,rgba(124,58,237,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(99,102,241,0.08)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)]" />
