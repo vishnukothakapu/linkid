@@ -50,7 +50,7 @@ const PLATFORM_BLOCKLIST: Partial<Record<Platform, RegExp>> = {
     // pattern above already rejects anything outside /in|company|school|pub/.
     linkedin:  /\/(messaging|feed|jobs|notifications|search|mynetwork|learning|checkpoint|sales)(?=[/?]|$)/i,
     // Facebook blocklist uses (?=[/?]|$) instead of \b so trailing slashes are caught too.
-    facebook:  /\/(messaging|messages|feed|groups|events|marketplace|gaming|watch|business|pages|help|policies|legal|about|login|checkpoint)(?=[/?]|$)/i,
+    facebook:  /\/(messaging|messages|feed|groups|events|marketplace|gaming|watch|business|pages|help|policies|legal|about|login|checkpoint)(?=[/?]|$)|\/profile\.php(?!\?id=\d)/i,
     youtube:   /\/results\b/i,
     instagram: /\/(explore|stories)\b/i,
 };
