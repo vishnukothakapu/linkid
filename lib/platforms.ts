@@ -21,15 +21,17 @@ export type Platform =
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     github:     /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
 
-    // Tightened to only allow public profile paths: /in/username or /company/name
+    // Tightened to only allow public profile paths: /in/username, /company/name, /school/name, /pub/username
     linkedin:   /^https?:\/\/(www\.)?linkedin\.com\/(in|company|school|pub)\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
 
     leetcode:   /^https?:\/\/(www\.)?leetcode\.com\/u\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
     youtube:    /^https?:\/\/(www\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
     x:          /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
 
-    // Tightened to only allow public profile usernames or profile.php?id= format
-    facebook:   /^https?:\/\/(www\.)?facebook\.com\/(?!(?:gaming|watch|business|marketplace|groups|events|pages|help|policies|legal|about|login|checkpoint)\b)([A-Za-z0-9._-]{1,50}(?<!\.php)|profile\.php\?id=\d+)\/?(\?.*)?$/i,
+    // Tightened to only allow profile.php?id= (checked first) or public usernames.
+    // profile.php?id=\d+ is listed before the username branch so the lookbehind
+    // never has a chance to misfire on the bare "profile.php" string.
+    facebook:   /^https?:\/\/(www\.)?facebook\.com\/(profile\.php\?id=\d+|(?!(?:gaming|watch|business|marketplace|groups|events|pages|help|policies|legal|about|login|checkpoint|messages)(?=[/?]|$))[A-Za-z0-9._-]{1,50})\/?(\?.*)?$/i,
 
     instagram:  /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     discord:    /^https?:\/\/(www\.)?discord\.com\/(users\/\d{17,20}|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
@@ -42,10 +44,13 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
 };
 
 // ─── Platform Blocklists ─────────────────────────────────────────────────────
-// Catches unauthorized feeds, internal app views, and search frames right after domain mapping.
+// Defence-in-depth: catches internal app views even if the main pattern is ever loosened.
 const PLATFORM_BLOCKLIST: Partial<Record<Platform, RegExp>> = {
-    linkedin:  /\/(messaging|feed|jobs|notifications|search|mynetwork|learning|checkpoint|sales)\b/i,
-    facebook:  /\/(messaging|feed|groups|events|marketplace|gaming|watch|business|pages|help|policies|legal|about|login|checkpoint)\b/i,
+    // LinkedIn blocklist is kept as defence-in-depth even though the tightened
+    // pattern above already rejects anything outside /in|company|school|pub/.
+    linkedin:  /\/(messaging|feed|jobs|notifications|search|mynetwork|learning|checkpoint|sales)(?=[/?]|$)/i,
+    // Facebook blocklist uses (?=[/?]|$) instead of \b so trailing slashes are caught too.
+    facebook:  /\/(messaging|messages|feed|groups|events|marketplace|gaming|watch|business|pages|help|policies|legal|about|login|checkpoint)(?=[/?]|$)/i,
     youtube:   /\/results\b/i,
     instagram: /\/(explore|stories)\b/i,
 };
