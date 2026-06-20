@@ -11,6 +11,14 @@ import {
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { checkRateLimit } from "@/lib/rateLimit";
+
+// Maximum number of links a single user can add to their profile.
+// Prevents unbounded database growth and degraded public profile performance.
+const MAX_LINKS_PER_USER = 20;
+
+const LINK_CREATE_LIMIT = 10;
+const LINK_CREATE_WINDOW_MS = 60 * 1000;
 
 /**
  * Handles the creation of a new profile link via a POST request.
@@ -26,6 +34,19 @@ export async function POST(req: Request) {
 
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const allowed = checkRateLimit(
+        `link-create:${session.user.email}`,
+        LINK_CREATE_LIMIT,
+        LINK_CREATE_WINDOW_MS
+    );
+
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please slow down." },
+            { status: 429 }
+        );
     }
 
     const body = await req.json();
@@ -115,7 +136,14 @@ export async function POST(req: Request) {
             const maxOrder = await tx.link.aggregate({
                 where: { userId: user.id },
                 _max: { position: true },
+                _count: { id: true },
             });
+
+            // Enforce per-user link limit atomically inside the transaction
+            // to prevent race conditions where concurrent requests bypass the check.
+            if ((maxOrder._count.id ?? 0) >= MAX_LINKS_PER_USER) {
+                throw Object.assign(new Error("LINK_LIMIT_REACHED"), { code: "LINK_LIMIT_REACHED" });
+            }
 
             return tx.link.create({
                 data: {
@@ -131,6 +159,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ link });
     } catch (err: unknown) {
         const error = err as { code?: string };
+
+        if (error?.code === "LINK_LIMIT_REACHED") {
+            return NextResponse.json(
+                { error: `You can add a maximum of ${MAX_LINKS_PER_USER} links.` },
+                { status: 400 }
+            );
+        }
+
         if (error?.code === "P2002") {
             return NextResponse.json(
                 { error: `You already added your ${finalLabel} link.` },
