@@ -128,18 +128,23 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
             }
+
             if (!token.image && user && "image" in user && user.image) {
                 token.image = user.image;
                 return token;
             }
 
-            if (!token.image && token.email) {
-                const user = await prisma.user.findUnique({
+            // Only query DB for image on the very first sign-in (token.image === undefined).
+            // On subsequent requests token.image is explicitly set to null for users without
+            // an image, preventing a redundant DB hit on every authenticated request.
+            if (token.image === undefined && token.email) {
+                const dbUser = await prisma.user.findUnique({
                     where: { email: token.email },
                     select: { image: true },
                 });
-                token.image = user?.image ?? null;
+                token.image = dbUser?.image ?? null;
             }
+
             return token;
         },
         async session({ session, token }) {
