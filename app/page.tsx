@@ -364,7 +364,7 @@ export default async function Home() {
                 >
                   <Github className="h-5 w-5" />
                 </FooterIcon>
-                <FooterIcon href="https://discord.gg/jydRT5jK" label="Discord">
+                <FooterIcon href="https://discord.gg/Ng4q6quFcq" label="Discord">
                   <DiscordIcon className="h-5 w-5" />
                 </FooterIcon>
                 <FooterIcon

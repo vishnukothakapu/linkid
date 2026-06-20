@@ -20,15 +20,6 @@ const MAX_LINKS_PER_USER = 20;
 const LINK_CREATE_LIMIT = 10;
 const LINK_CREATE_WINDOW_MS = 60 * 1000;
 
-/**
- * Handles the creation of a new profile link via a POST request.
- * It expects a JSON body containing `url`, `label`, and `platform`.
- * Validates the inputs, determines the final platform mapping,
- * and creates a new Link record for the authenticated user.
- *
- * @param {Request} req - The incoming HTTP POST request.
- * @returns {Promise<NextResponse>} JSON response containing the created link or an error.
- */
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 

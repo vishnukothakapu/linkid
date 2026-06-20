@@ -108,3 +108,56 @@ export async function sendDeleteOtpEmail(
     throw error;
   }
 }
+export async function sendVerificationEmail(
+  to: string,
+  token: string
+): Promise<void> {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || "noreply@linkid.app";
+  const baseUrl = process.env.NEXTAUTH_URL;
+  if (!baseUrl) {
+      throw new Error("NEXTAUTH_URL environment variable is not set");
+  }
+  const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+
+  if (!transporter) {
+    const msg = "SMTP is not configured for verification email delivery";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(msg);
+      console.warn(`📧 VERIFY URL: ${verifyUrl}`);
+    }
+    throw new Error(msg);
+  }
+
+  try {
+    await transporter.sendMail({
+      from,
+      to,
+      subject: "LinkID — Verify your email address",
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #fafafa; border-radius: 12px;">
+          <h2 style="margin: 0 0 8px; color: #7c3aed; font-size: 20px;">Welcome to LinkID 🔗</h2>
+          <p style="margin: 0 0 24px; color: #374151; font-size: 14px; line-height: 1.6;">
+            Thanks for signing up! Please verify your email address to activate your account. This link expires in <strong>24 hours</strong>.
+          </p>
+          <a href="${verifyUrl}" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+            Verify Email Address
+          </a>
+          <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+            If you did not create a LinkID account, please ignore this email.
+          </p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.warn(`⚠️ DEV FALLBACK: Failed to send verification email to ${to}`);
+      console.warn(`📧 VERIFY URL: ${verifyUrl}`);
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.error("SMTP Error:", (error as Error).message);
+      return;
+    }
+    throw error;
+  }
+}

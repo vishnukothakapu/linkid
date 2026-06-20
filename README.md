@@ -7,7 +7,7 @@
 
 **One username. Clean, predictable links for every platform.**
 
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/jydRT5jK)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/Ng4q6quFcq)
 
 
 
