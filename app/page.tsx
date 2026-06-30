@@ -13,6 +13,8 @@ import {
   Zap,
   Wand2,
   User,
+  UserPlus,
+Share2,
   BarChart3,
   Globe,
   Moon,
@@ -274,7 +276,44 @@ export default async function Home() {
             </div>
           </div>
         </section>
+{/* How It Works Section */}
+<section
+  id="how-it-works"
+  className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8"
+>
+  <SectionWash />
 
+  <div className="mx-auto max-w-7xl">
+    <SectionHeader
+      eyebrow="How It Works"
+      title="Create your professional identity in 3 simple steps"
+      desc="LinkID helps you claim one clean identity, connect your professional profiles, and share everything through one memorable link."
+    />
+
+    <div className="relative mt-14 grid gap-6 md:grid-cols-3">
+      <HowItWorksCard
+        step="Step 1"
+        icon={<UserPlus className="h-6 w-6" />}
+        title="Claim Your Username"
+        desc="Choose a unique and memorable LinkID username that represents your professional identity."
+      />
+
+      <HowItWorksCard
+        step="Step 2"
+        icon={<Link2 className="h-6 w-6" />}
+        title="Connect Your Profiles"
+        desc="Add GitHub, LinkedIn, LeetCode, portfolio websites, resumes, and other important professional links."
+      />
+
+      <HowItWorksCard
+        step="Step 3"
+        icon={<Share2 className="h-6 w-6" />}
+        title="Share One Clean Link"
+        desc="Use your LinkID URL everywhere — resumes, portfolios, applications, social profiles, and networking platforms."
+      />
+    </div>
+  </div>
+</section>
         {/* Demo Section */}
         <section
           className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8"
@@ -571,7 +610,41 @@ function FeatureCard({
     </div>
   );
 }
+function HowItWorksCard({
+  step,
+  icon,
+  title,
+  desc,
+}: {
+  step: string;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-3xl border border-violet-200/60 bg-white/40 p-6 shadow-lg shadow-violet-500/10 ring-1 ring-violet-200/30 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:border-violet-300/70 hover:bg-white/65 hover:shadow-xl hover:shadow-violet-500/15 dark:border-white/10 dark:bg-white/[0.04] dark:ring-0 dark:shadow-violet-950/5 dark:hover:border-violet-300/30 dark:hover:bg-white/[0.07]">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 text-violet-700 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:from-violet-400/15 dark:to-indigo-400/10 dark:text-violet-200">
+          {icon}
+        </div>
+
+        <span className="rounded-full border border-violet-200/70 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-400/20 dark:bg-white/5 dark:text-violet-200">
+          {step}
+        </span>
+      </div>
+
+      <h3 className="text-xl font-bold text-zinc-950 transition-colors duration-300 group-hover:text-violet-700 dark:text-white dark:group-hover:text-violet-200">
+        {title}
+      </h3>
+
+      <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+        {desc}
+      </p>
+    </div>
+  );
+}
 function DemoRow({
   icon,
   label,
