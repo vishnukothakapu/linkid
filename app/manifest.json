@@ -1,6 +1,11 @@
 {
   "name": "LinkID",
   "short_name": "LinkID",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -31,3 +36,4 @@
   "background_color": "#ffffff",
   "display": "standalone"
 }
+
