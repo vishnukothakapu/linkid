@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { sendSupportEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rateLimit";
+
+const CONTACT_US_LIMIT = 5;
+const CONTACT_US_WINDOW_MS = 60 * 60 * 1000;
 
 function isValidEmail(value: unknown): value is string {
   return typeof value === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -15,6 +19,16 @@ function escapeHtml(value: string): string {
 }
 
 export async function POST(req: Request) {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+  if (!checkRateLimit(`contact-us:${ip}`, CONTACT_US_LIMIT, CONTACT_US_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await req.json();
     const name = typeof body?.name === "string" ? body.name.trim() : "";
