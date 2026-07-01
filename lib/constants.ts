@@ -14,6 +14,9 @@ export const PLATFORMS = {
     WEBSITE: "website",
     OTHER: "other",
     GOOGLE: "google",
+    X: "x",
+    TWITCH: "twitch",
+    DISCORD: "discord",
 } as const;
 
 export type PlatformKey = keyof typeof PLATFORMS;

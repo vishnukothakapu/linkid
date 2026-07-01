@@ -3,16 +3,16 @@
 import { PLATFORMS } from "@/lib/constants";
 
 export type Platform =
-  | "instagram"
-  | "youtube"
-  | "x"
-  | "twitter"
-  | "github"
-  | "linkedin"
-  | "facebook"
-  | "twitch"
-  | "discord"
-  | "tiktok";
+    | "instagram"
+    | "youtube"
+    | "x"
+    | "twitter"
+    | "github"
+    | "linkedin"
+    | "facebook"
+    | "twitch"
+    | "discord"
+    | "tiktok";
 
 /**
  * Detects if a User-Agent string belongs to Android or iOS environments.
@@ -24,12 +24,12 @@ export function getMobileOS(userAgent: string): "android" | "ios" | "unknown" {
 }
 
 /**
- * Given a web URL and a target platform, compiles custom native app deep-link URIs 
+ * Given a web URL and a target platform, compiles custom native app deep-link URIs
  * for Android and iOS devices. Returns null if unsupported.
  */
 export function getDeepLink(
-  platform: string,
-  webUrl: string
+    platform: string,
+    webUrl: string
 ): { android: string | null; ios: string | null } {
   try {
     // Ensure protocol safety during instantiation
@@ -38,7 +38,7 @@ export function getDeepLink(
 
     const url = new URL(safeUrl);
     const cleanPath = url.pathname.replace(/^\/|\/$/g, "");
-    
+
     // Splitting paths through filter(Boolean) eliminates empty structural indices
     const segments = cleanPath.split("/").filter(Boolean);
     const searchParams = url.search; // Retains parameters like tracking markers, analytics, etc.
@@ -73,10 +73,10 @@ export function getDeepLink(
       case PLATFORMS.YOUTUBE: {
         if (url.hostname.includes("youtu.be")) {
           const id = segments[0];
-          return { 
-             android: `vnd.youtube://${id}${searchParams}`, 
-             ios: `https://www.youtube.com/watch?v=${id}${searchParams}` 
-           };
+          return {
+            android: `vnd.youtube://${id}${searchParams}`,
+            ios: `https://www.youtube.com/watch?v=${id}${searchParams}`
+          };
         }
 
         if (segments[0] === "shorts" && segments[1]) {
@@ -101,7 +101,7 @@ export function getDeepLink(
         };
       }
 
-      case "x":
+      case PLATFORMS.X:
       case PLATFORMS.TWITTER: {
         const handle = segments[0];
         if (handle && handle !== "home" && handle !== "explore") {
@@ -131,7 +131,7 @@ export function getDeepLink(
         };
       }
 
-      case "twitch": {
+      case PLATFORMS.TWITCH: {
         const channel = segments[0];
         if (channel) {
           const appLink = `twitch://stream/${channel}`;
@@ -140,9 +140,9 @@ export function getDeepLink(
         return { android: null, ios: null };
       }
 
-      case "tiktok": {
+      case PLATFORMS.TIKTOK: {
         if (/(vt|vm)\.tiktok\.com/i.test(url.hostname)) {
-          return { android: null, ios: null }; 
+          return { android: null, ios: null };
         }
 
         const username = segments[0]?.replace(/^@/, "");
@@ -155,7 +155,7 @@ export function getDeepLink(
         return { android: null, ios: null };
       }
 
-      case "discord": {
+      case PLATFORMS.DISCORD: {
         if (url.hostname.includes("discord.gg")) {
           const inviteCode = segments[0];
           return {
