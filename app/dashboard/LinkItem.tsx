@@ -29,6 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { formatLabel, POPULAR_PLATFORMS } from "@/lib/platformHelpers";
+import { PLATFORMS } from "@/lib/constants";
 export function LinkItem({
     dragListeners,
     dragAttributes,
@@ -50,7 +51,7 @@ export function LinkItem({
     const [url, setUrl] = useState(link.url);
     const [label, setLabel] = useState(link.label || "");
     const isStandardPlatform = Object.keys(PLATFORM_ICONS).includes(link.platform);
-    const initialPlatform = isStandardPlatform ? link.platform : "website";
+    const initialPlatform = isStandardPlatform ? link.platform : PLATFORMS.WEBSITE;
     const [platform, setPlatform] = useState(initialPlatform);
     const [copied, setCopied] = useState(false);
     const Icon = PLATFORM_ICONS[editing ? platform : link.platform] ?? Globe;

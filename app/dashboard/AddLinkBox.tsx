@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast from "react-hot-toast";
+import { PLATFORMS } from "@/lib/constants";
 
 import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
@@ -59,7 +60,7 @@ export default function AddLinkBox({
         }
 
         const finalLabel = label.trim();
-        if (platform === "website" && !finalLabel) {
+        if (platform === PLATFORMS.WEBSITE && !finalLabel) {
             return toast.error("Please enter a name for this link");
         }
 
@@ -119,7 +120,7 @@ export default function AddLinkBox({
                 placeholder={
                     !platform
                         ? "Link Display Name"
-                        : platform === "website"
+                        : platform === PLATFORMS.WEBSITE
                         ? "Link Display Name (Required)"
                         : "Link Display Name (Optional)"
                 }

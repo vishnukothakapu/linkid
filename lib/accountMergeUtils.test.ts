@@ -7,6 +7,7 @@ import {
     hashMergeCode,
     normalizeMergeCode,
 } from "@/lib/accountMergeUtils";
+import { PLATFORMS } from "@/lib/constants";
 
 test("generateMergeCode returns a readable merge code", () => {
     const code = generateMergeCode();
@@ -23,7 +24,7 @@ test("hashMergeCode is deterministic for the same code", () => {
 
 test("buildMergedPlatformSlug avoids collisions", () => {
     const slug = buildMergedPlatformSlug({
-        platform: "github",
+        platform: PLATFORMS.GITHUB,
         sourceIdentifier: "deepika",
         existingPlatforms: new Set(["github-from-deepika", "github-from-deepika-2"]),
     });

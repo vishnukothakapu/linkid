@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/constants";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { checkRateLimit } from "@/lib/rateLimit";
@@ -95,7 +96,7 @@ export async function PUT(
     const detectedPlatform = explicitPlatform || detectPlatform(finalUrlForPlatform);
     let finalPlatform: string;
 
-    if (detectedPlatform === "website") {
+    if (detectedPlatform === PLATFORMS.WEBSITE) {
       finalPlatform = slugifyPlatform(activeLabel);
 
       if (!finalPlatform) {

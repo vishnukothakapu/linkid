@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test, before } from "node:test";
+import { PLATFORMS } from "@/lib/constants";
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
 let mockSession: unknown = null;
@@ -64,7 +65,7 @@ function ctx(id = "test-id") {
     return { params: Promise.resolve({ id }) };
 }
 
-function ownerLink(platform = "github") {
+function ownerLink(platform = PLATFORMS.GITHUB) {
     return { id: "test-id", platform, user: { email: "owner@example.com" } };
 }
 
@@ -103,7 +104,7 @@ test("PUT 400 — URL fails basic validation (malformed)", async () => {
 
 test("PUT 400 — URL does not match stored platform (different-platform URL)", async () => {
     mockSession = { user: { email: "owner@example.com" } };
-    mockLink = ownerLink("github");
+    mockLink = ownerLink(PLATFORMS.GITHUB);
     // Valid LinkedIn URL for a GitHub link → platform mismatch
     const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
     assert.equal(res.status, 400);
@@ -120,7 +121,7 @@ test("PUT 400 — nothing to update (empty body)", async () => {
 
 test("PUT 200 — valid URL matching stored platform updates the link", async () => {
     mockSession = { user: { email: "owner@example.com" } };
-    mockLink = ownerLink("github");
+    mockLink = ownerLink(PLATFORMS.GITHUB);
     capturedUpdateArgs = null;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);

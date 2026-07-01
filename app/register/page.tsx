@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useCsrf } from "@/lib/useCsrf";
+import { PLATFORMS } from "@/lib/constants";
 
 import { Navbar } from "../components/Navbar";
 
@@ -99,9 +100,9 @@ export default function RegisterPage() {
                             onClick={async () => {
                                 setGoogleLoading(true);
                                 try {
-                                    await signIn("google", { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
                                 } finally {
-                                    setGoogleLoading(false);
+                                    setGoogleLoading(false);``
                                 }
                             }}
                         >
@@ -116,7 +117,7 @@ export default function RegisterPage() {
                             onClick={async () => {
                                 setGithubLoading(true);
                                 try {
-                                    await signIn("github", { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
                                 } finally {
                                     setGithubLoading(false);
                                 }

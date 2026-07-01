@@ -1,5 +1,7 @@
 // Lib/platforms.ts
 
+import { PLATFORMS } from "@/lib/constants";
+
 export type Platform =
     | "github"
     | "linkedin"
@@ -87,11 +89,11 @@ export function detectPlatform(url: string): Platform {
     const normalized = normalizeUrl(url);
 
     for (const [platform, regex] of Object.entries(PLATFORM_PATTERNS) as [Platform, RegExp][]) {
-        if (platform === "website") continue;
+        if (platform === PLATFORMS.WEBSITE) continue;
         if (regex.test(normalized)) return platform;
     }
 
-    return "website";
+    return PLATFORMS.WEBSITE;
 }
 
 export function isKnownPlatform(p: string): p is Platform {

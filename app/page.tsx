@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import OnboardingTour from "@/app/components/OnboardingTour";
 import TourHelpButton from "@/app/components/TourHelpButton";
+import { PLATFORMS } from '@/lib/constants';
 
 import {
   Link2,

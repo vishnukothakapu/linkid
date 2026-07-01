@@ -7,9 +7,10 @@ import type { NextAuthOptions } from "next-auth";
 
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
+import { PLATFORMS } from "@/lib/constants";
 
 
-const oauthProviders = new Set(["google", "github"]);
+const oauthProviders = new Set(["google", PLATFORMS.GITHUB]);
 
 function getOAuthProfileImage(profile: unknown): string | null {
     if (!profile || typeof profile !== "object") return null;

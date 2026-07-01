@@ -10,6 +10,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { PLATFORMS } from "@/lib/constants";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -80,7 +81,7 @@ export default function LoginPage() {
               onClick={async () => {
                 setGoogleLoading(true);
                 try {
-                  await signIn("google", { callbackUrl: "/dashboard" });
+                  await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
                 } finally {
                   setGoogleLoading(false);
                 }
@@ -97,7 +98,7 @@ export default function LoginPage() {
               onClick={async () => {
                 setGithubLoading(true);
                 try {
-                  await signIn("github", { callbackUrl: "/dashboard" });
+                  await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
                 } finally {
                   setGithubLoading(false);
                 }

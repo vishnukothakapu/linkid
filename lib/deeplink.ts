@@ -1,5 +1,7 @@
 // lib/deeplink.ts
 
+import { PLATFORMS } from "@/lib/constants";
+
 export type Platform =
   | "instagram"
   | "youtube"
@@ -42,7 +44,7 @@ export function getDeepLink(
     const searchParams = url.search; // Retains parameters like tracking markers, analytics, etc.
 
     switch (platform.toLowerCase()) {
-      case "instagram": {
+      case PLATFORMS.INSTAGRAM: {
         const firstSegment = segments[0];
 
         // Process profile requests safely while preserving explicit query parameters
@@ -68,7 +70,7 @@ export function getDeepLink(
         return { android: genericLink, ios: genericLink };
       }
 
-      case "youtube": {
+      case PLATFORMS.YOUTUBE: {
         if (url.hostname.includes("youtu.be")) {
           const id = segments[0];
           return { 
@@ -100,7 +102,7 @@ export function getDeepLink(
       }
 
       case "x":
-      case "twitter": {
+      case PLATFORMS.TWITTER: {
         const handle = segments[0];
         if (handle && handle !== "home" && handle !== "explore") {
           if (segments[1] === "status") {
@@ -113,14 +115,14 @@ export function getDeepLink(
         return { android: "twitter://", ios: "twitter://" };
       }
 
-      case "linkedin": {
+      case PLATFORMS.LINKEDIN: {
         return {
           android: `intent://www.linkedin.com/${cleanPath}${searchParams}#Intent;package=com.linkedin.android;scheme=https;end`,
           ios: safeUrl,
         };
       }
 
-      case "facebook": {
+      case PLATFORMS.FACEBOOK: {
         // Utilizing facewebmodal uniformly resolves both alphanumeric handles and tracking suffixes safely
         const fbScheme = `fb://facewebmodal/f?href=${encodeURIComponent(safeUrl)}`;
         return {
@@ -165,7 +167,7 @@ export function getDeepLink(
         return { android: discordScheme, ios: discordScheme };
       }
 
-      case "github": {
+      case PLATFORMS.GITHUB: {
         const githubScheme = safeUrl.replace(/^https?:\/\//i, "github://");
         return { android: githubScheme, ios: githubScheme };
       }

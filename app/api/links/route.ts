@@ -8,6 +8,7 @@ import {
     detectPlatform,
     validatePlatformUrl,
 } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/constants";
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
     let finalPlatform: string;
     let finalLabel: string;
 
-    if (detectedPlatform === "website") {
+    if (detectedPlatform === PLATFORMS.WEBSITE) {
         if (!customLabel) {
             return NextResponse.json(
                 { error: "Please enter a name for this link" },
