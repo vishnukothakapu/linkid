@@ -10,7 +10,7 @@ import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 import { PLATFORMS } from "@/lib/constants";
 
 
-const oauthProviders = new Set(["google", PLATFORMS.GITHUB]);
+const oauthProviders = new Set<string>([PLATFORMS.GITHUB, PLATFORMS.GOOGLE]);
 
 function getOAuthProfileImage(profile: unknown): string | null {
     if (!profile || typeof profile !== "object") return null;

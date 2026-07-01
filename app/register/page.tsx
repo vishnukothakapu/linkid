@@ -102,7 +102,7 @@ export default function RegisterPage() {
                                 try {
                                     await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
                                 } finally {
-                                    setGoogleLoading(false);``
+                                    setGoogleLoading(false);
                                 }
                             }}
                         >
