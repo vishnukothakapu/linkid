@@ -14,40 +14,45 @@ export type Platform =
     | "devto"
     | "medium"
     | "dribbble"
+    | "codeforces"
+    | "codechef"
     | "website";
+
 
 // ─── URL Validation Patterns ─────────────────────────────────────────────────
 
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
-    github:     /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    
+    github: /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+
     // Catch-all domain suffixes force immediate platform identification for paths like /feed or /jobs,
     // stopping links from bypassing validation filters as generic website URLs.
-    linkedin:   /^https?:\/\/(www\.)?linkedin\.com\/.*$/i,
-    
-    leetcode:   /^https?:\/\/(www\.)?leetcode\.com\/u\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    youtube:    /^https?:\/\/(www\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
-    x:          /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
-    
+    linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.*$/i,
+
+    leetcode: /^https?:\/\/(www\.)?leetcode\.com\/(u\/)?[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    youtube: /^https?:\/\/(www\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
+    x: /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
+
     // Generic domain catching ensures subpaths like /groups or /marketplace map to Facebook before validation.
-    facebook:   /^https?:\/\/(www\.)?facebook\.com\/.*$/i,
-    
-    instagram:  /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
-    discord:    /^https?:\/\/(www\.)?discord\.com\/(users\/\d{17,20}|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
-    twitch:     /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
-    hashnode:   /^https?:\/\/([A-Za-z0-9_-]+\.hashnode\.(com|dev)|hashnode\.(com|dev)\/[A-Za-z0-9_@-]+)\/?(\?.*)?$/i,
-    devto:      /^https?:\/\/(www\.)?dev\.to\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    medium:     /^https?:\/\/(www\.)?medium\.com\/@[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    dribbble:   /^https?:\/\/(www\.)?dribbble\.com\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    website:    /^https?:\/\/.+/i,
+    facebook: /^https?:\/\/(www\.)?facebook\.com\/.*$/i,
+
+    instagram: /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
+    discord: /^https?:\/\/(www\.)?discord\.com\/(users\/\d+|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
+    twitch: /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
+    hashnode: /^https?:\/\/([A-Za-z0-9_-]+\.hashnode\.(com|dev)|hashnode\.(com|dev)\/[A-Za-z0-9_@-]+)\/?(\?.*)?$/i,
+    devto: /^https?:\/\/(www\.)?dev\.to\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    medium: /^https?:\/\/(www\.)?medium\.com\/@?[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    dribbble: /^https?:\/\/(www\.)?dribbble\.com\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    codechef: /^https?:\/\/(www\.)?codechef\.com\/users\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    codeforces: /^https?:\/\/(www\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    website: /^https?:\/\/.+/i,
 };
 
 // ─── Platform Blocklists ─────────────────────────────────────────────────────
-// Catches unauthorized feeds, internal app views, and search frames right after domain mapping.
+// Defence-in-depth: catches internal app views even if the main pattern is ever loosened.
 const PLATFORM_BLOCKLIST: Partial<Record<Platform, RegExp>> = {
-    linkedin:  /\/(messaging|feed|jobs|notifications|search)\b/i,
-    facebook:  /\/(messaging|feed|groups|events|marketplace)\b/i,
-    youtube:   /\/results\b/i,
+    linkedin: /\/(messaging|feed|jobs|notifications|search)\b/i,
+    facebook: /\/(messaging|feed|groups|events|marketplace)\b/i,
+    youtube: /\/results\b/i,
     instagram: /\/(explore|stories)\b/i,
 };
 
@@ -62,7 +67,7 @@ export type DeepLinkResult = { android: string | null; ios: string | null };
 export function normalizeUrl(url: string): string {
     let u = url.trim();
     if (!/^https?:/i.test(u)) u = "https://" + u;
-    
+
     try {
         const parsed = new URL(u);
         let path = parsed.pathname;
@@ -90,7 +95,7 @@ export function detectPlatform(url: string): Platform {
 }
 
 export function isKnownPlatform(p: string): p is Platform {
-  return Object.prototype.hasOwnProperty.call(PLATFORM_PATTERNS, p);
+    return Object.prototype.hasOwnProperty.call(PLATFORM_PATTERNS, p);
 }
 
 export function validatePlatformUrl(
@@ -99,6 +104,8 @@ export function validatePlatformUrl(
 ): boolean {
     const normalized = normalizeUrl(url);
     const targetPlatform = platform.toLowerCase() as Platform;
+
+    if (/\/(messaging|feed)\b/i.test(normalized)) return false;
 
     const pattern = PLATFORM_PATTERNS[targetPlatform];
     if (!pattern || !pattern.test(normalized)) return false;

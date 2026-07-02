@@ -7,7 +7,7 @@
 
 **One username. Clean, predictable links for every platform.**
 
-[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/jydRT5jK)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/Ng4q6quFcq)
 
 
 
@@ -137,6 +137,9 @@ GITHUB_CLIENT_SECRET="your-github-client-secret"
 ```bash
 # Run migrations
 npx prisma migrate dev
+
+# If migrations aren't working as expected, check /prisma/migrations find the latest init migration. Mark migrations before that as applied using :
+npx prisma migrate resolve --applied <migration_name>
 
 # (Optional) Open Prisma Studio to inspect data
 npx prisma studio

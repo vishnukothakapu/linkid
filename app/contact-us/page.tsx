@@ -81,7 +81,7 @@ export default function ContactUsPage() {
                 Browse Documentation
               </Link>
             <a
-  href="https://discord.gg/jydRT5jK"
+  href="https://discord.gg/Ng4q6quFcq"
   target="_blank"
   rel="noopener noreferrer"
   className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"

@@ -78,16 +78,20 @@ export const authOptions: NextAuthOptions = {
             },
         }),
     ],
+events: {
+    async createUser({ user }) {
+        const account = await prisma.account.findFirst({
+            where: { userId: user.id },
+        });
 
-    events: {
-        async createUser({ user }) {
+        if (account && oauthProviders.has(account.provider)) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: { emailVerified: new Date() },
             });
-        },
+        }
     },
-
+},
     callbacks: {
         async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted
@@ -128,18 +132,23 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
             }
+
             if (!token.image && user && "image" in user && user.image) {
                 token.image = user.image;
                 return token;
             }
 
-            if (!token.image && token.email) {
-                const user = await prisma.user.findUnique({
+            // Only query DB for image on the very first sign-in (token.image === undefined).
+            // On subsequent requests token.image is explicitly set to null for users without
+            // an image, preventing a redundant DB hit on every authenticated request.
+            if (token.image === undefined && token.email) {
+                const dbUser = await prisma.user.findUnique({
                     where: { email: token.email },
                     select: { image: true },
                 });
-                token.image = user?.image ?? null;
+                token.image = dbUser?.image ?? null;
             }
+
             return token;
         },
         async session({ session, token }) {

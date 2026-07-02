@@ -16,11 +16,14 @@ export function ProfileLinkItem({ link, username }: ProfileLinks) {
     const Icon =
         PLATFORM_ICONS[link.platform] ?? Globe;
 
+    const ariaLabel = `Visit ${link.label || link.platform}`;
+
     return (
         <a
             href={`/${username}/${link.platform}`}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={ariaLabel}
             className="group flex items-center justify-between rounded-lg border bg-background px-4 py-3 transition hover:bg-muted"
         >
             <div className="flex items-center gap-3">

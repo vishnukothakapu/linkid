@@ -14,11 +14,6 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
             return {
                 title: `${username} | LinkID`,
                 description: `Check out ${username}'s LinkID profile.`,
-                openGraph: {
-                    title: `${username} | LinkID`,
-                    description: `Check out ${username}'s LinkID profile.`,
-                    url: `https://linkid.vercel.app/${username}`,
-                },
             };
         }
 
@@ -27,11 +22,6 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         return {
             title: `${canonicalUsername} | LinkID`,
             description: `Check out ${canonicalUsername}'s LinkID profile.`,
-            openGraph: {
-                title: `${canonicalUsername} | LinkID`,
-                description: `Check out ${canonicalUsername}'s LinkID profile.`,
-                url: `https://linkid.vercel.app/${canonicalUsername}`,
-            },
         };
     } catch {
         return {
