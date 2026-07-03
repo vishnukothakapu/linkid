@@ -7,11 +7,17 @@ import {
     Facebook,
     Instagram,
     Twitch,
-
 } from "lucide-react";
+
 import { FaDiscord, FaDribbble, FaMedium } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
-import { SiHashnode, SiDevdotto } from "react-icons/si";
+import {
+    SiHashnode,
+    SiDevdotto,
+    SiCodechef,
+    SiCodeforces,
+} from "react-icons/si";
+
 import type { ComponentType, SVGProps } from "react";
 
 export const PLATFORMS = {
@@ -30,6 +36,8 @@ export const PLATFORMS = {
     devto: { icon: SiDevdotto, name: "Dev.to" },
     medium: { icon: FaMedium, name: "Medium" },
     dribbble: { icon: FaDribbble, name: "Dribbble" },
+    codechef: { icon: SiCodechef, name: "CodeChef" },
+    codeforces: { icon: SiCodeforces, name: "Codeforces" },
 } as const;
 
 export const PLATFORM_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> =
@@ -41,24 +49,3 @@ export const PLATFORM_NAMES: Record<string, string> =
     Object.fromEntries(
         Object.entries(PLATFORMS).map(([key, value]) => [key, value.name])
     ) as Record<string, string>;
-import { SiCodeforces } from "react-icons/si";
-import { SiCodechef } from "react-icons/si";
-export const PLATFORM_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
-    github: Github,
-    linkedin: Linkedin,
-    leetcode: Code2,
-    website: Globe,
-    portfolio: Globe,
-    youtube: Youtube,
-    x: FaXTwitter,
-    facebook: Facebook,
-    instagram: Instagram,
-    twitch: Twitch,
-    discord: FaDiscord,
-    hashnode: SiHashnode,
-    devto: SiDevdotto,
-    medium: FaMedium,
-    dribbble: FaDribbble,
-    codechef: SiCodechef,
-    codeforces: SiCodeforces,
-};
