@@ -8,6 +8,7 @@ import { trackLinkClick } from "@/lib/analytics";
 import { resolveUserByUsername } from "@/lib/userLookup";
 // ✨ Fixed: Correct module reference target mapping
 import { getMobileOS, getDeepLink } from "@/lib/deeplink";
+import { isSafeRedirectUrl } from "@/lib/urlValidation";
 
 // ✨ Platform package registry mapping fallback for Android Intents
 const ANDROID_PACKAGES: Record<string, string> = {
@@ -54,7 +55,16 @@ export default async function PlatformRedirect({
 
     if (!link) notFound();
 
-    // Track analytics asynchronously safely 
+    // Revalidate the redirect target's scheme even though it was already
+    // checked when the link was created or updated. `link.url` below is
+    // rendered into a `<meta http-equiv="refresh">` tag, an inline script,
+    // an `<a href>`, and passed to `redirect()` — a `javascript:`, `data:`,
+    // or otherwise non-http(s) value must never reach any of those sinks.
+    if (!isSafeRedirectUrl(link.url)) {
+        notFound();
+    }
+
+    // Track analytics asynchronously safely
     await trackLinkClick({
         linkId: link.id,
         userId: link.userId,
