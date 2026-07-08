@@ -1,10 +1,23 @@
 import "../lib/prisma";
 import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
+import { processAnalyticsJob } from "../lib/analytics";
 
-// Example handlers: extend this map with your application's heavy tasks
+type AnalyticsJobPayload = {
+    linkId: string;
+    userId: string;
+    userAgent: string | null;
+    referrer: string | null;
+    country: string | null;
+    acceptLanguage: string | null;
+    ip: string | null;
+};
+
 const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
+  "analytics-click": async (payload) => {
+    const data = payload as unknown as AnalyticsJobPayload;
+    await processAnalyticsJob(data);
+  },
   "send-email": async (payload) => {
-    // placeholder: integrate with real email provider
     console.log("[worker] send-email", payload);
   },
   "recalculate-analytics": async (payload) => {
