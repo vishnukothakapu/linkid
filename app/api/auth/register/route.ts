@@ -4,9 +4,12 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { sendVerificationEmail } from "@/lib/email";
+import { signupSchema } from "@/lib/validations/auth";
 
 const REGISTER_LIMIT = 5;
 const REGISTER_WINDOW_MS = 60 * 60 * 1000;
+
+const registerSchema = signupSchema.pick({ email: true, password: true });
 
 export async function POST(req: Request) {
     const ip =
@@ -29,10 +32,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-        if (!passwordRegex.test(password)) {
+        const result = registerSchema.safeParse({ email, password });
+        if (!result.success) {
+            const fieldErrors = result.error.flatten().fieldErrors;
+            if (fieldErrors.email) {
+                return NextResponse.json(
+                    { error: "Invalid email address" },
+                    { status: 400 },
+                );
+            }
             return NextResponse.json(
                 { error: "Password does not meet requirements" },
                 { status: 400 },
@@ -46,7 +54,7 @@ export async function POST(req: Request) {
             user = await prisma.user.create({
                 data: {
                     name,
-                    email: normalizedEmail,
+                    email: result.data.email,
                     password: hashedPassword,
                     // emailVerified intentionally left null — set only after verification
                 },
@@ -69,7 +77,7 @@ export async function POST(req: Request) {
 
         await prisma.verificationToken.create({
             data: {
-                identifier: normalizedEmail,
+                identifier: result.data.email,
                 token,
                 expires,
             },
@@ -77,10 +85,10 @@ export async function POST(req: Request) {
 
         // Send verification email — non-blocking in dev if SMTP not configured
         try {
-            await sendVerificationEmail(normalizedEmail, token);
+            await sendVerificationEmail(result.data.email, token);
         } catch {
             // Email sending failure should not block registration
-            console.error("Failed to send verification email to", normalizedEmail);
+            console.error("Failed to send verification email to", result.data.email);
         }
 
         return NextResponse.json(
