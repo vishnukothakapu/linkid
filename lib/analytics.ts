@@ -17,7 +17,7 @@ type TrackClickInput = {
     headers: Headers;
 };
 
-type AnalyticsJobPayload = {
+export type AnalyticsJobPayload = {
     linkId: string;
     userId: string;
     userAgent: string | null;

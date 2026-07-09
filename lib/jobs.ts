@@ -36,23 +36,40 @@ export async function markJobFailed(id: string, error?: string) {
   });
 }
 
+export async function releaseJob(id: string) {
+  return prisma.job.update({
+    where: { id },
+    data: { status: "PENDING", updatedAt: new Date() },
+  });
+}
+
 // Polling-based worker helper: finds the next eligible job and marks it processing.
-export async function claimNextJob() {
+// Optionally filter by job type. If a non-matching job is found first, it is left
+// untouched so other workers can process it.
+export async function claimNextJob(type?: string) {
   const now = new Date();
-  // find a pending or scheduled job whose runAfter is null or in the past
+  const where: Prisma.JobWhereInput = type
+    ? {
+        type,
+        OR: [
+          { status: "PENDING" },
+          { status: "SCHEDULED", runAfter: { lte: now } },
+        ],
+      }
+    : {
+        OR: [
+          { status: "PENDING" },
+          { status: "SCHEDULED", runAfter: { lte: now } },
+        ],
+      };
+
   const job = await prisma.job.findFirst({
-    where: {
-      OR: [
-        { status: "PENDING" },
-        { status: "SCHEDULED", runAfter: { lte: now } },
-      ],
-    },
+    where,
     orderBy: { createdAt: "asc" },
   });
 
   if (!job) return null;
 
-  // try to atomically mark processing
   try {
     const claimed = await prisma.job.update({
       where: { id: job.id },
@@ -84,6 +101,7 @@ const jobs = {
   enqueueJob,
   getJob,
   claimNextJob,
+  releaseJob,
   processJobWithHandler,
 };
 

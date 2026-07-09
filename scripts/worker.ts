@@ -1,16 +1,6 @@
 import "../lib/prisma";
 import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
-import { processAnalyticsJob } from "../lib/analytics";
-
-type AnalyticsJobPayload = {
-    linkId: string;
-    userId: string;
-    userAgent: string | null;
-    referrer: string | null;
-    country: string | null;
-    acceptLanguage: string | null;
-    ip: string | null;
-};
+import { processAnalyticsJob, type AnalyticsJobPayload } from "../lib/analytics";
 
 const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
   "analytics-click": async (payload) => {

@@ -1,22 +1,12 @@
 import { NextResponse } from "next/server";
-import { claimNextJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
-import { processAnalyticsJob } from "@/lib/analytics";
+import { claimNextJob, releaseJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
+import { processAnalyticsJob, type AnalyticsJobPayload } from "@/lib/analytics";
 import type { Prisma } from "@prisma/client";
 
 const BATCH_SIZE = 50;
 const MAX_PROCESSING_TIME_MS = 50_000;
 
-type AnalyticsJobPayload = {
-    linkId: string;
-    userId: string;
-    userAgent: string | null;
-    referrer: string | null;
-    country: string | null;
-    acceptLanguage: string | null;
-    ip: string | null;
-};
-
-export async function POST(req: Request) {
+async function handleRequest(req: Request) {
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
@@ -30,13 +20,8 @@ export async function POST(req: Request) {
 
     try {
         while (Date.now() - startTime < MAX_PROCESSING_TIME_MS && processed < BATCH_SIZE) {
-            const job = await claimNextJob();
+            const job = await claimNextJob("analytics-click");
             if (!job) break;
-
-            if (job.type !== "analytics-click") {
-                await markJobCompleted(job.id);
-                continue;
-            }
 
             try {
                 const payload = job.payload as Prisma.JsonValue as AnalyticsJobPayload;
@@ -62,4 +47,12 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
+}
+
+export async function POST(req: Request) {
+    return handleRequest(req);
+}
+
+export async function GET(req: Request) {
+    return handleRequest(req);
 }
