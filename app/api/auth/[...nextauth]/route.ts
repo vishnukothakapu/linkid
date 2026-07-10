@@ -17,31 +17,15 @@ const handler = async (req: NextRequest, ctx: { params: Promise<{ nextauth: stri
       } else {
         const clone = req.clone();
         const formData = await clone.formData();
-        rememberMe = formData.get("rememberMe") === "true";
+        const remVal = formData.get("rememberMe");
+        rememberMe = remVal === "true" || remVal === "on";
       }
-
-      const cookieStore = await cookies();
-      cookieStore.set("remember-me", rememberMe ? "true" : "false", {
-        maxAge: rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60,
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
     } catch (e) {
       console.error("Error parsing form data in auth wrapper:", e);
     }
-  } else if (pathname.includes("/callback/")) {
+  } else if (pathname.includes("/callback/") && !pathname.endsWith("/callback/credentials")) {
     // Default OAuth logins to be remembered (30 days)
     rememberMe = true;
-    const cookieStore = await cookies();
-    cookieStore.set("remember-me", "true", {
-      maxAge: 30 * 24 * 60 * 60,
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
   } else if (req.method === "POST" && pathname.endsWith("/signout")) {
     const cookieStore = await cookies();
     cookieStore.delete("remember-me");

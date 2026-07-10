@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
+import { cookies } from "next/headers";
 
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
@@ -59,6 +60,7 @@ export const authOptions: NextAuthOptions = {
             credentials: {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
+                rememberMe: { label: "Remember Me", type: "text" },
             },
 
             async authorize(credentials) {
@@ -94,6 +96,29 @@ events: {
     },
 },
     callbacks: {
+        async signIn({ account, credentials }) {
+            const cookieStore = await cookies();
+            if (account?.provider === "credentials" && credentials) {
+                const rememberMe = credentials.rememberMe === "true" || credentials.rememberMe === true || credentials.rememberMe === "on";
+                cookieStore.set("remember-me", rememberMe ? "true" : "false", {
+                    maxAge: rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60,
+                    path: "/",
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "lax",
+                });
+            } else if (account?.provider && account.provider !== "credentials") {
+                // Default OAuth logins to be remembered (30 days)
+                cookieStore.set("remember-me", "true", {
+                    maxAge: 30 * 24 * 60 * 60,
+                    path: "/",
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "lax",
+                });
+            }
+            return true;
+        },
         async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted
             if (token.sub && (await isUserSessionInvalidated(token.sub))) {
