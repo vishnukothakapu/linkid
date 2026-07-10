@@ -34,6 +34,7 @@
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "disposable-email-domains": "^1.0.62",
     "dotenv": "^17.2.3",
     "driver.js": "^1.4.0",
     "lucide-react": "^0.562.0",
