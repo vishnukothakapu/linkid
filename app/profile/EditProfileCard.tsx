@@ -54,7 +54,7 @@ export default function EditProfileCard({
             }
 
             try {
-                const res = await fetch(`/api/username/check?username=${username}`);
+                const res = await fetch(`/api/username/check?username=${encodeURIComponent(username)}`);
                 const data = await res.json();
 
                 if (requestId === latestRequestId.current) {
