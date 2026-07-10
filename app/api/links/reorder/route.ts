@@ -85,6 +85,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Reorder conflict, please retry" }, { status: 409 });
     }
 
+    const { revalidateTag } = await import("next/cache");
+    if (user.username) {
+      revalidateTag(`profile-${user.username}`);
+    }
+
     return NextResponse.json({ ok: true, changed: updates.length });
   } catch (err) {
     console.error("/api/links/reorder error", err);

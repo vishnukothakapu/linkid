@@ -148,6 +148,11 @@ export async function POST(req: Request) {
             });
         });
 
+        const { revalidateTag } = await import("next/cache");
+        if (user.username) {
+            revalidateTag(`profile-${user.username}`);
+        }
+
         return NextResponse.json({ link });
     } catch (err: unknown) {
         const error = err as { code?: string };
