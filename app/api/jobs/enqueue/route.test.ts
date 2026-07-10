@@ -21,18 +21,9 @@ mock.module("@/lib/rateLimit", {
     },
 });
 
-mock.module("@/lib/prisma", {
-    defaultExport: {
-        job: {
-            create: () => Promise.resolve(mockCreatedJob),
-        },
-    },
+mock.module("@/lib/jobs", {
     namedExports: {
-        prisma: {
-            job: {
-                create: () => Promise.resolve(mockCreatedJob),
-            },
-        },
+        enqueueJob: () => Promise.resolve(mockCreatedJob),
     },
 });
 

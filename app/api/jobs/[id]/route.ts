@@ -18,9 +18,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         const job = await getJob(id);
         if (!job) return NextResponse.json({ error: "not found" }, { status: 404 });
         return NextResponse.json(job);
-    } catch (err: unknown) {
-        return NextResponse.json({
-            error: err instanceof Error ? err.message : String(err),
-        }, { status: 500 });
+    } catch {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

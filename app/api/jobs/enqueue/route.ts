@@ -27,12 +27,21 @@ export async function POST(req: Request) {
         );
     }
 
+    let body: unknown;
     try {
-        const body = await req.json();
+        body = await req.json();
+    } catch (err: unknown) {
+        if (err instanceof SyntaxError) {
+            return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+        }
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+
+    try {
         const parsed = enqueueJobSchema.safeParse(body);
 
         if (!parsed.success) {
-            const firstError = parsed.error.errors[0]?.message ?? "Invalid request";
+            const firstError = parsed.error.issues[0]?.message ?? "Invalid request";
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
 
@@ -44,8 +53,7 @@ export async function POST(req: Request) {
         );
         return NextResponse.json({ id: job.id });
     } catch (err: unknown) {
-        return NextResponse.json({
-            error: err instanceof Error ? err.message : String(err),
-        }, { status: 500 });
+        console.error("Failed to enqueue job:", err);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

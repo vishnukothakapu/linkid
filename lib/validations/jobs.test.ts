@@ -19,7 +19,7 @@ test("enqueueJobSchema rejects unknown job type", () => {
     assert.equal(result.success, false);
     if (!result.success) {
         assert.ok(result.error.issues.length > 0);
-        assert.match(result.error.issues[0].message, /expected one of/i);
+        assert.match(result.error.issues[0].message, /unsupported job type/i);
     }
 });
 
