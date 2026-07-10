@@ -128,6 +128,11 @@ export async function PUT(
       data,
     });
 
+    const { revalidateTag } = await import("next/cache");
+    if (link.user.username) {
+      revalidateTag(`profile-${link.user.username}`);
+    }
+
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -182,6 +187,11 @@ export async function DELETE(
   await prisma.link.delete({
     where: { id },
   });
+
+  const { revalidateTag } = await import("next/cache");
+  if (link.user.username) {
+    revalidateTag(`profile-${link.user.username}`);
+  }
 
   return NextResponse.json({ success: true });
 }

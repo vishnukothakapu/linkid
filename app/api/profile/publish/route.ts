@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 
 export async function POST() {
   try {
@@ -16,7 +17,7 @@ export async function POST() {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true },
+      select: { id: true, username: true },
     });
 
     if (!user) {
@@ -27,6 +28,10 @@ export async function POST() {
     }
 
     const { published, diff } = await publishProfileDraft(user.id);
+
+    if (user.username) {
+      revalidateTag(`profile-${user.username}`);
+    }
 
     return NextResponse.json(
       {
