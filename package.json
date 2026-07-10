@@ -11,7 +11,9 @@
     "postinstall": "node scripts/postinstall-prisma-generate.mjs",
     "migrate:deploy:safe": "node scripts/safe-prisma-migrate-deploy.mjs",
     "lint": "eslint",
-    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts lib/accountMergeUtils.test.ts lib/imageValidation.test.ts lib/urlValidation.test.ts"
+    "test": "tsx --test lib/csrf.test.ts lib/middleware/csrf.test.ts lib/analytics.test.ts lib/accountMergeUtils.test.ts lib/imageValidation.test.ts lib/urlValidation.test.ts",
+    "test:ui": "jest",
+    "test:ui:watch": "jest --watch"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -53,6 +55,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/bn.js": "^5.2.0",
     "@types/body-parser": "^1.19.6",
     "@types/bson": "^4.0.5",
@@ -64,6 +68,7 @@
     "@types/express": "^5.0.6",
     "@types/form-data": "^2.2.1",
     "@types/glob": "^8.1.0",
+    "@types/jest": "^30.0.0",
     "@types/lru-cache": "^7.10.9",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",
@@ -73,8 +78,11 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "prisma": "^7.2.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5"
