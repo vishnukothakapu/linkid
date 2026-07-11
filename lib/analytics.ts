@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { enqueueJob } from "@/lib/jobs";
 import {
     detectDeviceType,
     getForwardedIp,
@@ -16,6 +17,16 @@ type TrackClickInput = {
     headers: Headers;
 };
 
+export type AnalyticsJobPayload = {
+    linkId: string;
+    userId: string;
+    userAgent: string | null;
+    referrer: string | null;
+    country: string | null;
+    acceptLanguage: string | null;
+    ip: string | null;
+};
+
 export async function trackLinkClick(input: TrackClickInput): Promise<void> {
     const { linkId, userId, headers } = input;
 
@@ -24,6 +35,23 @@ export async function trackLinkClick(input: TrackClickInput): Promise<void> {
     const country = headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry");
     const acceptLanguage = headers.get("accept-language");
     const ip = getForwardedIp(headers);
+
+    const jobPayload: AnalyticsJobPayload = {
+        linkId,
+        userId,
+        userAgent,
+        referrer,
+        country,
+        acceptLanguage,
+        ip,
+    };
+
+    await enqueueJob("analytics-click", jobPayload);
+}
+
+export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise<void> {
+    const { linkId, userId, userAgent, referrer, country, acceptLanguage, ip } = payload;
+
     const isBot = isLikelyBot(userAgent);
     const deviceType = detectDeviceType(userAgent);
     const visitorKey = isBot
