@@ -18,10 +18,33 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         }
 
         const canonicalUsername = resolved.canonicalUsername ?? username;
+        const user = resolved.user;
+        
+        // Define the image URL, falling back to a default if the user hasn't uploaded one
+        const defaultImage = "https://linkid.qzz.io/default-og.png"; // You can change this to your actual default image path
+        const profileImage = user?.image || defaultImage;
 
         return {
             title: `${canonicalUsername} | LinkID`,
             description: `Check out ${canonicalUsername}'s LinkID profile.`,
+            openGraph: {
+                title: `${canonicalUsername} | LinkID`,
+                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                images: [
+                    {
+                        url: profileImage,
+                        width: 800,
+                        height: 600,
+                        alt: `${canonicalUsername}'s profile picture`,
+                    },
+                ],
+            },
+            twitter: {
+                card: "summary_large_image",
+                title: `${canonicalUsername} | LinkID`,
+                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                images: [profileImage],
+            },
         };
     } catch {
         return {
