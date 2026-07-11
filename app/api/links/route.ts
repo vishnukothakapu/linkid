@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const allowed = checkRateLimit(
+    const allowed = await checkRateLimit(
         `link-create:${session.user.email}`,
         LINK_CREATE_LIMIT,
         LINK_CREATE_WINDOW_MS
