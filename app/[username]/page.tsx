@@ -20,8 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         const canonicalUsername = resolved.canonicalUsername ?? username;
         const user = resolved.user;
         
-        // Define the image URL, falling back to a default if the user hasn't uploaded one
-        const defaultImage = "https://linkid.qzz.io/default-og.png"; // You can change this to your actual default image path
+        const defaultImage = "https://linkid.qzz.io/default-og.png"; 
         const profileImage = user?.image || defaultImage;
 
         return {
@@ -33,8 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
                 images: [
                     {
                         url: profileImage,
-                        width: 800,
-                        height: 600,
+                        // width and height have been removed
                         alt: `${canonicalUsername}'s profile picture`,
                     },
                 ],
