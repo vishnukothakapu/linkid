@@ -102,7 +102,7 @@ export default function AddLinkBox({
     }
 
     return (
-        <div className="rounded-lg border p-4 space-y-3">
+        <div className="rounded-lg border bg-card text-card-foreground p-4 space-y-3 shadow-sm">
             <Select value={platform} onValueChange={setPlatform}>
                 <SelectTrigger>
                     <SelectValue placeholder="Select a platform" />

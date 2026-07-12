@@ -4,8 +4,8 @@ import { Plus, Github, Linkedin, Globe, Youtube } from "lucide-react";
 
 export function EmptyLinksState({ onAdd }: { onAdd: () => void }) {
     return (
-        <div className="rounded-xl border border-dashed p-10 text-center space-y-4">
-            <h3 className="text-lg font-semibold">Add your first link</h3>
+        <div className="rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-900/50 bg-violet-50/50 dark:bg-violet-950/10 p-12 text-center space-y-5 transition-all hover:border-violet-300 dark:hover:border-violet-800">
+            <h3 className="text-xl font-bold tracking-tight text-foreground">Add your first link</h3>
 
             <p className="text-sm text-muted-foreground">
                 Start building your LinkID by adding your most important profile.

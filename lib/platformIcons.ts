@@ -28,6 +28,7 @@ export const PLATFORMS = {
     portfolio: { icon: Globe, name: "Portfolio" },
     youtube: { icon: Youtube, name: "YouTube" },
     x: { icon: FaXTwitter, name: "X" },
+    twitter: { icon: FaXTwitter, name: "X" },
     facebook: { icon: Facebook, name: "Facebook" },
     instagram: { icon: Instagram, name: "Instagram" },
     twitch: { icon: Twitch, name: "Twitch" },

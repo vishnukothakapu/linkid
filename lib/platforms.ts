@@ -8,6 +8,7 @@ export type Platform =
     | "leetcode"
     | "youtube"
     | "x"
+    | "twitter"
     | "facebook"
     | "instagram"
     | "discord"
