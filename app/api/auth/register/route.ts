@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const ip =
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 
-    if (!checkRateLimit(`register:${ip}`, REGISTER_LIMIT, REGISTER_WINDOW_MS)) {
+    if (!(await checkRateLimit(`register:${ip}`, REGISTER_LIMIT, REGISTER_WINDOW_MS))) {
         return NextResponse.json(
             { error: "Too many registration attempts. Please wait before trying again." },
             { status: 429 },

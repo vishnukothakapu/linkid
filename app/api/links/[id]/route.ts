@@ -23,7 +23,7 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const allowed = checkRateLimit(
+  const allowed = await checkRateLimit(
     `link-mutate:${session.user.email}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS
@@ -155,7 +155,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const allowed = checkRateLimit(
+  const allowed = await checkRateLimit(
     `link-mutate:${session.user.email}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS

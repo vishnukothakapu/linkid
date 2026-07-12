@@ -25,6 +25,7 @@ export default function EditProfileCard({
     const [username, setUsername] = useState(initialUsername);
     const [bio, setBio] = useState(initialBio || "");
     const [available, setAvailable] = useState<boolean | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
     const latestRequestId = useRef(0);
@@ -32,6 +33,7 @@ export default function EditProfileCard({
     function checkUsername(value: string) {
         setUsername(value);
         setAvailable(null);
+        setErrorMsg(null);
     }
 
     useEffect(() => {
@@ -41,6 +43,7 @@ export default function EditProfileCard({
             if (username.length < 3 || username === initialUsername) {
                 if (requestId === latestRequestId.current) {
                     setAvailable(null);
+                    setErrorMsg(null);
                     setChecking(false);
                 }
                 return;
@@ -51,15 +54,17 @@ export default function EditProfileCard({
             }
 
             try {
-                const res = await fetch(`/api/username/check?username=${username}`);
+                const res = await fetch(`/api/username/check?username=${encodeURIComponent(username)}`);
                 const data = await res.json();
 
                 if (requestId === latestRequestId.current) {
                     setAvailable(data.available);
+                    setErrorMsg(data.error || null);
                 }
             } catch {
                 if (requestId === latestRequestId.current) {
                     setAvailable(null);
+                    setErrorMsg(null);
                 }
             } finally {
                 if (requestId === latestRequestId.current) {
@@ -79,7 +84,7 @@ export default function EditProfileCard({
       if (username.trim().length < 3)
         return "Username must be ≥ 3 chars.";
       if (!USERNAME_REGEX.test(username.trim()))
-        return "Letters, numbers, _ - only.";
+        return "Letters, numbers, and hyphens only.";
       if (bio.trim().length > 160)
         return "Bio max 160 characters.";
       return null;
@@ -173,7 +178,7 @@ export default function EditProfileCard({
 
                         {!checking && available === false && (
                             <p className="flex items-center gap-1 text-sm text-red-600">
-                                <X className="h-4 w-4" /> Username already taken
+                                <X className="h-4 w-4" /> {errorMsg || "Username already taken"}
                             </p>
                         )}
                     </div>

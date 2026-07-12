@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -99,6 +100,21 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
       update: { sendCount: 0, windowStart: now },
       create: { userId, sendCount: 0, windowStart: now },
     });
+    try {
+      await prisma.deleteOtp.upsert({
+        where: { userId },
+        update: { sendCount: 1, windowStart: now },
+        create: { userId, sendCount: 1, windowStart: now }
+      });
+      return true;
+    } catch (err: unknown) {
+      // Ignore creation race condition (Unique constraint failed)
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        // Safe to proceed as the record was created by a concurrent request
+      } else {
+        throw err;
+      }
+    }
   }
 
   // Atomically increment send count
