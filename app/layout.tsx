@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Footer } from "@/app/components/Footer";
 import Providers from "./providers";
 import BackToTop from "@/components/ui/BackToTop";
 
@@ -24,7 +25,8 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>{children}
+        <Footer /></Providers>
         <BackToTop />
       </body>
     </html>
