@@ -60,7 +60,7 @@ export default function AddLinkBox({
         }
 
         const finalLabel = label.trim();
-        if (platform === PLATFORMS.WEBSITE && !finalLabel) {
+        if (!finalLabel) {
             return toast.error("Please enter a name for this link");
         }
 
@@ -121,8 +121,8 @@ export default function AddLinkBox({
                     !platform
                         ? "Link Display Name"
                         : platform === PLATFORMS.WEBSITE
-                        ? "Link Display Name (Required)"
-                        : "Link Display Name (Optional)"
+                        ? "Link Display Name"
+                        : "Link Display Name"
                 }
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}

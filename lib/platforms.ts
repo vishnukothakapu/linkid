@@ -24,28 +24,28 @@ export type Platform =
 // ─── URL Validation Patterns ─────────────────────────────────────────────────
 
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
-    github: /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    github: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
 
     // Catch-all domain suffixes force immediate platform identification for paths like /feed or /jobs,
     // stopping links from bypassing validation filters as generic website URLs.
-    linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.*$/i,
+    linkedin: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?linkedin\.com\/.*$/i,
 
-    leetcode: /^https?:\/\/(www\.)?leetcode\.com\/(u\/)?[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    youtube: /^https?:\/\/(www\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
-    x: /^https?:\/\/(www\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
+    leetcode: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?leetcode\.com\/(u\/)?[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    youtube: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?(youtube\.com\/(@[A-Za-z0-9_.-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9_-]+|shorts\/[A-Za-z0-9_-]+|watch|playlist)|youtu\.be\/[A-Za-z0-9_-]+\/?)\/?(\?.*)?$/i,
+    x: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?(x|twitter)\.com\/[A-Za-z0-9_]{1,15}\/?(\?.*)?$/i,
 
     // Generic domain catching ensures subpaths like /groups or /marketplace map to Facebook before validation.
-    facebook: /^https?:\/\/(www\.)?facebook\.com\/.*$/i,
+    facebook: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?facebook\.com\/.*$/i,
 
-    instagram: /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
-    discord: /^https?:\/\/(www\.)?discord\.com\/(users\/\d+|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
-    twitch: /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
+    instagram: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
+    discord: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?discord\.com\/(users\/\d+|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
+    twitch: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
     hashnode: /^https?:\/\/([A-Za-z0-9_-]+\.hashnode\.(com|dev)|hashnode\.(com|dev)\/[A-Za-z0-9_@-]+)\/?(\?.*)?$/i,
-    devto: /^https?:\/\/(www\.)?dev\.to\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    medium: /^https?:\/\/(www\.)?medium\.com\/@?[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    dribbble: /^https?:\/\/(www\.)?dribbble\.com\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    codechef: /^https?:\/\/(www\.)?codechef\.com\/users\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    codeforces: /^https?:\/\/(www\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    devto: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?dev\.to\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    medium: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?medium\.com\/@?[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    dribbble: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?dribbble\.com\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    codechef: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?codechef\.com\/users\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    codeforces: /^https?:\/\/([a-zA-Z0-9_.-]+\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     website: /^https?:\/\/.+/i,
 };
 
