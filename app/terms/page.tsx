@@ -92,7 +92,25 @@ export default function TermsOfServicePage() {
 
         {/* Content */}
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <div className="rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+            <aside className="hidden lg:block lg:col-span-1 sticky top-24 rounded-xl border border-white/70 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Terms Sections</h3>
+              <nav className="flex flex-col space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <a href="#acceptance" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">1. Acceptance of Terms</a>
+                <a href="#description" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">2. Description of Service</a>
+                <a href="#accounts" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">3. User Accounts</a>
+                <a href="#conduct" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">4. User Conduct</a>
+                <a href="#intellectual-property" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">5. Intellectual Property</a>
+                <a href="#termination" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">6. Termination</a>
+                <a href="#disclaimer" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">7. Disclaimer of Warranties</a>
+                <a href="#limitation" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">8. Limitation of Liability</a>
+                <a href="#changes" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">9. Changes to Terms</a>
+                <a href="#contact" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">10. Contact Us</a>
+              </nav>
+            </aside>
+            <div className="lg:col-span-3">
+<div className="rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
             <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12">
               <div
                 className={cn(
@@ -392,6 +410,8 @@ export default function TermsOfServicePage() {
               </div>
             </div>
           </div>
+        </div>
+        </div>
         </div>
       </main>
     </>

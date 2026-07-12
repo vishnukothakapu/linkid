@@ -28,11 +28,29 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-white/70 bg-white/70 p-6 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:p-8 md:p-10">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+            <aside className="hidden lg:block lg:col-span-1 sticky top-24 rounded-xl border border-white/70 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">Privacy Sections</h3>
+              <nav className="flex flex-col space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <a href="#introduction" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">1. Introduction</a>
+                <a href="#information-we-collect" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">2. Information We Collect</a>
+                <a href="#how-we-use" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">3. How We Use</a>
+                <a href="#authentication" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">4. Authentication</a>
+                <a href="#cookies" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">5. Cookies</a>
+                <a href="#security" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">6. Security</a>
+                <a href="#third-party" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">7. Third-Party</a>
+                <a href="#rights" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">8. Your Rights</a>
+                <a href="#changes" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">9. Changes</a>
+                <a href="#contact" className="hover:text-violet-600 dark:hover:text-violet-400 transition-colors">10. Contact Us</a>
+              </nav>
+            </aside>
+            <div className="lg:col-span-3">
+<div className="rounded-2xl border border-white/70 bg-white/70 p-6 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 sm:p-8 md:p-10">
             <div className="prose prose-zinc max-w-none dark:prose-invert prose-headings:text-zinc-950 dark:prose-headings:text-white">
               
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">1. Introduction</h2>
+                <h2 id="introduction" className="text-2xl font-semibold mb-3 scroll-mt-24">1. Introduction</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Welcome to <strong>LinkID</strong>. Your privacy is important to us. 
                   This Privacy Policy explains how we collect, use, and safeguard your information.
@@ -40,7 +58,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">2. Information We Collect</h2>
+                <h2 id="information-we-collect" className="text-2xl font-semibold mb-3 scroll-mt-24">2. Information We Collect</h2>
                 <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                   <li><strong>Account Information:</strong> Username, email address, and securely hashed password (bcrypt)</li>
                   <li><strong>Profile Information:</strong> Bio, avatar image, and social media links</li>
@@ -49,7 +67,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">3. How We Use Your Information</h2>
+                <h2 id="how-we-use" className="text-2xl font-semibold mb-3 scroll-mt-24">3. How We Use Your Information</h2>
                 <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                   <li>Create and manage your account</li>
                   <li>Display your profile and links publicly</li>
@@ -60,7 +78,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">4. Authentication &amp; OAuth</h2>
+                <h2 id="authentication" className="text-2xl font-semibold mb-3 scroll-mt-24">4. Authentication &amp; OAuth</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">
                   LinkID uses NextAuth.js for secure authentication. We support:
                 </p>
@@ -75,7 +93,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">5. Cookies and Tracking</h2>
+                <h2 id="cookies" className="text-2xl font-semibold mb-3 scroll-mt-24">5. Cookies and Tracking</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   We use cookies to maintain login sessions, remember theme preferences (light/dark mode), 
                   and understand how users interact with our platform.
@@ -83,7 +101,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">6. Data Storage and Security</h2>
+                <h2 id="security" className="text-2xl font-semibold mb-3 scroll-mt-24">6. Data Storage and Security</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   Your data is stored in a secure PostgreSQL database with industry-standard security measures 
                   including password hashing, HTTPS encryption, and regular security updates.
@@ -91,7 +109,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-3">7. Third-Party Services</h2>
+                <h2 id="third-party" className="text-2xl font-semibold mb-3 scroll-mt-24">7. Third-Party Services</h2>
                 <p className="text-muted-foreground leading-relaxed mb-3">LinkID integrates with:</p>
                 <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                   <li><strong>GitHub/Google OAuth</strong> - For authentication</li>
@@ -129,6 +147,8 @@ export default function PrivacyPolicyPage() {
               </Link>
             </div>
           </div>
+        </div>
+        </div>
         </div>
       </main>
     </>
