@@ -54,6 +54,13 @@ export default function RegisterPage() {
             password: (form.elements.namedItem("password") as HTMLInputElement).value,
         };
 
+        const passErr = getPasswordError(data.password);
+        if (passErr) {
+            setSubmitError(passErr);
+            setLoading(false);
+            return;
+        }
+
         const res = await fetch("/api/auth/register", {
             method: "POST",
             headers: {

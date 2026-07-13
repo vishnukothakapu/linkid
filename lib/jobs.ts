@@ -46,39 +46,49 @@ export async function releaseJob(id: string) {
 // Polling-based worker helper: finds the next eligible job and marks it processing.
 // Optionally filter by job type. If a non-matching job is found first, it is left
 // untouched so other workers can process it.
+//
+// Uses an atomic UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED LIMIT 1)
+// query to prevent the race condition where multiple concurrent workers could
+// claim and process the same job (see issue #397).
 export async function claimNextJob(type?: string) {
   const now = new Date();
-  const where: Prisma.JobWhereInput = type
-    ? {
-        type,
-        OR: [
-          { status: "PENDING" },
-          { status: "SCHEDULED", runAfter: { lte: now } },
-        ],
-      }
-    : {
-        OR: [
-          { status: "PENDING" },
-          { status: "SCHEDULED", runAfter: { lte: now } },
-        ],
-      };
 
-  const job = await prisma.job.findFirst({
-    where,
-    orderBy: { createdAt: "asc" },
-  });
+  // Build the type filter clause conditionally
+  const typeFilter = type ? Prisma.sql`AND "type" = ${type}` : Prisma.empty;
 
-  if (!job) return null;
+  // Atomic claim: the subquery locks the first eligible row with FOR UPDATE
+  // SKIP LOCKED, which means concurrent workers will skip already-locked rows
+  // and claim the next available job instead of waiting or double-claiming.
+  const result = await prisma.$queryRaw<Array<{
+    id: string;
+    type: string;
+    payload: Prisma.JsonValue;
+    status: string;
+    scheduleAt: Date | null;
+    attempts: number;
+    lastError: string | null;
+    runAfter: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }>>`
+    UPDATE "Job"
+    SET "status" = 'PROCESSING', "updatedAt" = NOW()
+    WHERE "id" = (
+      SELECT "id"
+      FROM "Job"
+      WHERE (
+        "status" = 'PENDING'
+        OR ("status" = 'SCHEDULED' AND "runAfter" <= ${now})
+      )
+      ${typeFilter}
+      ORDER BY "createdAt" ASC
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING *
+  `;
 
-  try {
-    const claimed = await prisma.job.update({
-      where: { id: job.id },
-      data: { status: "PROCESSING", updatedAt: new Date() },
-    });
-    return claimed;
-  } catch {
-    return null;
-  }
+  return result.length > 0 ? result[0] : null;
 }
 
 type JobRecord = { id: string; type: string; payload: Prisma.JsonValue };

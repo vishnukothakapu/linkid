@@ -18,10 +18,31 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         }
 
         const canonicalUsername = resolved.canonicalUsername ?? username;
+        const user = resolved.user;
+        
+        const defaultImage = "https://linkid.qzz.io/default-og.png"; 
+        const profileImage = user?.image || defaultImage;
 
         return {
             title: `${canonicalUsername} | LinkID`,
             description: `Check out ${canonicalUsername}'s LinkID profile.`,
+            openGraph: {
+                title: `${canonicalUsername} | LinkID`,
+                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                images: [
+                    {
+                        url: profileImage,
+                        // width and height have been removed
+                        alt: `${canonicalUsername}'s profile picture`,
+                    },
+                ],
+            },
+            twitter: {
+                card: "summary_large_image",
+                title: `${canonicalUsername} | LinkID`,
+                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                images: [profileImage],
+            },
         };
     } catch {
         return {

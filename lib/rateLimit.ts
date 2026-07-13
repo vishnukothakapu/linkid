@@ -28,6 +28,7 @@
 
 type WindowEntry = {
     timestamps: number[];
+    windowMs: number;
 };
 
 const store = new Map<string, WindowEntry>();
@@ -39,9 +40,10 @@ const store = new Map<string, WindowEntry>();
 let requestsSinceCleanup = 0;
 const CLEANUP_INTERVAL = 500; // sweep after every N requests
 
-function sweepExpiredKeys(windowMs: number): void {
-    const cutoff = Date.now() - windowMs;
+function sweepExpiredKeys(): void {
+    const now = Date.now();
     for (const [key, entry] of store.entries()) {
+        const cutoff = now - entry.windowMs;
         if (entry.timestamps.every((t) => t <= cutoff)) {
             store.delete(key);
         }
@@ -59,13 +61,15 @@ function checkRateLimitMemory(
     requestsSinceCleanup++;
     if (requestsSinceCleanup >= CLEANUP_INTERVAL) {
         requestsSinceCleanup = 0;
-        sweepExpiredKeys(windowMs);
+        sweepExpiredKeys();
     }
 
     let entry = store.get(key);
     if (!entry) {
-        entry = { timestamps: [] };
+        entry = { timestamps: [], windowMs };
         store.set(key, entry);
+    } else {
+        entry.windowMs = windowMs;
     }
 
     // Evict timestamps outside the current window.
