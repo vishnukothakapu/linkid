@@ -29,11 +29,27 @@ export async function markJobCompleted(id: string) {
   return prisma.job.update({ where: { id }, data: { status: "COMPLETED", updatedAt: new Date() } });
 }
 
+const MAX_ATTEMPTS = 5;
+
 export async function markJobFailed(id: string, error?: string) {
-  return prisma.job.update({
-    where: { id },
-    data: { status: "FAILED", lastError: error, attempts: { increment: 1 }, updatedAt: new Date() },
-  });
+  const job = await prisma.job.findUnique({ where: { id }, select: { attempts: true } });
+  if (!job) return null;
+
+  const nextAttempts = job.attempts + 1;
+
+  if (nextAttempts >= MAX_ATTEMPTS) {
+    return prisma.job.update({
+      where: { id },
+      data: { status: "FAILED", lastError: error, attempts: nextAttempts, updatedAt: new Date() },
+    });
+  } else {
+    const delaySeconds = Math.pow(2, nextAttempts) * 60;
+    const runAfter = new Date(Date.now() + delaySeconds * 1000);
+    return prisma.job.update({
+      where: { id },
+      data: { status: "PENDING", lastError: error, attempts: nextAttempts, runAfter, updatedAt: new Date() },
+    });
+  }
 }
 
 export async function releaseJob(id: string) {
@@ -77,8 +93,8 @@ export async function claimNextJob(type?: string) {
       SELECT "id"
       FROM "Job"
       WHERE (
-        "status" = 'PENDING'
-        OR ("status" = 'SCHEDULED' AND "runAfter" <= ${now})
+        "status" IN ('PENDING', 'SCHEDULED')
+        AND ("runAfter" IS NULL OR "runAfter" <= ${now})
       )
       ${typeFilter}
       ORDER BY "createdAt" ASC
