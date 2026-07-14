@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -101,8 +102,13 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
         create: { userId, sendCount: 1, windowStart: now }
       });
       return true;
-    } catch {
-      // Ignore creation race condition
+    } catch (err: unknown) {
+      // Ignore creation race condition (Unique constraint failed)
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        // Safe to proceed as the record was created by a concurrent request
+      } else {
+        throw err;
+      }
     }
   }
 

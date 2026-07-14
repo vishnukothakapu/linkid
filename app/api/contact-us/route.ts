@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 
-  if (!checkRateLimit(`contact-us:${ip}`, CONTACT_US_LIMIT, CONTACT_US_WINDOW_MS)) {
+  if (!(await checkRateLimit(`contact-us:${ip}`, CONTACT_US_LIMIT, CONTACT_US_WINDOW_MS))) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },
       { status: 429 },

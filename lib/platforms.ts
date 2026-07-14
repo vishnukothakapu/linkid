@@ -52,8 +52,8 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
 // ─── Platform Blocklists ─────────────────────────────────────────────────────
 // Defence-in-depth: catches internal app views even if the main pattern is ever loosened.
 const PLATFORM_BLOCKLIST: Partial<Record<Platform, RegExp>> = {
-    linkedin: /\/(messaging|feed|jobs|notifications|search)\b/i,
-    facebook: /\/(messaging|feed|groups|events|marketplace)\b/i,
+    linkedin: /\/(messaging|feed|jobs|notifications|search|mynetwork|learning)\b/i,
+    facebook: /\/(messaging|messages|feed|groups|events|marketplace|gaming|watch)\b/i,
     youtube: /\/results\b/i,
     instagram: /\/(explore|stories)\b/i,
 };
@@ -111,6 +111,19 @@ export function validatePlatformUrl(
 
     const pattern = PLATFORM_PATTERNS[targetPlatform];
     if (!pattern || !pattern.test(normalized)) return false;
+
+    if (targetPlatform === PLATFORMS.FACEBOOK) {
+        try {
+            const parsed = new URL(normalized);
+            if (parsed.pathname === "/profile.php") {
+                if (!parsed.searchParams.has("id")) {
+                    return false;
+                }
+            }
+        } catch {
+            return false;
+        }
+    }
 
     const blocklist = PLATFORM_BLOCKLIST[targetPlatform];
     if (blocklist?.test(normalized)) return false;

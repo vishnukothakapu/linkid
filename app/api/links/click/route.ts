@@ -10,7 +10,7 @@ const CLICK_RATE_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
     const ip = getForwardedIp(req.headers) ?? "unknown";
-    const allowed = checkRateLimit(`click:${ip}`, CLICK_RATE_LIMIT, CLICK_RATE_WINDOW_MS);
+    const allowed = await checkRateLimit(`click:${ip}`, CLICK_RATE_LIMIT, CLICK_RATE_WINDOW_MS);
     if (!allowed) {
         return NextResponse.json(
             { error: "Too many requests. Please slow down." },

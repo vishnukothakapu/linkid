@@ -10,7 +10,7 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
   function copyProfile() {
     navigator.clipboard.writeText(`linkid.qzz.io/${username}`);
     setCopied(true);
-    toast.success("Profile link copied");
+    toast.success("Profile link copied successfully!");
     setTimeout(() => setCopied(false), 1200);
   }
 

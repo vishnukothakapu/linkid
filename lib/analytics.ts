@@ -206,6 +206,8 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
     return { rows: upserts.length };
 }
 
+export type UserAnalyticsSummary = Awaited<ReturnType<typeof getUserAnalyticsSummary>>;
+
 export async function getUserAnalyticsSummary(input: {
     userId: string;
     days: number | null;
