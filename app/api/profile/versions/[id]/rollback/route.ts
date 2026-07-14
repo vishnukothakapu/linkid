@@ -30,6 +30,26 @@ export async function POST(
     }
 
     const { id: versionId } = await params;
+
+    const version = await prisma.profileVersion.findUnique({
+      where: { id: versionId },
+      select: { userId: true },
+    });
+
+    if (!version) {
+      return NextResponse.json(
+        { error: "Version not found" },
+        { status: 404 }
+      );
+    }
+
+    if (version.userId !== user.id) {
+      return NextResponse.json(
+        { error: "Access denied" },
+        { status: 403 }
+      );
+    }
+
     const { snapshot, diff } = await rollbackProfileVersion(user.id, versionId);
 
     return NextResponse.json(
@@ -44,11 +64,9 @@ export async function POST(
     console.error("Profile rollback error:", error);
     const message =
       error instanceof Error ? error.message : "Failed to rollback profile";
-    const isNotFound =
-      error instanceof Error && error.message === "Version not found or access denied";
     return NextResponse.json(
       { error: message },
-      { status: isNotFound ? 404 : 500 }
+      { status: 500 }
     );
   }
 }
