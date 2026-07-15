@@ -38,7 +38,7 @@ export async function setOtp(userId: string, otp: string): Promise<void> {
 
 export async function verifyOtp(userId: string, candidateOtp: string): Promise<{ valid: boolean; error?: string }> {
   const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
-  
+
   if (!entry || !entry.otp || !entry.expiresAt) {
     return { valid: false, error: "Verification code expired or not requested" };
   }
@@ -55,25 +55,22 @@ export async function verifyOtp(userId: string, candidateOtp: string): Promise<{
   });
 
   const attempts = updatedEntry.attempts;
-  const attemptsRemaining = MAX_ATTEMPTS - attempts;
-
-  if (attempts > MAX_ATTEMPTS) {
-    await clearOtpFields(userId);
-    return { valid: false, error: "Too many failed attempts. Please request a new code." };
-  }
 
   const isValid = await bcrypt.compare(candidateOtp, entry.otp);
 
   if (isValid) {
     await clearOtpFields(userId);
     return { valid: true };
-  } else {
-    if (attemptsRemaining <= 0) {
-      await clearOtpFields(userId);
-      return { valid: false, error: "Incorrect verification code. Maximum attempts reached. Please request a new code." };
-    }
-    return { valid: false, error: `Incorrect verification code. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.` };
   }
+
+  // Use >= so the guard fires at exactly MAX_ATTEMPTS, not one attempt later.
+  if (attempts >= MAX_ATTEMPTS) {
+    await clearOtpFields(userId);
+    return { valid: false, error: "Too many failed attempts. Please request a new code." };
+  }
+
+  const attemptsRemaining = MAX_ATTEMPTS - attempts;
+  return { valid: false, error: `Incorrect verification code. ${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.` };
 }
 
 async function clearOtpFields(userId: string) {
@@ -93,8 +90,16 @@ export async function clearOtp(userId: string): Promise<void> {
 export async function checkRateLimit(userId: string): Promise<boolean> {
   const now = new Date();
   const entry = await prisma.deleteOtp.findUnique({ where: { userId } });
-  
+
+  // Reset the window when there is no entry, no recorded start, or the
+  // previous window has fully elapsed.  sendCount is set to 0 so the
+  // increment below counts this as the first request of the new window.
   if (!entry || !entry.windowStart || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
+    await prisma.deleteOtp.upsert({
+      where: { userId },
+      update: { sendCount: 0, windowStart: now },
+      create: { userId, sendCount: 0, windowStart: now },
+    });
     try {
       await prisma.deleteOtp.upsert({
         where: { userId },
@@ -117,10 +122,10 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
     where: { userId },
     data: { sendCount: { increment: 1 } },
   });
-  
+
   if (updatedEntry.sendCount > MAX_SEND_PER_WINDOW) {
     return false;
   }
-  
+
   return true;
 }

@@ -60,58 +60,34 @@ export function AnalyticsOverview() {
         };
     }, [days]);
 
-    const exportToCSV = async () => {
-        const res = await fetch("/api/analytics/export?format=csv");
+    const downloadExport = async (url: string, filename: string) => {
+        const res = await fetch(url);
         if (!res.ok) return;
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.href = url;
-        link.download = "analytics-export.csv";
+        link.href = objectUrl;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(objectUrl);
         document.body.removeChild(link);
     };
 
-    const exportToPDF = () => {
-        const rangeLabel =
-            summary?.rangeDays != null ? `Last ${summary.rangeDays} Days` : "All time";
-        const win = window.open("", "_blank");
-        if (!win || !summary) return;
-        win.document.write(`
-            <html>
-            <head>
-                <title>Analytics Report</title>
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 40px; }
-                    h1 { font-size: 24px; margin-bottom: 4px; }
-                    p { color: #666; margin-top: 0; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
-                    th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
-                    th { background: #f5f5f5; font-weight: 600; }
-                </style>
-            </head>
-            <body>
-                <h1>Analytics Report</h1>
-                <p>${rangeLabel}</p>
-                <table>
-                    <thead>
-                        <tr><th>Metric</th><th>Value</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Total Clicks</td><td>${summary.totals.totalClicks}</td></tr>
-                        <tr><td>Unique Visitors</td><td>${summary.totals.uniqueClicks}</td></tr>
-                        <tr><td>Filtered Bot Hits</td><td>${summary.totals.botClicks}</td></tr>
-                    </tbody>
-                </table>
-            </body>
-            </html>
-        `);
-        win.document.close();
-        win.focus();
-        win.print();
-    };
+    const exportToCSV = () =>
+        downloadExport("/api/analytics/export?format=csv", "analytics-export.csv");
+
+    const exportToJSON = () =>
+        downloadExport(
+            `/api/analytics/export?format=json&days=${days}`,
+            "analytics-export.json"
+        );
+
+    const exportToPDF = () =>
+        downloadExport(
+            `/api/analytics/export?format=pdf&days=${days}`,
+            "analytics-export.pdf"
+        );
 
     const cards = useMemo(() => {
         if (!summary) {
@@ -157,6 +133,9 @@ export function AnalyticsOverview() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={exportToCSV}>
                                     Export CSV
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={exportToJSON}>
+                                    Export JSON
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={exportToPDF}>
                                     Export PDF
