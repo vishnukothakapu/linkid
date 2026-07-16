@@ -33,7 +33,7 @@ function clickToCSVRow(c: ExportClick): string {
         escapeCSV(c.referrer),
         escapeCSV(c.country),
         escapeCSV(c.deviceType),
-        escapeCSV(c.userAgent),
+        escapeCSV(c.userAgent), 
     ].join(",");
 }
 

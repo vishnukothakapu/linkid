@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await prisma.user.update({
-      where: { id: userId },
-      data: { username },
-    });
+  where: { id: userld }, 
+  data: { username },
+});
 
     return NextResponse.json({ success: true, user }, { status: 200 });
 
