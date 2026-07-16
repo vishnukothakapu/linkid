@@ -21,24 +21,20 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const name = typeof body?.name === "string" ? body.name.trim() : "";
-        const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-        const password = typeof body?.password === "string" ? body.password : "";
 
-        if (!email || !password) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-        }
+        // Validate using Zod schema which now includes fake/disposable email checks
+        const { signupSchema } = await import("@/lib/validations/auth");
+        const parseResult = signupSchema.safeParse(body);
 
-        const normalizedEmail = email.toLowerCase().trim();
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-        if (!passwordRegex.test(password)) {
+        if (!parseResult.success) {
             return NextResponse.json(
-                { error: "Password does not meet requirements" },
-                { status: 400 },
+                { error: parseResult.error.errors[0]?.message || "Invalid input" },
+                { status: 400 }
             );
         }
 
+        const { name, email, password } = parseResult.data;
+        const normalizedEmail = email.toLowerCase().trim();
         const hashedPassword = await bcrypt.hash(password, 10);
 
         let user;
