@@ -5,6 +5,7 @@ import { Download, ChevronDown } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import {
     Select,
     SelectContent,
@@ -161,6 +162,7 @@ export function AnalyticsOverview() {
                     </Card>
                 ))}
             </div>
+            <AnalyticsCharts days={days} />
         </div>
     );
 }

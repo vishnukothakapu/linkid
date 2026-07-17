@@ -302,3 +302,113 @@ export async function getUserAnalyticsSummary(input: {
             .sort((a, b) => b.totalClicks - a.totalClicks),
     };
 }
+
+export async function getUserAnalyticsDetails(input: {
+    userId: string;
+    days: number | null;
+}) {
+    const rangeDays = input.days === null
+        ? null
+        : Math.max(1, Math.min(365, input.days));
+
+    const start = rangeDays === null
+        ? null
+        : utcDayStart(new Date(Date.now() - (rangeDays - 1) * 24 * 60 * 60 * 1000));
+
+    // 1. Time-series daily clicks
+    const dailyAnalytics = await prisma.dailyLinkAnalytics.groupBy({
+        by: ["date"],
+        where: {
+            userId: input.userId,
+            ...(start !== null && { date: { gte: start } }),
+        },
+        _sum: {
+            totalClicks: true,
+            uniqueClicks: true,
+            botClicks: true,
+        },
+        orderBy: {
+            date: "asc",
+        },
+    });
+
+    const dailyData = dailyAnalytics.map((entry) => ({
+        date: entry.date.toISOString().slice(0, 10),
+        clicks: entry._sum.totalClicks ?? 0,
+        uniqueClicks: entry._sum.uniqueClicks ?? 0,
+        botClicks: entry._sum.botClicks ?? 0,
+    }));
+
+    // 2. ClickEvent details: referrers, deviceTypes, countries
+    const [referrers, devices, countries] = await Promise.all([
+        // Referrers
+        prisma.clickEvent.groupBy({
+            by: ["referrer"],
+            where: {
+                userId: input.userId,
+                isBot: false,
+                ...(start !== null && { createdAt: { gte: start } }),
+            },
+            _count: {
+                id: true,
+            },
+            orderBy: {
+                _count: {
+                    id: "desc",
+                },
+            },
+            take: 10,
+        }),
+        // Devices
+        prisma.clickEvent.groupBy({
+            by: ["deviceType"],
+            where: {
+                userId: input.userId,
+                isBot: false,
+                ...(start !== null && { createdAt: { gte: start } }),
+            },
+            _count: {
+                id: true,
+            },
+            orderBy: {
+                _count: {
+                    id: "desc",
+                },
+            },
+        }),
+        // Countries
+        prisma.clickEvent.groupBy({
+            by: ["country"],
+            where: {
+                userId: input.userId,
+                isBot: false,
+                ...(start !== null && { createdAt: { gte: start } }),
+            },
+            _count: {
+                id: true,
+            },
+            orderBy: {
+                _count: {
+                    id: "desc",
+                },
+            },
+            take: 10,
+        }),
+    ]);
+
+    return {
+        dailyData,
+        referrers: referrers.map((r) => ({
+            name: r.referrer || "Direct",
+            value: r._count.id,
+        })),
+        devices: devices.map((d) => ({
+            name: d.deviceType || "Unknown",
+            value: d._count.id,
+        })),
+        countries: countries.map((c) => ({
+            name: c.country || "Unknown",
+            value: c._count.id,
+        })),
+    };
+}
