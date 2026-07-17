@@ -396,6 +396,9 @@ export async function resolvePreviewToken(
     username: draft.username,
     bio: draft.bio,
     image: draft.image,
+    themeType: draft.themeType,
+    themeColor: draft.themeColor,
+    themeCustom: draft.themeCustom,
   };
 
   return {
