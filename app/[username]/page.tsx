@@ -82,8 +82,29 @@ export default async function PublicProfile({
   const isOwner =
     session?.user?.email?.toLowerCase() === user.email?.toLowerCase();
 
+  const bgStyle: React.CSSProperties = {};
+  if (user.themeType === "solid") {
+    bgStyle.backgroundColor = user.themeColor || "#0f172a";
+  } else if (user.themeType === "gradient") {
+    if (user.themeColor === "custom" && user.themeCustom) {
+      const parts = user.themeCustom.split(",");
+      bgStyle.backgroundImage = `linear-gradient(135deg, ${parts[0] || "#0f172a"}, ${parts[1] || "#0369a1"})`;
+    } else {
+      bgStyle.backgroundColor = "#0f172a";
+    }
+  } else if (user.themeType === "glassmorphism") {
+    bgStyle.backgroundColor = "#030712";
+    bgStyle.backgroundImage = "radial-gradient(ellipse at top, #1e293b, transparent)";
+  } else if (user.themeType === "retro") {
+    bgStyle.backgroundColor = "#000000";
+    bgStyle.fontFamily = "monospace";
+  } else if (user.themeType === "cyberpunk") {
+    bgStyle.backgroundColor = "#050505";
+    bgStyle.backgroundImage = "linear-gradient(180deg, #09090b 0%, #1e1b4b 100%)";
+  }
+
   return (
-    <main className="min-h-screen px-4 py-16">
+    <main className="min-h-screen px-4 py-16" style={bgStyle}>
       <div className="mx-auto max-w-md">
         <ProfileCard
           user={{
@@ -99,6 +120,7 @@ export default async function PublicProfile({
           username={resolved.canonicalUsername}
           showCTA={!session}
           isOwner={isOwner}
+          themeType={user.themeType}
         />
 
         <div className="mt-4 flex justify-center gap-2">

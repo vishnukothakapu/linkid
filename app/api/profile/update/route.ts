@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
     }
     const userId = session.user.id;
     const body = await req.json();
-    const { username, name, bio, image } = body;
+    const { username, name, bio, image, themeType, themeColor, themeCustom } = body;
 
     // Save to draft using the workflow function
     const draft = await upsertProfileDraft(userId, {
@@ -19,6 +19,9 @@ export async function PATCH(req: NextRequest) {
       name,
       bio,
       image,
+      themeType,
+      themeColor,
+      themeCustom,
     });
 
     return NextResponse.json({ success: true, draft }, { status: 200 });

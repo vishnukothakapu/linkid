@@ -10,6 +10,7 @@ import { AccountInfoCard } from "./AccountInfoCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
 import { DangerZoneCard } from "./DangerZoneCard";
 import { ResumeCard } from "./ResumeCard";
+import { ThemeBuilderCard } from "./ThemeBuilderCard";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -44,6 +45,16 @@ export default async function ProfilePage() {
                 <ResumeCard
                     initialResumeUrl={user.resumeUrl}
                     initialDownloadCount={user.resumeDownloadCount}
+                />
+
+                <ThemeBuilderCard
+                    userId={user.id}
+                    initialThemeType={user.profileDraft?.themeType ?? user.themeType}
+                    initialThemeColor={user.profileDraft?.themeColor ?? user.themeColor}
+                    initialThemeCustom={user.profileDraft?.themeCustom ?? user.themeCustom}
+                    userName={user.name}
+                    userBio={user.bio}
+                    userImage={user.image}
                 />
 
                 <ProfileActionsCard
