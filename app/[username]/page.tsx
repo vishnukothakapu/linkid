@@ -83,7 +83,7 @@ export default async function PublicProfile({
     session?.user?.email?.toLowerCase() === user.email?.toLowerCase();
 
   return (
-    <main className="min-h-screen px-4 py-16">
+    <main className={`min-h-screen px-4 py-16 theme-${user.theme || "default"}`}>
       <div className="mx-auto max-w-md">
         <ProfileCard
           user={{
