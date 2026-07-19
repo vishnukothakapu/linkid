@@ -167,10 +167,12 @@ function diffProfileSnapshots(
  */
 export async function isProfileUsernameAvailable(
   username: string,
-  excludeUserId?: string
+  excludeUserId?: string,
+  tx?: TransactionClient | typeof prisma
 ): Promise<boolean> {
+  const db = tx || prisma;
   // Check if username is taken
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { username },
   });
 
@@ -179,7 +181,7 @@ export async function isProfileUsernameAvailable(
   }
 
   // Check if username is an alias — but allow the user to reclaim their own alias
-  const alias = await prisma.userAlias.findUnique({
+  const alias = await db.userAlias.findUnique({
     where: { username },
   });
 
@@ -435,7 +437,18 @@ export async function rollbackProfileVersion(
 
     // Handle username change
     if (beforeSnapshot.username && beforeSnapshot.username !== afterSnapshot.username) {
+      if (afterSnapshot.username) {
+        const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, userId, tx);
+        if (!isAvailable) {
+          throw new Error("The username in this profile version is no longer available.");
+        }
+      }
       await ensureUsernameAliases(tx, userId, beforeSnapshot.username);
+    } else if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
+      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, userId, tx);
+      if (!isAvailable) {
+        throw new Error("The username in this profile version is no longer available.");
+      }
     }
 
     // Update the live profile

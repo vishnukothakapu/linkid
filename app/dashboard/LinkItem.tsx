@@ -75,7 +75,7 @@ export function LinkItem({
 
     function copy() {
         navigator.clipboard.writeText(
-            `linkid.qzz.io/${username}/${link.platform}`
+            `linkid.qzz.io/${username}/${link.alias || link.platform}`
         );
         setCopied(true);
         toast.success("Copied");

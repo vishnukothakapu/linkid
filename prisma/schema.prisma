@@ -49,6 +49,7 @@ model UserAlias {
 model Link {
   id        String   @id @default(uuid())
   platform  String
+  alias     String?
   label     String
   url       String
   position  Int      @default(0)
@@ -60,8 +61,6 @@ model Link {
   dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([userId, platform])
   @@index([userId])
   @@index([platform])
 }

@@ -3,6 +3,7 @@ export type Link = {
     id: string;
     createdAt: Date;
     platform: string;
+    alias?: string | null;
     url: string;
     position: number;
     clicks: number;

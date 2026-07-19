@@ -20,7 +20,7 @@ export function ProfileLinkItem({ link, username }: ProfileLinks) {
 
     return (
         <a
-            href={`/${username}/${link.platform}`}
+            href={`/${username}/${link.alias || link.platform}`}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={ariaLabel}

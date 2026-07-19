@@ -44,6 +44,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const rawUrl = body?.url?.trim();
     const customLabel = body?.label?.trim();
+    const rawAlias = body?.alias?.trim();
+    const customAlias = rawAlias ? rawAlias.toLowerCase().replace(/[^a-z0-9-]/g, "") : undefined;
+    
+    if (rawAlias && !customAlias) {
+        return NextResponse.json(
+            { error: "Please enter a valid alphanumeric custom alias" },
+            { status: 400 }
+        );
+    }
+    
     const rawExplicitPlatform = body?.platform?.trim();
     const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform) 
         ? rawExplicitPlatform 
@@ -123,8 +133,24 @@ export async function POST(req: Request) {
         );
     }
 
+    const proposedRoute = customAlias || finalPlatform;
+
     try {
         const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const existingLink = await tx.link.findFirst({
+                where: {
+                    userId: user.id,
+                    OR: [
+                        { alias: proposedRoute },
+                        { platform: proposedRoute, alias: null }
+                    ]
+                }
+            });
+
+            if (existingLink) {
+                throw Object.assign(new Error("ROUTE_ALREADY_EXISTS"), { code: "ROUTE_ALREADY_EXISTS" });
+            }
+
             const maxOrder = await tx.link.aggregate({
                 where: { userId: user.id },
                 _max: { position: true },
@@ -141,16 +167,26 @@ export async function POST(req: Request) {
                 data: {
                     userId: user.id,
                     platform: finalPlatform,
+                    alias: customAlias || null,
                     label: finalLabel,
                     url: finalUrl,
                     position: (maxOrder._max.position ?? 0) + 1,
                 },
             });
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         });
 
         return NextResponse.json({ link });
     } catch (err: unknown) {
         const error = err as { code?: string };
+
+        if (error?.code === "ROUTE_ALREADY_EXISTS") {
+            return NextResponse.json(
+                { error: `The route '/${proposedRoute}' is already in use. Please provide a unique custom alias.` },
+                { status: 409 }
+            );
+        }
 
         if (error?.code === "LINK_LIMIT_REACHED") {
             return NextResponse.json(
