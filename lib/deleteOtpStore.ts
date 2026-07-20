@@ -97,24 +97,10 @@ export async function checkRateLimit(userId: string): Promise<boolean> {
   if (!entry || !entry.windowStart || now.getTime() - entry.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
     await prisma.deleteOtp.upsert({
       where: { userId },
-      update: { sendCount: 0, windowStart: now },
-      create: { userId, sendCount: 0, windowStart: now },
+      update: { sendCount: 1, windowStart: now },
+      create: { userId, sendCount: 1, windowStart: now },
     });
-    try {
-      await prisma.deleteOtp.upsert({
-        where: { userId },
-        update: { sendCount: 1, windowStart: now },
-        create: { userId, sendCount: 1, windowStart: now }
-      });
-      return true;
-    } catch (err: unknown) {
-      // Ignore creation race condition (Unique constraint failed)
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        // Safe to proceed as the record was created by a concurrent request
-      } else {
-        throw err;
-      }
-    }
+    return true;
   }
 
   // Atomically increment send count
