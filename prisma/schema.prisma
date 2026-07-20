@@ -245,6 +245,7 @@ model Job {
   type       String
   payload    Json
   status     JobStatus @default(PENDING)
+  userId     String    @default("")
   scheduleAt DateTime?
   attempts   Int       @default(0)
   lastError  String?
@@ -254,6 +255,7 @@ model Job {
 
   @@index([status, runAfter])
   @@index([scheduleAt])
+  @@index([userId])
 }
 
 model DeleteOtp {

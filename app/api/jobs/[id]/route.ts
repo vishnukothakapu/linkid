@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getJob } from "@/lib/jobs";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
     const session = await getServerSession(authOptions);
@@ -9,13 +9,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ownership filtering is not implemented because the Job model
-    // does not currently store a userId. Once that field is added,
-    // authorize by comparing session.user.id against job.userId.
-
     try {
         const { id } = await ctx.params;
-        const job = await getJob(id);
+        const job = await prisma.job.findUnique({
+            where: { id, userId: session.user.id },
+        });
         if (!job) return NextResponse.json({ error: "not found" }, { status: 404 });
         return NextResponse.json(job);
     } catch {

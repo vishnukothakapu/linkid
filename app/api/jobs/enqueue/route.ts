@@ -49,7 +49,10 @@ export async function POST(req: Request) {
         const job = await enqueueJob(
             type,
             payload,
-            scheduleAt ? { scheduleAt: new Date(scheduleAt) } : undefined
+            {
+                ...(scheduleAt ? { scheduleAt: new Date(scheduleAt) } : {}),
+                userId: session.user.id,
+            },
         );
         return NextResponse.json({ id: job.id });
     } catch (err: unknown) {
