@@ -42,6 +42,8 @@ export async function PUT(
   const isPublic = body?.isPublic;
   const label = body?.label;
   const platform = body?.platform;
+  const startDate = body?.startDate;
+  const endDate = body?.endDate;
 
   const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
   const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
@@ -57,7 +59,7 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string } = {};
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null } = {};
 
   const activeLabel = typeof label === "string" ? label.trim() : link.label;
 
@@ -116,6 +118,37 @@ export async function PUT(
 
   if (typeof isPublic === "boolean") {
     data.isPublic = isPublic;
+  }
+
+  if (startDate !== undefined) {
+    if (startDate) {
+      const d = new Date(startDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
+      }
+      data.startDate = d;
+    } else {
+      data.startDate = null;
+    }
+  }
+
+  if (endDate !== undefined) {
+    if (endDate) {
+      const d = new Date(endDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
+      }
+      data.endDate = d;
+    } else {
+      data.endDate = null;
+    }
+  }
+
+  const finalStartDate = data.startDate !== undefined ? data.startDate : link.startDate;
+  const finalEndDate = data.endDate !== undefined ? data.endDate : link.endDate;
+
+  if (finalStartDate && finalEndDate && finalStartDate > finalEndDate) {
+    return NextResponse.json({ error: "Start date cannot be later than end date" }, { status: 400 });
   }
 
   if (Object.keys(data).length === 0) {

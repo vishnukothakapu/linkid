@@ -28,7 +28,7 @@ type LinksSectionProps = {
     setShowAdd: React.Dispatch<React.SetStateAction<boolean>>;
     onExport: () => void;
     onAdd: (link: ProfileLink) => void | Promise<void>;
-    onUpdate: (id: string, url: string, label?: string, platform?: string) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
     onReorder: (links: ProfileLink[]) => void;
