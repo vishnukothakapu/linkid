@@ -12,6 +12,7 @@ import {
     Trash,
     Eye,
     EyeOff,
+    Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState } from "react";
@@ -62,8 +63,8 @@ export function LinkItem({
         if (!date) return "";
         const d = new Date(date);
         if (isNaN(d.getTime())) return "";
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
     const handlePlatformChange = (newPlatform: string) => {
@@ -143,10 +144,18 @@ export function LinkItem({
                                 })}
                         </p>
                     )}
-                            <p className="mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-                            {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                            {link.isPublic ? "Public" : "Private"}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                            <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                                {link.isPublic ? "Public" : "Private"}
+                            </p>
+                            {(link.startDate || link.endDate) && (
+                                <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    Scheduled
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
