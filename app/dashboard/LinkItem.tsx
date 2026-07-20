@@ -61,6 +61,7 @@ export function LinkItem({
     const toDatetimeLocal = (date?: Date | string | null) => {
         if (!date) return "";
         const d = new Date(date);
+        if (isNaN(d.getTime())) return "";
         d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d.toISOString().slice(0, 16);
     };
@@ -104,6 +105,10 @@ export function LinkItem({
         const trimmedLabel = label.trim();
         if (!trimmedLabel) {
             return toast.error("Please enter a display name for this link");
+        }
+
+        if (startDate && endDate && startDate > endDate) {
+            return toast.error("Start date cannot be later than end date");
         }
 
         const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate);

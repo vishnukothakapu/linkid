@@ -121,11 +121,34 @@ export async function PUT(
   }
 
   if (startDate !== undefined) {
-    data.startDate = startDate ? new Date(startDate) : null;
+    if (startDate) {
+      const d = new Date(startDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
+      }
+      data.startDate = d;
+    } else {
+      data.startDate = null;
+    }
   }
 
   if (endDate !== undefined) {
-    data.endDate = endDate ? new Date(endDate) : null;
+    if (endDate) {
+      const d = new Date(endDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
+      }
+      data.endDate = d;
+    } else {
+      data.endDate = null;
+    }
+  }
+
+  const finalStartDate = data.startDate !== undefined ? data.startDate : link.startDate;
+  const finalEndDate = data.endDate !== undefined ? data.endDate : link.endDate;
+
+  if (finalStartDate && finalEndDate && finalStartDate > finalEndDate) {
+    return NextResponse.json({ error: "Start date cannot be later than end date" }, { status: 400 });
   }
 
   if (Object.keys(data).length === 0) {
