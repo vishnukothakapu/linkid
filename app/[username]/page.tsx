@@ -103,6 +103,13 @@ export default async function PublicProfile({
     bgStyle.backgroundImage = "linear-gradient(180deg, #09090b 0%, #1e1b4b 100%)";
   }
 
+  const now = new Date();
+  const activeLinks = (user.links || []).filter((link) => {
+    if (link.startDate && new Date(link.startDate) > now) return false;
+    if (link.endDate && new Date(link.endDate) < now) return false;
+    return true;
+  });
+
   return (
     <main className="min-h-screen px-4 py-16" style={bgStyle}>
       <div className="mx-auto max-w-md">
@@ -114,7 +121,7 @@ export default async function PublicProfile({
               resolved.canonicalUsername,
             bio: user.bio,
             image: user.image,
-            links: user.links || [],
+            links: activeLinks,
             resumeUrl: publicUserData?.resumeUrl ?? null,
           }}
           username={resolved.canonicalUsername}

@@ -25,7 +25,7 @@ export default function DashboardClient({
         setShowAdd(false);
     }
 
-    async function updateLink(id: string, url: string, label?: string, platform?: string): Promise<boolean> {
+    async function updateLink(id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null): Promise<boolean> {
         const csrfToken = await getCsrfToken();
 
         try {
@@ -35,7 +35,7 @@ export default function DashboardClient({
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
                 },
-                body: JSON.stringify({ url, label, platform }),
+                body: JSON.stringify({ url, label, platform, startDate, endDate }),
             });
 
             if (!response.ok) {

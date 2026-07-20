@@ -58,6 +58,8 @@ model Link {
   position  Int      @default(0)
   clicks    Int      @default(0)
   isPublic  Boolean  @default(true)
+  startDate DateTime?
+  endDate   DateTime?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clickEvents ClickEvent[]

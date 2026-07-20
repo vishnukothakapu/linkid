@@ -8,6 +8,8 @@ export type Link = {
     position: number;
     clicks: number;
     isPublic: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
     updatedAt?: Date;
     userId: string;
 }

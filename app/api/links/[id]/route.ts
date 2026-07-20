@@ -42,6 +42,8 @@ export async function PUT(
   const isPublic = body?.isPublic;
   const label = body?.label;
   const platform = body?.platform;
+  const startDate = body?.startDate;
+  const endDate = body?.endDate;
 
   const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
   const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
@@ -57,7 +59,7 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string } = {};
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null } = {};
 
   const activeLabel = typeof label === "string" ? label.trim() : link.label;
 
@@ -116,6 +118,14 @@ export async function PUT(
 
   if (typeof isPublic === "boolean") {
     data.isPublic = isPublic;
+  }
+
+  if (startDate !== undefined) {
+    data.startDate = startDate ? new Date(startDate) : null;
+  }
+
+  if (endDate !== undefined) {
+    data.endDate = endDate ? new Date(endDate) : null;
   }
 
   if (Object.keys(data).length === 0) {
