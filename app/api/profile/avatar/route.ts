@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         cloudinary.uploader.upload_stream(
             { folder: "linkid/avatars", transformation: [{ width: 200, height: 200, crop: "fill" }] },
             (error, result) => {
-                if (error || !result) reject(error);
+                if (error || !result) reject(error ?? new Error("Upload failed with no result"));
                 else resolve(result);
             }
         ).end(buffer);
