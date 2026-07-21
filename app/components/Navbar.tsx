@@ -196,6 +196,20 @@ export function Navbar() {
                             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </button>
                     </div>
+                    <motion.div
+                        style={{
+                            scaleX,
+                            transformOrigin: "left center",
+                            position: "absolute",
+                            insetInline: "0",
+                            bottom: 0,
+                            height: "2px",
+                            background: "linear-gradient(90deg, #7C3AED 0%, #A855F7 35%, #EC4899 70%, #6366F1 100%)",
+                            boxShadow: "0 0 10px rgba(168,85,247,.45), 0 0 20px rgba(99,102,241,.25)",
+                            borderRadius: "9999px",
+                            zIndex: 20,
+                        }}
+                    />
                 </div>
 
                 {/* Mobile dropdown — floats below the pill */}
