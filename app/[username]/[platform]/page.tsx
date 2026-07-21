@@ -46,11 +46,14 @@ export default async function PlatformRedirect({
 
     const link = await prisma.link.findFirst({
         where: {
-            platform: normalizedPlatform, // Pass lowercased string safely
             userId: resolved.user.id,
             isPublic: true,
+            OR: [
+                { alias: normalizedPlatform },
+                { platform: normalizedPlatform, alias: null }
+            ]
         },
-        select: { id: true, url: true, userId: true },
+        select: { id: true, url: true, userId: true, platform: true },
     });
 
     if (!link) notFound();
@@ -77,7 +80,8 @@ export default async function PlatformRedirect({
     const webUrl = link.url;
 
     if (os !== "unknown") {
-        const deepLinks = getDeepLink(normalizedPlatform, webUrl);
+        const actualPlatform = link.platform;
+        const deepLinks = getDeepLink(actualPlatform, webUrl);
         let appUrl = os === "android" ? deepLinks.android : deepLinks.ios;
 
         if (appUrl) {
@@ -86,7 +90,7 @@ export default async function PlatformRedirect({
             
             if (os === "android" && isInApp) {
                 const cleanUrl = webUrl.replace(/^https?:\/\//, "");
-                const targetPackage = ANDROID_PACKAGES[normalizedPlatform];
+                const targetPackage = ANDROID_PACKAGES[actualPlatform];
                 
                 // ✨ Fixed: Safe registry mapping check to skip wrong fake package layouts
                 if (targetPackage) {
@@ -133,7 +137,7 @@ export default async function PlatformRedirect({
                             `,
                         }}
                     />
-                    <p>Opening {platform} app...</p>
+                    <p>Opening {actualPlatform} app...</p>
                     <a href={webUrl}>Open in browser instead</a>
                 </div>
             );

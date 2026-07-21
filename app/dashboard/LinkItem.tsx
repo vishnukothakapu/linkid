@@ -12,6 +12,7 @@ import {
     Trash,
     Eye,
     EyeOff,
+    Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState } from "react";
@@ -43,7 +44,7 @@ export function LinkItem({
     dragAttributes?: DraggableAttributes;
     link: ProfileLink;
     username: string;
-    onUpdate: (id: string, url: string, label?: string, platform?: string) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }) {
@@ -53,8 +54,18 @@ export function LinkItem({
     const isStandardPlatform = Object.keys(PLATFORM_ICONS).includes(link.platform);
     const initialPlatform = isStandardPlatform ? link.platform : PLATFORMS.WEBSITE;
     const [platform, setPlatform] = useState(initialPlatform);
+    const [startDate, setStartDate] = useState<Date | null>(link.startDate ? new Date(link.startDate) : null);
+    const [endDate, setEndDate] = useState<Date | null>(link.endDate ? new Date(link.endDate) : null);
     const [copied, setCopied] = useState(false);
     const Icon = PLATFORM_ICONS[editing ? platform : link.platform] ?? Globe;
+
+    const toDatetimeLocal = (date?: Date | string | null) => {
+        if (!date) return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return "";
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
 
     const handlePlatformChange = (newPlatform: string) => {
         setPlatform(newPlatform);
@@ -75,7 +86,7 @@ export function LinkItem({
 
     function copy() {
         navigator.clipboard.writeText(
-            `linkid.qzz.io/${username}/${link.platform}`
+            `linkid.qzz.io/${username}/${link.alias || link.platform}`
         );
         setCopied(true);
         toast.success("Copied");
@@ -97,7 +108,11 @@ export function LinkItem({
             return toast.error("Please enter a display name for this link");
         }
 
-        const success = await onUpdate(link.id, url, trimmedLabel, platform);
+        if (startDate && endDate && startDate > endDate) {
+            return toast.error("Start date cannot be later than end date");
+        }
+
+        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate);
         if (success) {
             setEditing(false);
         }
@@ -129,10 +144,18 @@ export function LinkItem({
                                 })}
                         </p>
                     )}
-                            <p className="mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-                            {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                            {link.isPublic ? "Public" : "Private"}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                            <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                                {link.isPublic ? "Public" : "Private"}
+                            </p>
+                            {(link.startDate || link.endDate) && (
+                                <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    Scheduled
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -173,6 +196,8 @@ export function LinkItem({
                                 setUrl(link.url);
                                 setLabel(link.label || "");
                                 setPlatform(initialPlatform);
+                                setStartDate(link.startDate ? new Date(link.startDate) : null);
+                                setEndDate(link.endDate ? new Date(link.endDate) : null);
                             }
                             setEditing((v) => !v);
                         }}
@@ -229,6 +254,35 @@ export function LinkItem({
                             className="flex-1 px-2 py-4 text-sm"
                         />
                     </div>
+
+                    <details className="group border rounded-md p-3 [&_summary::-webkit-details-marker]:hidden">
+                        <summary className="flex cursor-pointer items-center justify-between font-medium text-sm text-muted-foreground">
+                            Advanced Settings
+                            <span className="transition group-open:rotate-180">
+                                <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                            </span>
+                        </summary>
+                        <div className="mt-3 flex flex-col gap-3 sm:flex-row text-sm">
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">Visible From</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={toDatetimeLocal(startDate)}
+                                    onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="w-full text-sm"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">Visible Until</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={toDatetimeLocal(endDate)}
+                                    onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="w-full text-sm"
+                                />
+                            </div>
+                        </div>
+                    </details>
 
                     <div className="flex gap-2 justify-end">
                         <Button size="icon" onClick={save} aria-label="Save changes">

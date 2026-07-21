@@ -21,6 +21,7 @@ export default async function DashboardPage() {
         <DashboardClient
             username={user.username}
             initialLinks={user.links}
+            initialTheme={user.theme}
             qrCode={<QRCode />} 
         />
     );

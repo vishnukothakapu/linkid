@@ -63,11 +63,11 @@ export async function DELETE(req: NextRequest) {
     }
 
 
+    await invalidateUserSessions(userId);
+    await clearOtp(userId);
     await prisma.user.delete({
       where: { id: session.user.id },
     });
-    await invalidateUserSessions(userId);
-    await clearOtp(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
