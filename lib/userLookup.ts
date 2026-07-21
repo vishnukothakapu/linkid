@@ -58,3 +58,21 @@ export const getPublicUserData = unstable_cache(
     { revalidate: 60, tags: ["public-profile"] }
 );
 
+/**
+ * Get all users with a published (public) profile, for sitemap generation.
+ * A profile is considered "published" once the user has claimed a username.
+ */
+export const getPublishedUsernames = unstable_cache(
+    async () => {
+        const users = await prisma.user.findMany({
+            where: { username: { not: null } },
+            select: { username: true, createdAt: true },
+        });
+
+        return users.filter(
+            (u): u is { username: string; createdAt: Date } => u.username !== null
+        );
+    },
+    ["getPublishedUsernames"],
+    { revalidate: 3600, tags: ["public-profile"] }
+);

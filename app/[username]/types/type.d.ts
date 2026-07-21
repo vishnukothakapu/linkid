@@ -3,10 +3,13 @@ export type Link = {
     id: string;
     createdAt: Date;
     platform: string;
+    alias?: string | null;
     url: string;
     position: number;
     clicks: number;
     isPublic: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
     updatedAt?: Date;
     userId: string;
 }
@@ -31,6 +34,7 @@ export type User = {
 
 export type ProfileCardProps = User & {
     isOwner: boolean;
+    themeType?: string | null;
 };
 
 export type ProfileLinksProps = {

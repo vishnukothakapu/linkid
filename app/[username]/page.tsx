@@ -82,6 +82,34 @@ export default async function PublicProfile({
   const isOwner =
     session?.user?.email?.toLowerCase() === user.email?.toLowerCase();
 
+  const bgStyle: React.CSSProperties = {};
+  if (user.themeType === "solid") {
+    bgStyle.backgroundColor = user.themeColor || "#0f172a";
+  } else if (user.themeType === "gradient") {
+    if (user.themeColor === "custom" && user.themeCustom) {
+      const parts = user.themeCustom.split(",");
+      bgStyle.backgroundImage = `linear-gradient(135deg, ${parts[0] || "#0f172a"}, ${parts[1] || "#0369a1"})`;
+    } else {
+      bgStyle.backgroundColor = "#0f172a";
+    }
+  } else if (user.themeType === "glassmorphism") {
+    bgStyle.backgroundColor = "#030712";
+    bgStyle.backgroundImage = "radial-gradient(ellipse at top, #1e293b, transparent)";
+  } else if (user.themeType === "retro") {
+    bgStyle.backgroundColor = "#000000";
+    bgStyle.fontFamily = "monospace";
+  } else if (user.themeType === "cyberpunk") {
+    bgStyle.backgroundColor = "#050505";
+    bgStyle.backgroundImage = "linear-gradient(180deg, #09090b 0%, #1e1b4b 100%)";
+  }
+
+  const now = new Date();
+  const activeLinks = (user.links || []).filter((link) => {
+    if (link.startDate && new Date(link.startDate) > now) return false;
+    if (link.endDate && new Date(link.endDate) < now) return false;
+    return true;
+  });
+
   return (
     <main className={`min-h-screen px-4 py-16 theme-${user.theme || "default"}`}>
       <div className="mx-auto max-w-md">
@@ -93,12 +121,13 @@ export default async function PublicProfile({
               resolved.canonicalUsername,
             bio: user.bio,
             image: user.image,
-            links: user.links || [],
+            links: activeLinks,
             resumeUrl: publicUserData?.resumeUrl ?? null,
           }}
           username={resolved.canonicalUsername}
           showCTA={!session}
           isOwner={isOwner}
+          themeType={user.themeType}
         />
 
         <div className="mt-4 flex justify-center gap-2">
