@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { verifyOtp, clearOtp } from "@/lib/deleteOtpStore";
 import { invalidateUserSessions } from "@/lib/sessionInvalidation";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -14,6 +15,19 @@ export async function DELETE(req: NextRequest) {
     }
 
     const userId = session.user.id;
+
+    const allowed = await checkRateLimit(
+      `delete-account:${userId}`,
+      5,
+      15 * 60 * 1000
+    );
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
     let body: unknown;
     try {
       body = await req.json();
