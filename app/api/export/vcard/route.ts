@@ -2,12 +2,23 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { buildVCard } from "@/lib/buildVCard";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new Response("Unauthorized", { status: 401 });
+    }
+
+    const allowed = await checkRateLimit(
+      `export-vcard:${session.user.email}`,
+      10,
+      60 * 1000
+    );
+
+    if (!allowed) {
+      return new Response("Too many requests. Please slow down.", { status: 429 });
     }
 
     const user = await prisma.user.findUnique({
