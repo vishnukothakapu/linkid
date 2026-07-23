@@ -41,6 +41,7 @@ export const authOptions: NextAuthOptions = {
                   Google({
                       clientId: process.env.GOOGLE_CLIENT_ID,
                       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                      allowDangerousEmailAccountLinking: true,
                   }),
               ]
             : []),
@@ -50,6 +51,7 @@ export const authOptions: NextAuthOptions = {
                   GitHub({
                       clientId: process.env.GITHUB_CLIENT_ID,
                       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                      allowDangerousEmailAccountLinking: true,
                   }),
               ]
             : []),
@@ -69,6 +71,10 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user || !user.password) return null;
+
+                if (!user.emailVerified) {
+                    throw new Error("Please verify your email address to log in.");
+                }
 
                 const isValid = await bcrypt.compare(
                     credentials.password,
