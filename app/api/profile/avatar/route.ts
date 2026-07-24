@@ -4,6 +4,11 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { hasSupportedImageMagicBytes } from "@/lib/imageValidation";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
+
+const RATE_LIMIT = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -12,6 +17,12 @@ cloudinary.config({
 });
 
 export async function POST(req: Request) {
+    const ip = getForwardedIp(req.headers) ?? "unknown";
+    const allowed = await checkRateLimit(`avatar:${ip}`, RATE_LIMIT, RATE_LIMIT_WINDOW_MS);
+    if (!allowed) {
+        return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

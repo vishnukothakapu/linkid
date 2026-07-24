@@ -4,8 +4,19 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { completeAccountMerge, MergeError } from "@/lib/accountMerge";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
+
+const RATE_LIMIT = 10;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(req: Request) {
+    const ip = getForwardedIp(req.headers) ?? "unknown";
+    const allowed = await checkRateLimit(`merge-complete:${ip}`, RATE_LIMIT, RATE_LIMIT_WINDOW_MS);
+    if (!allowed) {
+        return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
