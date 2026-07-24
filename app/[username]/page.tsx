@@ -23,12 +23,15 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
         const defaultImage = "https://linkid.qzz.io/default-og.png"; 
         const profileImage = user?.image || defaultImage;
 
+        const pageTitle = user?.seoTitle || `${canonicalUsername} | LinkID`;
+        const pageDescription = user?.seoDescription || `Check out ${canonicalUsername}'s LinkID profile.`;
+
         return {
-            title: `${canonicalUsername} | LinkID`,
-            description: `Check out ${canonicalUsername}'s LinkID profile.`,
+            title: pageTitle,
+            description: pageDescription,
             openGraph: {
-                title: `${canonicalUsername} | LinkID`,
-                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                title: pageTitle,
+                description: pageDescription,
                 images: [
                     {
                         url: profileImage,
@@ -39,8 +42,8 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
             },
             twitter: {
                 card: "summary_large_image",
-                title: `${canonicalUsername} | LinkID`,
-                description: `Check out ${canonicalUsername}'s LinkID profile.`,
+                title: pageTitle,
+                description: pageDescription,
                 images: [profileImage],
             },
         };
