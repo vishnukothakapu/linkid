@@ -24,6 +24,7 @@ model User {
   themeType           String   @default("solid")
   themeColor          String   @default("slate")
   themeCustom         String?
+  enableEmailCapture  Boolean  @default(false)
 
   links         Link[]
   accounts      Account[]
@@ -34,6 +35,7 @@ model User {
   profileDraft  ProfileDraft?
   profileVersions ProfileVersion[]
   previewTokens ProfilePreviewToken[]
+  subscribers   Subscriber[]
   createdAt     DateTime @default(now())
 
   theme         String   @default("default")
@@ -285,4 +287,15 @@ model InvalidatedSession {
   createdAt DateTime @default(now())
 
   @@map("invalidatedSession")
+}
+
+model Subscriber {
+  id        String   @id @default(uuid())
+  email     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([email, userId])
+  @@index([userId])
 }
