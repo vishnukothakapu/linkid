@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { Check, X } from "lucide-react";
+
+const USERNAME_REGEX = /^[a-zA-Z0-9-]+$/;
+
 export default function EditProfileCard({
     initialName,
     initialUsername,
@@ -22,6 +25,7 @@ export default function EditProfileCard({
     const [username, setUsername] = useState(initialUsername);
     const [bio, setBio] = useState(initialBio || "");
     const [available, setAvailable] = useState<boolean | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(false);
     const latestRequestId = useRef(0);
@@ -29,32 +33,66 @@ export default function EditProfileCard({
     function checkUsername(value: string) {
         setUsername(value);
         setAvailable(null);
+        setErrorMsg(null);
     }
 
     useEffect(() => {
-        if (username.length < 3 || username === initialUsername) {
-            setAvailable(null);
-            setChecking(false);
-            return;
-        }
-
-        setChecking(true);
         const requestId = ++latestRequestId.current;
 
         const timer = setTimeout(async () => {
-            const res = await fetch(`/api/username/check?username=${username}`);
-            const data = await res.json();
+            if (username.length < 3 || username === initialUsername) {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                    setErrorMsg(null);
+                    setChecking(false);
+                }
+                return;
+            }
 
             if (requestId === latestRequestId.current) {
-                setAvailable(data.available);
-                setChecking(false);
+                setChecking(true);
+            }
+
+            try {
+                const res = await fetch(`/api/username/check?username=${encodeURIComponent(username)}`);
+                const data = await res.json();
+
+                if (requestId === latestRequestId.current) {
+                    setAvailable(data.available);
+                    setErrorMsg(data.error || null);
+                }
+            } catch {
+                if (requestId === latestRequestId.current) {
+                    setAvailable(null);
+                    setErrorMsg(null);
+                }
+            } finally {
+                if (requestId === latestRequestId.current) {
+                    setChecking(false);
+                }
             }
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [username]);
+    }, [username, initialUsername]);
+
+    function validate(): string | null {
+      if (!name.trim())
+        return "Name cannot be empty.";
+      if (name.trim().length < 2)
+        return "Name must be ≥ 2 chars.";
+      if (username.trim().length < 3)
+        return "Username must be ≥ 3 chars.";
+      if (!USERNAME_REGEX.test(username.trim()))
+        return "Letters, numbers, and hyphens only.";
+      if (bio.trim().length > 160)
+        return "Bio max 160 characters.";
+      return null;
+    }
 
     async function saveChanges() {
+        const err = validate();
+        if (err) { alert(err); return; }
         setLoading(true);
         const csrfToken = await getCsrfToken();
 
@@ -64,18 +102,27 @@ export default function EditProfileCard({
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
             },
-            body: JSON.stringify({ name, username,bio }),
+            body: JSON.stringify({ 
+                name: name.trim(), 
+                username: username.trim(),
+                bio: bio.trim()
+            }),
         });
 
         setLoading(false);
 
         if (!res.ok) {
-            alert("Failed to update profile");
+            alert("Failed to save draft");
             return;
         }
         if(onSuccess) onSuccess();
         window.location.reload();
     }
+
+    const isDirty =
+        name.trim() !== initialName.trim() ||
+        username.trim() !== initialUsername.trim() ||
+        bio.trim() !== (initialBio || "").trim();
 
     return (
         <Card>
@@ -115,33 +162,40 @@ export default function EditProfileCard({
                             ⚠️ <strong>Heads up:</strong> Changing your username may affect existing shared links. Old links will automatically redirect to your new username.
                         </div>
                     )}
+                    
+                    <div role="status" aria-live="polite" aria-atomic="true">
+                        {checking && (
+                            <p className="text-sm text-muted-foreground">
+                                Checking availability...
+                            </p>
+                        )}
 
-                    <div className="space-y-1">
-                        <Label>Bio</Label>
-                        <textarea
-                            className="w-full rounded-md border p-2 text-sm"
-                            maxLength={160}
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            placeholder="Tell something about yourself..."
-                        />
-                        <p className="text-xs text-muted-foreground text-right">
-                            {bio.length}/160
-                        </p>
+                        {available === true && (
+                            <p className="flex items-center gap-1 text-sm text-green-600">
+                                <Check className="h-4 w-4" /> Username available
+                            </p>
+                        )}
+
+                        {!checking && available === false && (
+                            <p className="flex items-center gap-1 text-sm text-red-600">
+                                <X className="h-4 w-4" /> {errorMsg || "Username already taken"}
+                            </p>
+                        )}
                     </div>
-
-
-                    {available === true && (
-                        <p className="flex items-center gap-1 text-sm text-green-600">
-                            <Check className="h-4 w-4" /> Username available
-                        </p>
-                    )}
-
-                    {available === false && (
-                        <p className="flex items-center gap-1 text-sm text-red-600">
-                            <X className="h-4 w-4" /> Username already taken
-                        </p>
-                    )}
+                </div>
+                
+                <div className="space-y-1">
+                    <Label>Bio</Label>
+                    <textarea
+                        className="w-full rounded-md border p-2 text-sm"
+                        maxLength={160}
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        placeholder="Tell something about yourself..."
+                    />
+                    <p className="text-xs text-muted-foreground text-right">
+                        {bio.length}/160
+                    </p>
                 </div>
 
                 <Button
@@ -149,12 +203,19 @@ export default function EditProfileCard({
                     disabled={
                         loading ||
                         checking ||
+                        !isDirty ||
                         username.length < 3 ||
+                        !USERNAME_REGEX.test(username) ||
                         (!available && username !== initialUsername)
                     }
                 >
-                    {loading ? "Saving..." : "Save Changes"}
+                    {loading ? "Saving draft..." : "Save as Draft"}
                 </Button>
+
+                <p className="text-xs text-muted-foreground">
+                    Changes are saved as a draft. Go to{" "}
+                    <strong>Actions → Publish Draft</strong> to make them live on your public profile.
+                </p>
             </CardContent>
         </Card>
     );

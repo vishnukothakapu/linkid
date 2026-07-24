@@ -3,10 +3,14 @@ export type Link = {
     id: string;
     createdAt: Date;
     platform: string;
+    alias?: string | null;
     url: string;
-    order: number;
+    position: number;
     clicks: number;
     isPublic: boolean;
+    startDate?: Date | null;
+    endDate?: Date | null;
+    updatedAt?: Date;
     userId: string;
 }
 
@@ -21,12 +25,23 @@ export type User = {
         username: string;
         bio: string | null;
         image: string | null;
-        links: Link[]
+        links?: Link[];
+        resumeUrl?: string | null;
     };
     username: string;
     showCTA: boolean;
 }
 
+export type ProfileCardProps = User & {
+    isOwner: boolean;
+    themeType?: string | null;
+};
+
+export type ProfileLinksProps = {
+    links?: Link[];
+    username: string;
+    isOwner: boolean;
+};
 
 export type ProfileHeader = {
     name: string | null;

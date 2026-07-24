@@ -8,9 +8,10 @@ import {
 } from "@/lib/csrf";
 
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const CSRF_EXCLUDED_PATH_PREFIXES = [
+const CSRF_EXCLUDED_PATHS = [
     "/api/auth",
     "/api/csrf",
+    "/api/contact-us",
     "/api/links/click",
     "/api/analytics/aggregate",
 ];
@@ -18,8 +19,13 @@ const CSRF_EXCLUDED_PATH_PREFIXES = [
 export type CsrfDecision = "skip" | "allow" | "reject";
 
 /**
- * Decides whether a request should be protected by CSRF validation.
+ * Helper to ensure an exact path match or strict path-segment boundary matching.
+ * This prevents partial matching vulnerabilities (e.g., /api/contact-us-admin).
  */
+function matchesExcludedPrefix(pathname: string, prefix: string): boolean {
+    return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 export function getCsrfDecision(input: {
     method: string;
     pathname: string;
@@ -30,7 +36,7 @@ export function getCsrfDecision(input: {
 
     if (
         !CSRF_PROTECTED_METHODS.has(method) ||
-        CSRF_EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+        CSRF_EXCLUDED_PATHS.some((prefix) => matchesExcludedPrefix(pathname, prefix))
     ) {
         return "skip";
     }
@@ -38,9 +44,6 @@ export function getCsrfDecision(input: {
     return validateCsrfToken(requestToken, storedToken) ? "allow" : "reject";
 }
 
-/**
- * Applies CSRF validation to a middleware request and returns a rejection response when needed.
- */
 export async function applyCsrfProtection(request: NextRequest): Promise<NextResponse | null> {
     const requestToken = await extractCsrfTokenFromRequest(request);
     const storedToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;

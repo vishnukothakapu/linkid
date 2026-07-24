@@ -1,12 +1,16 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { DashboardNavbar } from "@/app/components/DashboardNavbar";
+import { getProfileVersions } from "@/lib/profileWorkflow";
 
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
+import { DangerZoneCard } from "./DangerZoneCard";
+import { ResumeCard } from "./ResumeCard";
+import { ThemeBuilderCard } from "./ThemeBuilderCard";
 
 export default async function ProfilePage() {
     const session = await getServerSession(authOptions);
@@ -14,10 +18,17 @@ export default async function ProfilePage() {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { accounts: true },
+        include: { 
+            accounts: true, 
+            links: true,
+            profileDraft: true,
+        },
     });
 
     if (!user) return null;
+
+    // Load profile versions
+    const profileVersions = await getProfileVersions(user.id);
 
     return (
         <>
@@ -31,7 +42,31 @@ export default async function ProfilePage() {
 
                 <AccountInfoCard user={user} />
 
-                <ProfileActionsCard />
+                <ResumeCard
+                    initialResumeUrl={user.resumeUrl}
+                    initialDownloadCount={user.resumeDownloadCount}
+                />
+
+                <ThemeBuilderCard
+                    userId={user.id}
+                    initialThemeType={user.profileDraft?.themeType ?? user.themeType}
+                    initialThemeColor={user.profileDraft?.themeColor ?? user.themeColor}
+                    initialThemeCustom={user.profileDraft?.themeCustom ?? user.themeCustom}
+                    userName={user.name}
+                    userBio={user.bio}
+                    userImage={user.image}
+                />
+
+                <ProfileActionsCard
+                    hasPassword={Boolean(user.password)}
+                    profileDraft={user.profileDraft}
+                    profileVersions={profileVersions}
+                />
+
+                <DangerZoneCard
+                    userEmail={user.email}
+                    hasPassword={Boolean(user.password)}
+                />
             </main>
         </>
     );

@@ -15,13 +15,15 @@ async function generateQRCode() {
         if (!user?.username) redirect("/dashboard");
         const url = `https://linkid.qzz.io/${user.username}`;
         const qrCode = await QRCodeLib.toDataURL(url);  // ← use renamed import
-        return qrCode;
+        return { qrCode, user };
     } catch (error) {
         console.error(error);
     }
 }
 
 export default async function QRCode() {
-    const qrCode = await generateQRCode();
-    return <QRCodeButton qrCode={qrCode ?? ""} />;
+    const data = await generateQRCode();
+    const qrCode = data?.qrCode ?? "";
+    const user = data?.user;
+    return <QRCodeButton qrCode={qrCode} avatarUrl={user?.image ?? undefined} username={user?.name ?? "User"} linkidUsername={user?.username ?? undefined} />;
 }

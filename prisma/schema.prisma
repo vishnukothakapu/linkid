@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
@@ -19,31 +19,62 @@ model User {
 
   bio            String?
 
+  resumeUrl           String?
+  resumeDownloadCount Int      @default(0)
+  themeType           String   @default("solid")
+  themeColor          String   @default("slate")
+  themeCustom         String?
+
   links         Link[]
   accounts      Account[]
   sessions      Session[]
+  aliases       UserAlias[]
+  mergeRequests AccountMergeRequest[]
+  usernameHistory UsernameHistory[]
+  profileDraft  ProfileDraft?
+  profileVersions ProfileVersion[]
+  previewTokens ProfilePreviewToken[]
   createdAt     DateTime @default(now())
 
-  usernameHistory UsernameHistory[]
+  theme         String   @default("default")
+
+  customDomain  String?  @unique
+  totpSecret       String?
+  twoFactorEnabled Boolean  @default(false)
+  recoveryCodes    String?
+
+  @@index([username])
 }
 
+model UserAlias {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
+  @@index([userId])
+}
 
 model Link {
   id        String   @id @default(uuid())
   platform  String
+  alias     String?
   label     String
   url       String
-  order     Int      @default(0)
+  position  Int      @default(0)
   clicks    Int      @default(0)
   isPublic  Boolean  @default(true)
+  startDate DateTime?
+  endDate   DateTime?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clickEvents ClickEvent[]
   dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
-
-  @@unique([userId, platform])
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+  @@index([platform])
 }
 
 model ClickEvent {
@@ -82,18 +113,51 @@ model DailyLinkAnalytics {
   @@index([userId, date])
   @@index([date])
 }
+
+model AccountMergeRequest {
+  id               String   @id @default(uuid())
+  codeHash         String   @unique
+  targetUserId     String
+  targetUser       User     @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  consumedAt       DateTime?
+  consumedByUserId String?
+
+  @@index([targetUserId, createdAt])
+  @@index([expiresAt])
+}
+
+model AccountMergeEvent {
+  id                String   @id @default(uuid())
+  sourceUserId      String
+  targetUserId      String
+  sourceEmail       String
+  targetEmail       String
+  sourceUsername    String?
+  targetUsername    String?
+  mergedLinks       Int      @default(0)
+  mergedAccounts    Int      @default(0)
+  transferredSessions Int    @default(0)
+  conflictsJson     String?
+  createdAt         DateTime @default(now())
+
+  @@index([sourceUserId])
+  @@index([targetUserId, createdAt])
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -125,4 +189,100 @@ model UsernameHistory {
   createdAt        DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProfileDraft {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String?
+  username  String?
+  bio       String?
+  image     String?
+  themeType String?
+  themeColor String?
+  themeCustom String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ProfileVersion {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String?
+  username  String?
+  bio       String?
+  image     String?
+  themeType String?
+  themeColor String?
+  themeCustom String?
+  changeType String // "publish" or "rollback"
+  diffJson  String? // JSON stringified diff
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ProfilePreviewToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique // SHA256 hash of the actual token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+enum JobStatus {
+  PENDING
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Job {
+  id         String    @id @default(cuid())
+  type       String
+  payload    Json
+  status     JobStatus @default(PENDING)
+  userId     String    @default("")
+  scheduleAt DateTime?
+  attempts   Int       @default(0)
+  lastError  String?
+  runAfter   DateTime? // next eligible run time
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status, runAfter])
+  @@index([scheduleAt])
+  @@index([userId])
+}
+
+model DeleteOtp {
+  userId      String   @id
+  otp         String?
+  expiresAt   DateTime?
+  attempts    Int      @default(0)
+  sendCount   Int      @default(0)
+  windowStart DateTime?
+
+  @@index([windowStart])
+  @@map("deleteOtp")
+}
+
+model InvalidatedSession {
+  userId    String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("invalidatedSession")
 }

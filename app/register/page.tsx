@@ -10,8 +10,10 @@ import { FcGoogle } from "react-icons/fc";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useCsrf } from "@/lib/useCsrf";
+import { PLATFORMS } from "@/lib/constants";
 
 import { Navbar } from "../components/Navbar";
 
@@ -22,6 +24,9 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("");
     const [submitError, setSubmitError] = useState<string | null>(null);
     const csrfToken = useCsrf();
+
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const [githubLoading, setGithubLoading] = useState(false);
 
     const getPasswordError = (value: string) => {
         if (value.length < 8) return "Must be at least 8 characters";
@@ -48,6 +53,13 @@ export default function RegisterPage() {
             name: (form.elements.namedItem("name") as HTMLInputElement).value,
             password: (form.elements.namedItem("password") as HTMLInputElement).value,
         };
+
+        const passErr = getPasswordError(data.password);
+        if (passErr) {
+            setSubmitError(passErr);
+            setLoading(false);
+            return;
+        }
 
         const res = await fetch("/api/auth/register", {
             method: "POST",
@@ -91,19 +103,37 @@ export default function RegisterPage() {
                         <Button
                             variant="outline"
                             className="flex w-full items-center justify-center gap-2"
-                            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                            disabled={googleLoading || githubLoading}
+                            onClick={async () => {
+                                setGoogleLoading(true);
+                                try {
+                                    await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
+                                } finally {
+                                    setGoogleLoading(false);
+                                }
+                            }}
                         >
-                            <FcGoogle className="h-5 w-5" />
-                            Continue with Google
+                            {googleLoading ? <Spinner className="h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
+                            {googleLoading ? "Connecting..." : "Continue with Google"}
                         </Button>
 
                         <Button
                             variant="outline"
                             className="flex w-full items-center justify-center gap-2"
-                            onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+                            disabled={googleLoading || githubLoading}
+                            onClick={async () => {
+                                setGithubLoading(true);
+                                try {
+                                    await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
+                                } finally {
+                                    setGithubLoading(false);
+                                }
+                            }}
                         >
-                            <FaGithub className="h-5 w-5" />
-                            Continue with GitHub
+
+                            {githubLoading ? <Spinner className="h-5 w-5" /> : <FaGithub className="h-5 w-5" />}
+                            {githubLoading ? "Connecting..." : "Continue with GitHub"}
+
                         </Button>
                     </div>
 
@@ -117,50 +147,48 @@ export default function RegisterPage() {
                         <input type="hidden" name="_csrf" value={csrfToken} />
 
                         <div className="relative mb-4 flex items-center">
-                            <User className="absolute left-3 text-gray-400" size={20} />
+                            <User className="absolute left-3 text-muted-foreground" size={20} />
                             <Input
                                 name="name"
                                 placeholder="Full name"
+                                autoComplete="name"
                                 required
-                                className="bg-[#1a1a1a] pl-10 border-gray-800 focus:border-purple-500"
+                                className="pl-10 transition-colors"
                             />
                         </div>
 
                         <div className="relative mb-4 flex items-center">
-                            <Mail className="absolute left-3 text-gray-400" width="20" />
+                            <Mail className="absolute left-3 text-muted-foreground" width="20" />
                             <Input
                                 name="email"
                                 type="email"
                                 placeholder="Email"
+                                autoComplete="email"
                                 required
-                                className="bg-[#1a1a1a] pl-10 border-gray-800 focus:border-purple-500"
+                                className="pl-10 transition-colors"
                             />
                         </div>
 
                         <div className="relative flex items-center">
-                            <Lock className="absolute left-3 text-gray-400" width="20" />
+                            <Lock className="absolute left-3 text-muted-foreground" width="20" />
                             <Input
                                 name="password"
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Password"
+                                autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className={`bg-[#1a1a1a] pl-10 pr-10 border-gray-800 focus:border-purple-500 ${password && error ? "border-red-500" : ""}`}
+                                className={`pl-10 pr-10 transition-colors ${password && error ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30" : ""}`}
                             />
-                            {showPassword ? (
-                                <EyeOff
-                                    onClick={() => setShowPassword((prev) => !prev)}
-                                    className="absolute right-3 cursor-pointer text-gray-400 hover:text-white"
-                                    width="20"
-                                />
-                            ) : (
-                            <Eye
+                            <button
+                                type="button"
                                 onClick={() => setShowPassword((prev) => !prev)}
-                                className="absolute right-3 cursor-pointer text-gray-400 hover:text-white"
-                                width="20"
-                                />
-                            )}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff width="20" /> : <Eye width="20" />}
+                            </button>
                         </div>
 
                         {password && error && (

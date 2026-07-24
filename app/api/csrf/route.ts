@@ -6,9 +6,6 @@ import {
     getCsrfCookieOptions,
 } from "@/lib/csrf";
 
-/**
- * Issues a fresh CSRF token and rotates the cookie value.
- */
 export async function GET() {
     const token = generateCsrfToken();
     const response = NextResponse.json(

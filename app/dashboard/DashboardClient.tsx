@@ -7,17 +7,23 @@ import { LinksSection } from "./LinksSection";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import { LinkIdCard } from "./LinkIdCard";
 import { AnalyticsOverview } from "./AnalyticsOverview";
+import { VersionHistory } from "@/components/dashboard/VersionHistory";
+import { AppearanceSection } from "./AppearanceSection";
 
 export default function DashboardClient({
     username,
     initialLinks,
+    initialTheme,
     qrCode,
 }: {
     username: string;
     initialLinks: ProfileLink[];
+    initialTheme?: string;
     qrCode?: React.ReactNode;
 }) {
     const [links, setLinks] = useState(initialLinks);
+    const [theme, setTheme] = useState(initialTheme || "default");
+    const [activeTab, setActiveTab] = useState<"links" | "appearance">("links");
     const [showAdd, setShowAdd] = useState(false);
 
     async function addLink(link: ProfileLink) {
@@ -25,24 +31,43 @@ export default function DashboardClient({
         setShowAdd(false);
     }
 
-    async function updateLink(id: string, url: string) {
+    async function updateLink(id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null): Promise<boolean> {
         const csrfToken = await getCsrfToken();
 
-        await fetch(`/api/links/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "x-csrf-token": csrfToken,
-            },
-            body: JSON.stringify({ url }),
-        });
-        toast.success("Link updated");
+        try {
+            const response = await fetch(`/api/links/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({ url, label, platform, startDate, endDate }),
+            });
 
-        setLinks((prev) =>
-            prev.map((l) =>
-                l.id === id ? { ...l, url } : l
-            )
-        );
+            if (!response.ok) {
+                try {
+                    const data = await response.json();
+                    toast.error(data.error ?? "Failed to update link");
+                } catch {
+                    toast.error("Failed to update link");
+                }
+                return false;
+            }
+
+            const responseData = await response.json();
+            toast.success("Link updated");
+
+            setLinks((prev) =>
+                prev.map((l) =>
+                    l.id === id ? { ...l, ...responseData.link } : l
+                )
+            );
+            return true;
+        } catch (error) {
+            console.error("Link update failed:", error);
+            toast.error("Failed to update link");
+            return false;
+        }
     }
 
     async function updateVisibility(id: string, isPublic: boolean) {
@@ -118,19 +143,49 @@ export default function DashboardClient({
 
                 <LinkIdCard username={username} qrCode={qrCode} />
 
-                <AnalyticsOverview />
+                <div className="grid gap-6 md:grid-cols-3">
+                    <div className="md:col-span-2">
+                        <AnalyticsOverview />
+                    </div>
+                    <div>
+                        <VersionHistory />
+                    </div>
+                </div>
 
-                <LinksSection
-                    username={username}
-                    links={links}
-                    showAdd={showAdd}
-                    setShowAdd={setShowAdd}
-                    onExport={exportCsv}
-                    onAdd={addLink}
-                    onUpdate={updateLink}
-                    onToggleVisibility={updateVisibility}
-                    onDelete={deleteLink}
-                />
+                <div className="flex gap-4 border-b">
+                    <button 
+                        className={`pb-2 px-1 text-sm font-medium ${activeTab === 'links' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground'}`}
+                        onClick={() => setActiveTab('links')}
+                    >
+                        Links
+                    </button>
+                    <button 
+                        className={`pb-2 px-1 text-sm font-medium ${activeTab === 'appearance' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground'}`}
+                        onClick={() => setActiveTab('appearance')}
+                    >
+                        Appearance
+                    </button>
+                </div>
+
+                {activeTab === 'links' ? (
+                    <LinksSection
+                        username={username}
+                        links={links}
+                        showAdd={showAdd}
+                        setShowAdd={setShowAdd}
+                        onExport={exportCsv}
+                        onAdd={addLink}
+                        onUpdate={updateLink}
+                        onToggleVisibility={updateVisibility}
+                        onDelete={deleteLink}
+                        onReorder={setLinks}
+                    />
+                ) : (
+                    <AppearanceSection 
+                        initialTheme={theme} 
+                        onUpdateTheme={setTheme} 
+                    />
+                )}
 
                 <footer className="pt-10 border-t text-center text-sm text-muted-foreground">
                     © {new Date().getFullYear()} LinkID · Built for developers

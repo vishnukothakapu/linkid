@@ -1,3 +1,6 @@
+@import "react-image-crop/dist/ReactCrop.css";
+@import "tailwindcss";
+@import "tw-animate-css";
 * {
   transition: 
     background-color 0.25s ease,
@@ -8,9 +11,8 @@
 html {
   scroll-behavior: smooth;
 }
-@import "react-image-crop/dist/ReactCrop.css";
-@import "tailwindcss";
-@import "tw-animate-css";
+
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -27,6 +29,7 @@ html {
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-chart-6: var(--chart-6);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -83,6 +86,7 @@ html {
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --chart-6:  oklch(0.696 0.17 162.48);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -146,4 +150,126 @@ html {
     linear-gradient(135deg, #030304, #09090b 45%, rgba(30, 27, 75, 0.42)),
     linear-gradient(to bottom, rgba(124, 58, 237, 0.08), rgba(0, 0, 0, 0));
   background-attachment: fixed;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.marquee:hover {
+  animation-play-state: paused;
+}
+
+.marquee-reverse {
+  animation: marquee-reverse 40s linear infinite;
+}
+
+/* Global scrollbar style to cover the entire page */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent; /* Purple for Firefox */
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #7c3aed; /* Vibrant Purple */
+  border-radius: 9999px;
+  border: 2px solid transparent; 
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: #2563eb; /* Vibrant Blue on hover */
+}
+.marquee-reverse:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee,
+  .marquee-reverse {
+    animation: none;
+  }
+}
+
+/* Custom Profile Themes */
+.theme-default {
+  /* Inherits everything from globals */
+}
+
+.theme-midnight {
+  --background: oklch(0.18 0.02 260);
+  --foreground: oklch(0.98 0.01 260);
+  --card: oklch(0.22 0.02 260);
+  --card-foreground: oklch(0.98 0.01 260);
+  --primary: oklch(0.6 0.2 260);
+  --primary-foreground: oklch(0.98 0.01 260);
+  --border: oklch(1 0 0 / 10%);
+  --muted: oklch(0.25 0.02 260);
+  --muted-foreground: oklch(0.7 0.01 260);
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+}
+
+.theme-forest {
+  --background: oklch(0.98 0.01 140);
+  --foreground: oklch(0.15 0.02 140);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.02 140);
+  --primary: oklch(0.45 0.15 140);
+  --primary-foreground: oklch(0.98 0.01 140);
+  --border: oklch(0.85 0.02 140);
+  --muted: oklch(0.95 0.02 140);
+  --muted-foreground: oklch(0.4 0.05 140);
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.theme-ocean {
+  --background: oklch(0.98 0.02 220);
+  --foreground: oklch(0.15 0.03 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.03 220);
+  --primary: oklch(0.5 0.18 220);
+  --primary-foreground: oklch(0.98 0.02 220);
+  --border: oklch(0.85 0.02 220);
+  --muted: oklch(0.95 0.03 220);
+  --muted-foreground: oklch(0.4 0.05 220);
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+
+.theme-sunset {
+  --background: oklch(0.98 0.02 40);
+  --foreground: oklch(0.15 0.03 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.03 40);
+  --primary: oklch(0.6 0.18 40);
+  --primary-foreground: oklch(0.98 0.02 40);
+  --border: oklch(0.85 0.02 40);
+  --muted: oklch(0.95 0.03 40);
+  --muted-foreground: oklch(0.4 0.05 40);
+  background: linear-gradient(135deg, #fffbeb, #ffedd5);
 }

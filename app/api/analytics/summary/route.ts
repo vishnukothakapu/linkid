@@ -22,18 +22,23 @@ export async function GET(request: NextRequest) {
     }
 
     const daysQuery = request.nextUrl.searchParams.get("days");
-    const days = daysQuery ? Number.parseInt(daysQuery, 10) : 30;
+    const isAllTime = daysQuery === "all";
+    const days = isAllTime ? null : (daysQuery ? Number.parseInt(daysQuery, 10) : 30);
 
-    if (Number.isNaN(days) || days < 1 || days > 365) {
-        return NextResponse.json(
-            { error: "days must be between 1 and 365" },
-            { status: 400 }
-        );
+    if (!isAllTime) {
+        const numDays = days as number;
+
+        if (Number.isNaN(numDays) || numDays < 1 || numDays > 365) {
+            return NextResponse.json(
+                { error: "days must be between 1 and 365, or 'all'" },
+                { status: 400 }
+            );
+        }
     }
 
     const summary = await getUserAnalyticsSummary({
         userId: user.id,
-        days,
+        days,  // null = no date filter = all time
     });
 
     return NextResponse.json({ summary });

@@ -6,11 +6,20 @@ import { Prisma } from "@prisma/client";
 
 import {
     detectPlatform,
-    normalizeUrl,
     validatePlatformUrl,
 } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/constants";
 
-import { isValidHttpUrl } from "@/lib/url";
+import { validateUrlBackend } from "@/lib/urlValidation";
+import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { checkRateLimit } from "@/lib/rateLimit";
+
+// Maximum number of links a single user can add to their profile.
+// Prevents unbounded database growth and degraded public profile performance.
+const MAX_LINKS_PER_USER = 20;
+
+const LINK_CREATE_LIMIT = 10;
+const LINK_CREATE_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -19,9 +28,36 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const allowed = await checkRateLimit(
+        `link-create:${session.user.email}`,
+        LINK_CREATE_LIMIT,
+        LINK_CREATE_WINDOW_MS
+    );
+
+    if (!allowed) {
+        return NextResponse.json(
+            { error: "Too many requests. Please slow down." },
+            { status: 429 }
+        );
+    }
+
     const body = await req.json();
     const rawUrl = body?.url?.trim();
     const customLabel = body?.label?.trim();
+    const rawAlias = body?.alias?.trim();
+    const customAlias = rawAlias ? rawAlias.toLowerCase().replace(/[^a-z0-9-]/g, "") : undefined;
+    
+    if (rawAlias && !customAlias) {
+        return NextResponse.json(
+            { error: "Please enter a valid alphanumeric custom alias" },
+            { status: 400 }
+        );
+    }
+    
+    const rawExplicitPlatform = body?.platform?.trim();
+    const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform) 
+        ? rawExplicitPlatform 
+        : null;
 
     if (!rawUrl) {
         return NextResponse.json(
@@ -30,19 +66,20 @@ export async function POST(req: Request) {
         );
     }
 
-    if (!isValidHttpUrl(rawUrl)) {
+    const validation = validateUrlBackend(rawUrl);
+    if (!validation.valid) {
         return NextResponse.json(
-            { error: "Please enter a valid URL (https://…)" },
+            { error: validation.error },
             { status: 400 }
         );
     }
 
-    const finalUrl = normalizeUrl(rawUrl);
-    const detectedPlatform = detectPlatform(finalUrl);
+    const finalUrl = validation.normalizedUrl;
+    const detectedPlatform = explicitPlatform || detectPlatform(finalUrl);
 
     if (!detectedPlatform) {
         return NextResponse.json(
-            { error: "Unsupported or unknown platform" },
+            { error: "Please select a platform" },
             { status: 400 }
         );
     }
@@ -50,7 +87,7 @@ export async function POST(req: Request) {
     let finalPlatform: string;
     let finalLabel: string;
 
-    if (detectedPlatform === "website") {
+    if (detectedPlatform === PLATFORMS.WEBSITE) {
         if (!customLabel) {
             return NextResponse.json(
                 { error: "Please enter a name for this link" },
@@ -64,9 +101,16 @@ export async function POST(req: Request) {
             .trim()
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
+
+        if (!finalPlatform) {
+            return NextResponse.json(
+                { error: "Please enter a valid alphanumeric name for this link" },
+                { status: 400 }
+            );
+        }
     } else {
         finalPlatform = detectedPlatform;
-        finalLabel =
+        finalLabel = customLabel ||
             detectedPlatform.charAt(0).toUpperCase() +
             detectedPlatform.slice(1);
     }
@@ -89,27 +133,68 @@ export async function POST(req: Request) {
         );
     }
 
+    const proposedRoute = customAlias || finalPlatform;
+
     try {
         const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const existingLink = await tx.link.findFirst({
+                where: {
+                    userId: user.id,
+                    OR: [
+                        { alias: proposedRoute },
+                        { platform: proposedRoute, alias: null }
+                    ]
+                }
+            });
+
+            if (existingLink) {
+                throw Object.assign(new Error("ROUTE_ALREADY_EXISTS"), { code: "ROUTE_ALREADY_EXISTS" });
+            }
+
             const maxOrder = await tx.link.aggregate({
                 where: { userId: user.id },
-                _max: { order: true },
+                _max: { position: true },
+                _count: { id: true },
             });
+
+            // Enforce per-user link limit atomically inside the transaction
+            // to prevent race conditions where concurrent requests bypass the check.
+            if ((maxOrder._count.id ?? 0) >= MAX_LINKS_PER_USER) {
+                throw Object.assign(new Error("LINK_LIMIT_REACHED"), { code: "LINK_LIMIT_REACHED" });
+            }
 
             return tx.link.create({
                 data: {
                     userId: user.id,
                     platform: finalPlatform,
+                    alias: customAlias || null,
                     label: finalLabel,
                     url: finalUrl,
-                    order: (maxOrder._max.order ?? 0) + 1,
+                    position: (maxOrder._max.position ?? 0) + 1,
                 },
             });
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         });
 
         return NextResponse.json({ link });
     } catch (err: unknown) {
         const error = err as { code?: string };
+
+        if (error?.code === "ROUTE_ALREADY_EXISTS") {
+            return NextResponse.json(
+                { error: `The route '/${proposedRoute}' is already in use. Please provide a unique custom alias.` },
+                { status: 409 }
+            );
+        }
+
+        if (error?.code === "LINK_LIMIT_REACHED") {
+            return NextResponse.json(
+                { error: `You can add a maximum of ${MAX_LINKS_PER_USER} links.` },
+                { status: 400 }
+            );
+        }
+
         if (error?.code === "P2002") {
             return NextResponse.json(
                 { error: `You already added your ${finalLabel} link.` },
@@ -124,4 +209,25 @@ export async function POST(req: Request) {
             { status: 500 }
         );
     }
+}
+
+export async function GET() {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    if (!user) return NextResponse.json({ links: [] });
+
+    const links = await prisma.link.findMany({
+        where: { userId: user.id },
+        orderBy: [
+            { position: 'asc' },
+            { createdAt: 'asc' }
+        ],
+    });
+
+    return NextResponse.json({ links });
 }
