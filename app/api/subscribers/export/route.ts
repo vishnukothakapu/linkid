@@ -17,9 +17,16 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" },
         });
 
+        const formatCsvField = (field: string) => {
+            const str = String(field);
+            const needsPrefix = /^[=+\-@]/.test(str);
+            const prefixed = needsPrefix ? `'${str}` : str;
+            return `"${prefixed.replace(/"/g, '""')}"`;
+        };
+
         const csvRows = ["id,email,createdAt"];
         for (const sub of subscribers) {
-            csvRows.push(`${sub.id},${sub.email},${sub.createdAt.toISOString()}`);
+            csvRows.push(`${formatCsvField(sub.id)},${formatCsvField(sub.email)},${formatCsvField(sub.createdAt.toISOString())}`);
         }
         
         const csvString = csvRows.join("\n");

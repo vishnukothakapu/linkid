@@ -28,8 +28,9 @@ export function NewsletterSubscribeBlock({ username }: { username: string }) {
 
             toast.success("Subscribed successfully!");
             setEmail("");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to subscribe");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to subscribe";
+            toast.error(message);
         } finally {
             setLoading(false);
         }

@@ -13,9 +13,13 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { enableEmailCapture } = body;
 
+    if (typeof enableEmailCapture !== "boolean") {
+      return NextResponse.json({ error: "enableEmailCapture must be a boolean" }, { status: 400 });
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { enableEmailCapture: Boolean(enableEmailCapture) },
+      data: { enableEmailCapture },
     });
 
     return NextResponse.json({ success: true, enableEmailCapture: user.enableEmailCapture }, { status: 200 });

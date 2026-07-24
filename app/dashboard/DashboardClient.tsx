@@ -30,10 +30,12 @@ export default function DashboardClient({
     const [activeTab, setActiveTab] = useState<"links" | "appearance">("links");
     const [showAdd, setShowAdd] = useState(false);
     const [isEmailCaptureEnabled, setIsEmailCaptureEnabled] = useState(enableEmailCapture ?? false);
+    const [isPendingEmailCapture, setIsPendingEmailCapture] = useState(false);
 
     async function toggleEmailCapture() {
+        if (isPendingEmailCapture) return;
         const newValue = !isEmailCaptureEnabled;
-        setIsEmailCaptureEnabled(newValue);
+        setIsPendingEmailCapture(true);
         try {
             const csrfToken = await getCsrfToken();
             const response = await fetch('/api/settings', {
@@ -45,10 +47,13 @@ export default function DashboardClient({
                 body: JSON.stringify({ enableEmailCapture: newValue }),
             });
             if (!response.ok) throw new Error();
-            toast.success(newValue ? "Email capture enabled" : "Email capture disabled");
+            const data = await response.json();
+            setIsEmailCaptureEnabled(data.enableEmailCapture);
+            toast.success(data.enableEmailCapture ? "Email capture enabled" : "Email capture disabled");
         } catch {
-            setIsEmailCaptureEnabled(!newValue);
             toast.error("Failed to update email capture settings");
+        } finally {
+            setIsPendingEmailCapture(false);
         }
     }
 
@@ -140,20 +145,20 @@ export default function DashboardClient({
     }
 
     async function exportSubscribersCsv() {
-        const response = await fetch("/api/subscribers/export");
+        try {
+            const response = await fetch("/api/subscribers/export");
+            if (!response.ok) throw new Error();
 
-        if (!response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `linkid-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch {
             toast.error("Unable to export subscribers");
-            return;
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `linkid-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
     }
 
     async function deleteLink(id: string) {
@@ -218,9 +223,9 @@ export default function DashboardClient({
                                     <h2 className="text-xl font-bold">Email Subscribers</h2>
                                     <p className="text-sm text-muted-foreground">Collect emails directly from your LinkID page.</p>
                                 </div>
-                                <label className="flex items-center cursor-pointer">
+                                <label className={`flex items-center cursor-pointer ${isPendingEmailCapture ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <div className="relative">
-                                        <input type="checkbox" className="sr-only" checked={isEmailCaptureEnabled} onChange={toggleEmailCapture} />
+                                        <input type="checkbox" className="sr-only" checked={isEmailCaptureEnabled} onChange={toggleEmailCapture} disabled={isPendingEmailCapture} />
                                         <div className={`block w-14 h-8 rounded-full ${isEmailCaptureEnabled ? 'bg-primary' : 'bg-muted'}`}></div>
                                         <div className={`dot absolute left-1 top-1 bg-background w-6 h-6 rounded-full transition ${isEmailCaptureEnabled ? 'transform translate-x-6' : ''}`}></div>
                                     </div>
@@ -247,7 +252,7 @@ export default function DashboardClient({
                                                 {subscribers.map(sub => (
                                                     <li key={sub.id} className="p-2 px-4 flex justify-between">
                                                         <span>{sub.email}</span>
-                                                        <span className="text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</span>
+                                                        <span className="text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString("en-US", { timeZone: "UTC" })}</span>
                                                     </li>
                                                 ))}
                                             </ul>
