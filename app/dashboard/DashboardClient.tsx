@@ -15,6 +15,8 @@ export default function DashboardClient({
     username,
     initialLinks,
     initialTheme,
+    initialSeoTitle,
+    initialSeoDescription,
     qrCode,
 }: {
     username: string;

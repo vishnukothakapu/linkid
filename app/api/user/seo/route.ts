@@ -13,11 +13,27 @@ export async function PATCH(req: NextRequest) {
         const body = await req.json();
         const { seoTitle, seoDescription } = body;
 
+        let finalSeoTitle = null;
+        if (typeof seoTitle === "string") {
+            const trimmed = seoTitle.trim();
+            if (trimmed) {
+                finalSeoTitle = trimmed.substring(0, 60);
+            }
+        }
+
+        let finalSeoDescription = null;
+        if (typeof seoDescription === "string") {
+            const trimmed = seoDescription.trim();
+            if (trimmed) {
+                finalSeoDescription = trimmed.substring(0, 160);
+            }
+        }
+
         const updatedUser = await prisma.user.update({
             where: { email: session.user.email },
             data: { 
-                seoTitle: typeof seoTitle === "string" ? seoTitle : null, 
-                seoDescription: typeof seoDescription === "string" ? seoDescription : null,
+                seoTitle: finalSeoTitle, 
+                seoDescription: finalSeoDescription,
             },
         });
 
