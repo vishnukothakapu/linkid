@@ -12,7 +12,10 @@ export default async function DashboardPage() {
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
-        include: { links: { orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] } },
+        include: { 
+            links: { orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] },
+            subscribers: { orderBy: { createdAt: 'desc' } }
+        },
     });
 
     if (!user?.username) return <CreateLinkId />;
@@ -25,6 +28,8 @@ export default async function DashboardPage() {
             initialSeoTitle={user.seoTitle || ""}
             initialSeoDescription={user.seoDescription || ""}
             qrCode={<QRCode />} 
+            enableEmailCapture={user.enableEmailCapture}
+            subscribers={user.subscribers}
         />
     );
 }

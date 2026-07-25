@@ -27,6 +27,7 @@ export type User = {
         image: string | null;
         links?: Link[];
         resumeUrl?: string | null;
+        enableEmailCapture?: boolean;
     };
     username: string;
     showCTA: boolean;

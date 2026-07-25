@@ -3,6 +3,7 @@ import { ProfileHeader } from "./ProfileHeader";
 import { ProfileLinks } from "./ProfileLinks";
 import { ProfileCTA } from "./ProfileCTA";
 import { ProfileCardProps } from "./types/type";
+import { NewsletterSubscribeBlock } from "./NewsletterSubscribeBlock";
 
 export function ProfileCard(props: ProfileCardProps) {
     const { user, username, showCTA, isOwner, themeType } = props;
@@ -25,6 +26,10 @@ export function ProfileCard(props: ProfileCardProps) {
             </CardHeader>
 
             <CardContent className="space-y-3">
+                {user.enableEmailCapture && (
+                    <NewsletterSubscribeBlock username={username} />
+                )}
+
                 <ProfileLinks
                     links={user.links ?? []}
                     username={username}
