@@ -216,3 +216,60 @@ html::-webkit-scrollbar-thumb:hover {
     animation: none;
   }
 }
+
+/* Custom Profile Themes */
+.theme-default {
+  /* Inherits everything from globals */
+}
+
+.theme-midnight {
+  --background: oklch(0.18 0.02 260);
+  --foreground: oklch(0.98 0.01 260);
+  --card: oklch(0.22 0.02 260);
+  --card-foreground: oklch(0.98 0.01 260);
+  --primary: oklch(0.6 0.2 260);
+  --primary-foreground: oklch(0.98 0.01 260);
+  --border: oklch(1 0 0 / 10%);
+  --muted: oklch(0.25 0.02 260);
+  --muted-foreground: oklch(0.7 0.01 260);
+  background: linear-gradient(135deg, #0f172a, #1e1b4b);
+}
+
+.theme-forest {
+  --background: oklch(0.98 0.01 140);
+  --foreground: oklch(0.15 0.02 140);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.02 140);
+  --primary: oklch(0.45 0.15 140);
+  --primary-foreground: oklch(0.98 0.01 140);
+  --border: oklch(0.85 0.02 140);
+  --muted: oklch(0.95 0.02 140);
+  --muted-foreground: oklch(0.4 0.05 140);
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.theme-ocean {
+  --background: oklch(0.98 0.02 220);
+  --foreground: oklch(0.15 0.03 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.03 220);
+  --primary: oklch(0.5 0.18 220);
+  --primary-foreground: oklch(0.98 0.02 220);
+  --border: oklch(0.85 0.02 220);
+  --muted: oklch(0.95 0.03 220);
+  --muted-foreground: oklch(0.4 0.05 220);
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+
+.theme-sunset {
+  --background: oklch(0.98 0.02 40);
+  --foreground: oklch(0.15 0.03 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.03 40);
+  --primary: oklch(0.6 0.18 40);
+  --primary-foreground: oklch(0.98 0.02 40);
+  --border: oklch(0.85 0.02 40);
+  --muted: oklch(0.95 0.03 40);
+  --muted-foreground: oklch(0.4 0.05 40);
+  background: linear-gradient(135deg, #fffbeb, #ffedd5);
+}

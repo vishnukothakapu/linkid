@@ -14,7 +14,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const allowed = checkRateLimit(
+    const allowed = await checkRateLimit(
         `job-enqueue:${session.user.email}`,
         ENQUEUE_LIMIT,
         ENQUEUE_WINDOW_MS
@@ -49,7 +49,10 @@ export async function POST(req: Request) {
         const job = await enqueueJob(
             type,
             payload,
-            scheduleAt ? { scheduleAt: new Date(scheduleAt) } : undefined
+            {
+                ...(scheduleAt ? { scheduleAt: new Date(scheduleAt) } : {}),
+                userId: session.user.id,
+            },
         );
         return NextResponse.json({ id: job.id });
     } catch (err: unknown) {

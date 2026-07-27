@@ -53,7 +53,7 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
           asChild
           className="w-full sm:w-auto justify-center gap-2"
         >
-          <a href={`/${username}`} target="_blank">
+          <a href={`/${username}`} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-4 w-4" />
             Open
           </a>

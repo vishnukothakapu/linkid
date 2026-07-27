@@ -19,8 +19,15 @@ model User {
 
   bio            String?
 
+  seoTitle       String?
+  seoDescription String?
+
   resumeUrl           String?
   resumeDownloadCount Int      @default(0)
+  themeType           String   @default("solid")
+  themeColor          String   @default("slate")
+  themeCustom         String?
+  enableEmailCapture  Boolean  @default(false)
 
   links         Link[]
   accounts      Account[]
@@ -31,7 +38,15 @@ model User {
   profileDraft  ProfileDraft?
   profileVersions ProfileVersion[]
   previewTokens ProfilePreviewToken[]
+  subscribers   Subscriber[]
   createdAt     DateTime @default(now())
+
+  theme         String   @default("default")
+
+  customDomain  String?  @unique
+  totpSecret       String?
+  twoFactorEnabled Boolean  @default(false)
+  recoveryCodes    String?
 
   @@index([username])
 }
@@ -49,19 +64,20 @@ model UserAlias {
 model Link {
   id        String   @id @default(uuid())
   platform  String
+  alias     String?
   label     String
   url       String
   position  Int      @default(0)
   clicks    Int      @default(0)
   isPublic  Boolean  @default(true)
+  startDate DateTime?
+  endDate   DateTime?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   clickEvents ClickEvent[]
   dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([userId, platform])
   @@index([userId])
   @@index([platform])
 }
@@ -187,6 +203,9 @@ model ProfileDraft {
   username  String?
   bio       String?
   image     String?
+  themeType String?
+  themeColor String?
+  themeCustom String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -202,6 +221,9 @@ model ProfileVersion {
   username  String?
   bio       String?
   image     String?
+  themeType String?
+  themeColor String?
+  themeCustom String?
   changeType String // "publish" or "rollback"
   diffJson  String? // JSON stringified diff
   createdAt DateTime @default(now())
@@ -237,6 +259,7 @@ model Job {
   type       String
   payload    Json
   status     JobStatus @default(PENDING)
+  userId     String    @default("")
   scheduleAt DateTime?
   attempts   Int       @default(0)
   lastError  String?
@@ -246,6 +269,7 @@ model Job {
 
   @@index([status, runAfter])
   @@index([scheduleAt])
+  @@index([userId])
 }
 
 model DeleteOtp {
@@ -266,4 +290,15 @@ model InvalidatedSession {
   createdAt DateTime @default(now())
 
   @@map("invalidatedSession")
+}
+
+model Subscriber {
+  id        String   @id @default(uuid())
+  email     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([email, userId])
+  @@index([userId])
 }

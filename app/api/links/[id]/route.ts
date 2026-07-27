@@ -42,6 +42,8 @@ export async function PUT(
   const isPublic = body?.isPublic;
   const label = body?.label;
   const platform = body?.platform;
+  const startDate = body?.startDate;
+  const endDate = body?.endDate;
 
   const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
   const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
@@ -57,7 +59,7 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string } = {};
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null } = {};
 
   const activeLabel = typeof label === "string" ? label.trim() : link.label;
 
@@ -118,18 +120,78 @@ export async function PUT(
     data.isPublic = isPublic;
   }
 
+  if (startDate !== undefined) {
+    if (startDate) {
+      const d = new Date(startDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
+      }
+      data.startDate = d;
+    } else {
+      data.startDate = null;
+    }
+  }
+
+  if (endDate !== undefined) {
+    if (endDate) {
+      const d = new Date(endDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
+      }
+      data.endDate = d;
+    } else {
+      data.endDate = null;
+    }
+  }
+
+  const finalStartDate = data.startDate !== undefined ? data.startDate : link.startDate;
+  const finalEndDate = data.endDate !== undefined ? data.endDate : link.endDate;
+
+  if (finalStartDate && finalEndDate && finalStartDate > finalEndDate) {
+    return NextResponse.json({ error: "Start date cannot be later than end date" }, { status: 400 });
+  }
+
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
   try {
-    const updatedLink = await prisma.link.update({
-      where: { id },
-      data,
+    const updatedLink = await prisma.$transaction(async (tx) => {
+        // Enforce uniqueness for the resulting route if platform is changing
+        if (data.platform) {
+            const proposedRoute = link.alias || data.platform;
+            const existingLink = await tx.link.findFirst({
+                where: {
+                    userId: link.userId,
+                    id: { not: link.id },
+                    OR: [
+                        { alias: proposedRoute },
+                        { platform: proposedRoute, alias: null }
+                    ]
+                }
+            });
+
+            if (existingLink) {
+                throw Object.assign(new Error("ROUTE_ALREADY_EXISTS"), { code: "ROUTE_ALREADY_EXISTS", proposedRoute });
+            }
+        }
+
+        return tx.link.update({
+            where: { id },
+            data,
+        });
     });
 
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
+    const error = err as { code?: string; proposedRoute?: string };
+    
+    if (error?.code === "ROUTE_ALREADY_EXISTS") {
+        return NextResponse.json(
+            { error: `The route '/${error.proposedRoute}' is already in use.` },
+            { status: 409 }
+        );
+    }
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       const labelForErrorMessage = (typeof label === "string" ? label.trim() : link.label) || "custom link";
       return NextResponse.json(

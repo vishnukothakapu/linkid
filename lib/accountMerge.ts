@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 import { buildMergedPlatformSlug, generateMergeCode, hashMergeCode } from "@/lib/accountMergeUtils";
@@ -124,68 +125,73 @@ export async function completeAccountMerge(input: {
         sourceUser.username && targetUser.username && sourceUser.username !== targetUser.username
     );
 
-    await prisma.$transaction(async (tx) => {
-        if (sourceUser.name && !targetUser.name) {
-            await tx.user.update({ where: { id: targetUser.id }, data: { name: sourceUser.name } });
-        }
+    const userUpdateData: Prisma.UserUpdateInput = {};
+    if (sourceUser.name && !targetUser.name) userUpdateData.name = sourceUser.name;
+    if (sourceUser.bio && !targetUser.bio) userUpdateData.bio = sourceUser.bio;
+    if (sourceUser.image && !targetUser.image) userUpdateData.image = sourceUser.image;
+    if (sourceUser.emailVerified && !targetUser.emailVerified) userUpdateData.emailVerified = sourceUser.emailVerified;
+    if (!targetUser.username && sourceUser.username) userUpdateData.username = sourceUser.username;
 
-        if (sourceUser.bio && !targetUser.bio) {
-            await tx.user.update({ where: { id: targetUser.id }, data: { bio: sourceUser.bio } });
-        }
+    const transactionOperations: Prisma.PrismaPromise<any>[] = [];
 
-        if (sourceUser.image && !targetUser.image) {
-            await tx.user.update({ where: { id: targetUser.id }, data: { image: sourceUser.image } });
-        }
+    if (Object.keys(userUpdateData).length > 0) {
+        transactionOperations.push(
+            prisma.user.update({ where: { id: targetUser.id }, data: userUpdateData })
+        );
+    }
 
-        if (sourceUser.emailVerified && !targetUser.emailVerified) {
-            await tx.user.update({ where: { id: targetUser.id }, data: { emailVerified: sourceUser.emailVerified } });
-        }
-
-        if (!targetUser.username && sourceUser.username) {
-            await tx.user.update({ where: { id: targetUser.id }, data: { username: sourceUser.username } });
-        } else if (shouldAliasSourceUsername && sourceUser.username) {
-            await tx.userAlias.upsert({
+    if (shouldAliasSourceUsername && sourceUser.username) {
+        transactionOperations.push(
+            prisma.userAlias.upsert({
                 where: { username: sourceUser.username },
                 update: { userId: targetUser.id },
                 create: { username: sourceUser.username, userId: targetUser.id },
+            })
+        );
+    }
+
+    const mergeCandidatePlatforms = new Set(targetPlatformSet);
+    for (const link of sourceUser.links) {
+        let platform = link.platform;
+        if (mergeCandidatePlatforms.has(platform)) {
+            platform = uniqueTransferPlatform({
+                platform,
+                sourceIdentifier,
+                existingPlatforms: mergeCandidatePlatforms,
             });
+            conflicts.push(link.platform);
         }
 
-        const mergeCandidatePlatforms = new Set(targetPlatformSet);
-        for (const link of sourceUser.links) {
-            let platform = link.platform;
-            if (mergeCandidatePlatforms.has(platform)) {
-                platform = uniqueTransferPlatform({
-                    platform,
-                    sourceIdentifier,
-                    existingPlatforms: mergeCandidatePlatforms,
-                });
-                conflicts.push(link.platform);
-            }
-
-            await tx.link.update({
+        transactionOperations.push(
+            prisma.link.update({
                 where: { id: link.id },
                 data: {
                     userId: targetUser.id,
                     platform,
                     position: basePosition + mergedLinks + 1,
                 },
-            });
-            mergeCandidatePlatforms.add(platform);
-            mergedLinks += 1;
-        }
+            })
+        );
+        mergeCandidatePlatforms.add(platform);
+        mergedLinks += 1;
+    }
 
-        const mergedAccounts = await tx.account.updateMany({
+    transactionOperations.push(
+        prisma.account.updateMany({
             where: { userId: sourceUser.id },
             data: { userId: targetUser.id },
-        });
+        })
+    );
 
-        const transferredSessions = await tx.session.updateMany({
+    transactionOperations.push(
+        prisma.session.updateMany({
             where: { userId: sourceUser.id },
             data: { userId: targetUser.id },
-        });
+        })
+    );
 
-        await tx.accountMergeEvent.create({
+    transactionOperations.push(
+        prisma.accountMergeEvent.create({
             data: {
                 sourceUserId: sourceUser.id,
                 targetUserId: targetUser.id,
@@ -194,24 +200,30 @@ export async function completeAccountMerge(input: {
                 sourceUsername: sourceUser.username,
                 targetUsername: finalTargetUsername,
                 mergedLinks,
-                mergedAccounts: mergedAccounts.count,
-                transferredSessions: transferredSessions.count,
+                mergedAccounts: sourceUser.accounts.length,
+                transferredSessions: sourceUser.sessions.length,
                 conflictsJson: conflicts.length > 0 ? JSON.stringify(conflicts) : null,
             },
-        });
+        })
+    );
 
-        await tx.accountMergeRequest.update({
+    transactionOperations.push(
+        prisma.accountMergeRequest.update({
             where: { id: mergeRequest.id },
             data: {
                 consumedAt: new Date(),
                 consumedByUserId: sourceUser.id,
             },
-        });
+        })
+    );
 
-        await tx.user.delete({
+    transactionOperations.push(
+        prisma.user.delete({
             where: { id: sourceUser.id },
-        });
-    });
+        })
+    );
+
+    await prisma.$transaction(transactionOperations);
 
     return {
         mergedLinks,

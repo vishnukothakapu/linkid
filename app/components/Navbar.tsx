@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { Link2, Menu, X } from "lucide-react";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 // Page section order (must match DOM order on app/page.tsx)
 const SECTION_IDS = ["features", "demo", "how"] as const;
@@ -106,16 +107,24 @@ export function Navbar() {
         return () => document.removeEventListener("mousedown", handler);
     }, [mobileOpen]);
 
+    /* Scroll Progress */
+    const { scrollYProgress } = useScroll();
+
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 180,
+        damping: 28,
+        mass: 0.3,
+    });
+
     return (
         <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4 sm:px-6">
             <div ref={menuRef} className="pointer-events-auto w-full max-w-4xl">
                 {/* Pill navbar */}
                 <div
-                    className={`flex h-12 items-center justify-between gap-4 rounded-full border px-3 transition-all duration-300 sm:h-13 sm:px-4 ${
-                        scrolled
-                            ? "border-white/20 bg-white/10 shadow-xl shadow-violet-500/10 ring-1 ring-white/15 backdrop-blur-3xl dark:border-violet-500/15 dark:bg-transparent dark:shadow-violet-950/30 dark:ring-0 dark:backdrop-blur-2xl"
-                            : "border-white/15 bg-white/8 shadow-lg shadow-violet-500/[0.07] ring-1 ring-white/10 backdrop-blur-2xl dark:border-violet-500/10 dark:bg-transparent dark:shadow-none dark:ring-0 dark:backdrop-blur-xl"
-                    }`}
+                    className={`flex h-12 overflow-hidden items-center justify-between gap-4 rounded-full border px-3 transition-all duration-300 sm:h-13 sm:px-4 ${scrolled
+                        ? "border-white/20 bg-white/10 shadow-xl shadow-violet-500/10 ring-1 ring-white/15 backdrop-blur-3xl dark:border-violet-500/15 dark:bg-transparent dark:shadow-violet-950/30 dark:ring-0 dark:backdrop-blur-2xl"
+                        : "border-white/15 bg-white/8 shadow-lg shadow-violet-500/[0.07] ring-1 ring-white/10 backdrop-blur-2xl dark:border-violet-500/10 dark:bg-transparent dark:shadow-none dark:ring-0 dark:backdrop-blur-xl"
+                        }`}
                 >
                     {/* Logo */}
                     <Link
@@ -141,11 +150,10 @@ export function Navbar() {
                                 after:bg-gradient-to-r after:from-violet-500 after:via-fuchsia-500 after:to-indigo-500
                                 after:transition-transform after:duration-300 after:ease-out
                                 after:origin-center hover:after:scale-x-100
-                                ${
-                                    activeSection === id
+                                ${activeSection === id
                                         ? "text-violet-700 dark:text-violet-300 after:scale-x-100"
                                         : "text-zinc-600 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-300"
-                                }`}
+                                    }`}
                             >
                                 {label}
                             </Link>
@@ -161,6 +169,20 @@ export function Navbar() {
                         >
                             <Link href="/login">Get Started</Link>
                         </Button>
+                        <motion.div
+                            style={{
+                                scaleX,
+                                transformOrigin: "left center",
+                                position: "absolute",
+                                insetInline: "0",
+                                bottom: 0,
+                                height: "2px",
+                                background: "linear-gradient(90deg, #7C3AED 0%, #A855F7 35%, #EC4899 70%, #6366F1 100%)",
+                                boxShadow: "0 0 10px rgba(168,85,247,.45), 0 0 20px rgba(99,102,241,.25)",
+                                borderRadius: "9999px",
+                                zIndex: 20,
+                            }}
+                        />
                     </div>
 
                     {/* Mobile: theme toggle + hamburger */}
@@ -174,15 +196,28 @@ export function Navbar() {
                             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </button>
                     </div>
+                    <motion.div
+                        style={{
+                            scaleX,
+                            transformOrigin: "left center",
+                            position: "absolute",
+                            insetInline: "0",
+                            bottom: 0,
+                            height: "2px",
+                            background: "linear-gradient(90deg, #7C3AED 0%, #A855F7 35%, #EC4899 70%, #6366F1 100%)",
+                            boxShadow: "0 0 10px rgba(168,85,247,.45), 0 0 20px rgba(99,102,241,.25)",
+                            borderRadius: "9999px",
+                            zIndex: 20,
+                        }}
+                    />
                 </div>
 
                 {/* Mobile dropdown — floats below the pill */}
                 <div
-                    className={`mt-2 overflow-hidden rounded-3xl border transition-all duration-300 ease-in-out md:hidden ${
-                        mobileOpen
-                            ? "max-h-80 border-violet-300/20 opacity-100 shadow-lg shadow-violet-950/20 dark:border-violet-500/20 dark:shadow-violet-950/40"
-                            : "max-h-0 border-transparent opacity-0"
-                    } bg-white/15 backdrop-blur-3xl dark:bg-violet-950/60`}
+                    className={`mt-2 overflow-hidden rounded-3xl border transition-all duration-300 ease-in-out md:hidden ${mobileOpen
+                        ? "max-h-80 border-violet-300/20 opacity-100 shadow-lg shadow-violet-950/20 dark:border-violet-500/20 dark:shadow-violet-950/40"
+                        : "max-h-0 border-transparent opacity-0"
+                        } bg-white/95 backdrop-blur-3xl dark:bg-violet-950/95`}
                 >
                     <div className="px-3 pb-4 pt-3">
                         <nav className="mb-3 flex flex-col gap-1">
@@ -194,11 +229,10 @@ export function Navbar() {
                                         selectSection(id);
                                         setMobileOpen(false);
                                     }}
-                                    className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                                        activeSection === id
-                                            ? "bg-violet-600 text-white shadow-sm shadow-violet-500/25"
-                                            : "text-zinc-600 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-violet-300"
-                                    }`}
+                                    className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition-colors ${activeSection === id
+                                        ? "bg-violet-600 text-white shadow-sm shadow-violet-500/25"
+                                        : "text-zinc-600 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-violet-300"
+                                        }`}
                                 >
                                     {label}
                                 </Link>

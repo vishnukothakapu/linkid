@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { resolveUserByUsername } from '@/lib/userLookup';
+import { PLATFORM_ICONS } from '@/lib/platformIcons';
 
 export const alt = 'LinkID Profile';
 export const size = {
@@ -147,6 +148,8 @@ export default async function Image({ params }: { params: Promise<{ username: st
           >
             {[0, 1, 2].map((index) => {
               const link = links[index];
+              const Icon = link ? PLATFORM_ICONS[link.platform] : null;
+              
               return (
                 <div
                   key={index}
@@ -173,7 +176,9 @@ export default async function Image({ params }: { params: Promise<{ username: st
                       marginRight: 24,
                     }}
                   >
-                    {link && (
+                    {Icon ? (
+                      <Icon style={{ width: 24, height: 24, color: '#fff' }} />
+                    ) : link && (
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
@@ -210,3 +215,4 @@ export default async function Image({ params }: { params: Promise<{ username: st
     { ...size }
   );
 }
+

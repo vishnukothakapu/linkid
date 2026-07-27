@@ -3,12 +3,13 @@ import { prisma } from "./prisma";
 
 export type JobPayload = Exclude<Prisma.JsonValue, null>;
 
-export async function enqueueJob(type: string, payload: JobPayload, opts?: { scheduleAt?: Date }) {
+export async function enqueueJob(type: string, payload: JobPayload, opts?: { scheduleAt?: Date; userId?: string }) {
   const runAfter = opts?.scheduleAt ?? null;
   const job = await prisma.job.create({
     data: {
       type,
       payload,
+      userId: opts?.userId ?? "",
       status: opts?.scheduleAt ? "SCHEDULED" : "PENDING",
       scheduleAt: opts?.scheduleAt,
       runAfter,

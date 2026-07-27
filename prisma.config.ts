@@ -2,7 +2,7 @@
 
 import 'dotenv/config';
 // prisma.config.ts
-const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!url) {
   throw new Error(
@@ -18,7 +18,7 @@ const config = {
   },
 
   datasource: {
-    url: process.env.DATABASE_URL ?? process.env.DIRECT_URL,
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
   },
 };
 
