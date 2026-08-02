@@ -148,7 +148,7 @@ export async function PUT(
   if (startDate !== undefined) {
     if (startDate) {
       const d = new Date(startDate);
-      if (isNaN(d.getTime())) {
+      if (Number.isNaN(d.getTime())) {
         return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
       }
       data.startDate = d;
@@ -160,7 +160,7 @@ export async function PUT(
   if (endDate !== undefined) {
     if (endDate) {
       const d = new Date(endDate);
-      if (isNaN(d.getTime())) {
+      if (Number.isNaN(d.getTime())) {
         return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
       }
       data.endDate = d;
