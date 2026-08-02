@@ -22,7 +22,21 @@
  * const allowed = await checkRateLimit(key, limit, windowMs);
  * if (!allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
  * ```
+ *
+ * ## Middleware helper
+ * For convenience, `rateLimit(limit, windowMs)` returns a middleware function that
+ * extracts the client IP from `x-forwarded-for` and handles the Next.js response.
+ * Use it in API routes or middleware:
+ *
+ * ```ts
+ * const rateLimitMiddleware = rateLimit(10, 60_000);
+ * const response = await rateLimitMiddleware(req);
+ * if (response) return response; // rate limited
+ * // ... proceed with your route logic
+ * ```
  */
+
+import { NextRequest, NextResponse } from 'next/server';
 
 // ─── In-Memory Backend ────────────────────────────────────────────────────────
 
@@ -174,4 +188,50 @@ export async function checkRateLimit(
     }
 
     return checkRateLimitMemory(key, limit, windowMs);
+}
+
+/**
+ * Middleware-style rate limiter for Next.js API routes.
+ *
+ * Extracts the client IP from `x-forwarded-for` (or falls back to `"unknown"`)
+ * and uses the shared `checkRateLimit` logic to enforce a sliding window.
+ *
+ * Returns a `NextResponse` with a 429 status if the limit is exceeded, otherwise `null`.
+ * When a response is returned, it includes:
+ * - `Retry-After` (seconds until the window resets, estimated)
+ * - `X-RateLimit-Limit` (the configured limit)
+ * - `X-RateLimit-Remaining` (always `"0"` when blocked)
+ *
+ * @param limit    Maximum requests allowed in the window
+ * @param windowMs Window duration in milliseconds
+ */
+export function rateLimit(limit: number, windowMs: number) {
+    return async function (req: NextRequest): Promise<NextResponse | null> {
+        // Extract client IP
+        const forwarded = req.headers.get("x-forwarded-for");
+        const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+
+        const allowed = await checkRateLimit(ip, limit, windowMs);
+
+        if (!allowed) {
+            // Approximate time until the window expires; we don't have the exact reset time
+            // for sliding windows, so we use the window duration as a safe estimate.
+            const retryAfter = Math.ceil(windowMs / 1000);
+
+            return NextResponse.json(
+                { error: "Too many requests. Please try again later." },
+                {
+                    status: 429,
+                    headers: {
+                        "Retry-After": String(retryAfter),
+                        "X-RateLimit-Limit": String(limit),
+                        "X-RateLimit-Remaining": "0",
+                    },
+                }
+            );
+        }
+
+        // Request allowed – proceed
+        return null;
+    };
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -13,33 +13,24 @@ import { nestLinks } from "@/lib/linkTree";
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { rateLimit } from "@/lib/rateLimit";
 
 // Maximum number of links a single user can add to their profile.
 // Prevents unbounded database growth and degraded public profile performance.
 const MAX_LINKS_PER_USER = 20;
 
-const LINK_CREATE_LIMIT = 10;
-const LINK_CREATE_WINDOW_MS = 60 * 1000;
+// Rate limiter for link creation: 30 requests per minute per IP
+const linksLimiter = rateLimit(30, 60_000);
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    // Apply IP‑based rate limiting first
+    const limited = await linksLimiter(req);
+    if (limited) return limited;
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const allowed = await checkRateLimit(
-        `link-create:${session.user.email}`,
-        LINK_CREATE_LIMIT,
-        LINK_CREATE_WINDOW_MS
-    );
-
-    if (!allowed) {
-        return NextResponse.json(
-            { error: "Too many requests. Please slow down." },
-            { status: 429 }
-        );
     }
 
     const body = await req.json();
