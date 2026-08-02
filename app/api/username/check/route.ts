@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { validateUsername } from "@/lib/validations/username";
+import { isReservedUsername } from '@/lib/reservedUsernames';
 
 async function isAvailable(username: string): Promise<boolean> {
     const [user, alias] = await Promise.all([
@@ -9,6 +10,13 @@ async function isAvailable(username: string): Promise<boolean> {
     ]);
 
     return !user && !alias;
+}
+
+if (isReservedUsername(username)) {
+  return NextResponse.json(
+    { available: false, reason: 'This username is reserved and cannot be claimed.' },
+    { status: 200 } // return 200 so the UI can show the message without erroring
+  );
 }
 
 export async function GET(req: Request) {
