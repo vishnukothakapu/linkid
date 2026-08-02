@@ -67,6 +67,16 @@ model UserAlias {
   @@index([userId])
 }
 
+model LinkClick {
+  id        String   @id @default(cuid())
+  linkId    String
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  clickedAt DateTime @default(now())
+
+  @@index([linkId])
+  @@index([clickedAt])
+}
+
 model Link {
   id        String   @id @default(uuid())
   platform  String
@@ -74,7 +84,7 @@ model Link {
   label     String
   url       String
   position  Int      @default(0)
-  clicks    Int      @default(0)
+  clicks    LinkClick[]
   isPublic  Boolean  @default(true)
   isGroup   Boolean  @default(false)
   parentId  String?

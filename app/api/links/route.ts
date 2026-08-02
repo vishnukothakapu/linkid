@@ -302,6 +302,22 @@ export async function GET() {
 
     const allLinks = await prisma.link.findMany({
         where: { userId: user.id },
+        select: {
+            id: true,
+            platform: true,
+            alias: true,
+            label: true,
+            url: true,
+            position: true,
+            parentId: true,
+            isGroup: true,
+            isPublic: true,
+            createdAt: true,
+            updatedAt: true,
+            startDate: true,
+            endDate: true,
+            clicks: true, // ← Added this to include click count
+        },
         orderBy: [
             { position: 'asc' },
             { createdAt: 'asc' }

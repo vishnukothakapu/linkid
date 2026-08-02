@@ -39,6 +39,8 @@ type LinksSectionProps = {
     onDeleteGroup: (groupId: string, deleteChildren: boolean) => Promise<void>;
     onRenameGroup: (groupId: string, newName: string) => Promise<void>;
     onReorder: (links: ProfileLink[]) => void;
+    // Add clickCounts prop
+    clickCounts?: Record<string, number>;
 };
 
 function SortableLinkWrapper({ link, children }: { link: ProfileLink; children: React.ReactNode }) {
@@ -139,6 +141,7 @@ export function LinksSection({
     onDeleteGroup,
     onRenameGroup,
     onReorder,
+    clickCounts = {}, // Default to empty object
 }: LinksSectionProps) {
     const [localLinks, setLocalLinks] = React.useState<ProfileLink[]>(links);
     const localLinksRef = React.useRef(localLinks);
@@ -345,7 +348,7 @@ export function LinksSection({
                     triggerReorder(newList);
                 }
             } else {
-                // Moving between levels — link is being moved out of a group to top level
+                // Moving between levels â€” link is being moved out of a group to top level
                 // or between groups. The drag-over handler already handled this.
                 triggerReorder(localLinks);
             }
@@ -355,6 +358,11 @@ export function LinksSection({
 
     // Get all sortable IDs (top-level + all children for nested contexts)
     const topLevelIds = localLinks.map(l => l.id);
+
+    // Helper function to get click count for a link
+    const getClickCount = (linkId: string): number => {
+        return clickCounts[linkId] ?? 0;
+    };
 
     return (
         <Card>
@@ -415,6 +423,7 @@ export function LinksSection({
                                             onUpdate={onUpdate}
                                             onToggleVisibility={onToggleVisibility}
                                             onDelete={onDelete}
+                                            clickCount={getClickCount(item.id)}
                                         />
                                     </SortableLinkWrapper>
                                 );

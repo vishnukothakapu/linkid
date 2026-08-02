@@ -1,6 +1,6 @@
 // app/[username]/[platform]/page.tsx
 
-import prisma from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { PlatformParams } from "../types/type";
@@ -9,6 +9,8 @@ import { resolveUserByUsername } from "@/lib/userLookup";
 // ✨ Fixed: Correct module reference target mapping
 import { getMobileOS, getDeepLink } from "@/lib/deeplink";
 import { isSafeRedirectUrl } from "@/lib/urlValidation";
+
+prisma.linkClick.create({ data: { linkId: link.id } }).catch(() => {});
 
 // ✨ Platform package registry mapping fallback for Android Intents
 const ANDROID_PACKAGES: Record<string, string> = {
