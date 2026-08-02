@@ -11,7 +11,7 @@ const BOT_USER_AGENT_RE = /(bot|spider|crawler|bingpreview|slurp|duckduckbot|bai
  */
 export function isPrivateIp(ip: string): boolean {
     const parts = ip.split(".").map(Number);
-    if (parts.length !== 4 || parts.some((p) => isNaN(p) || p < 0 || p > 255)) {
+    if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) {
         return false;
     }
     const [a, b] = parts;
