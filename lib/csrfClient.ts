@@ -15,29 +15,4 @@ export async function getCsrfToken(): Promise<string> {
             method: "GET",
         })
             .then(async (response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch CSRF token");
-                }
-
-                const data = await response.json() as { token?: string };
-
-                if (!data.token) {
-                    throw new Error("Missing CSRF token");
-                }
-
-                cachedCsrfToken = data.token;
-
-                return data.token;
-            })
-            .finally(() => {
-                csrfTokenPromise = null;
-            });
-    }
-
-    return csrfTokenPromise;
-}
-
-export function clearCsrfToken(): void {
-    cachedCsrfToken = null;
-    csrfTokenPromise = null;
-}
+            .catch(err => console.error(err))
