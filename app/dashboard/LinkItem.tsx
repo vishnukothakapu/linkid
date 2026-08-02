@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { formatLabel, POPULAR_PLATFORMS } from "@/lib/platformHelpers";
 import { PLATFORMS } from "@/lib/constants";
+
 export function LinkItem({
     dragListeners,
     dragAttributes,
@@ -44,13 +45,14 @@ export function LinkItem({
     dragAttributes?: DraggableAttributes;
     link: ProfileLink;
     username: string;
-    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, customLabel?: string | null) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }) {
     const [editing, setEditing] = useState(false);
     const [url, setUrl] = useState(link.url);
     const [label, setLabel] = useState(link.label || "");
+    const [customLabel, setCustomLabel] = useState(link.customLabel || ""); // Added for custom label
     const isStandardPlatform = Object.keys(PLATFORM_ICONS).includes(link.platform);
     const initialPlatform = isStandardPlatform ? link.platform : PLATFORMS.WEBSITE;
     const [platform, setPlatform] = useState(initialPlatform);
@@ -112,7 +114,7 @@ export function LinkItem({
             return toast.error("Start date cannot be later than end date");
         }
 
-        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate);
+        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate, customLabel.trim() || null);
         if (success) {
             setEditing(false);
         }
@@ -128,7 +130,7 @@ export function LinkItem({
 
                     <div className="min-w-0">
                         <p className="font-medium capitalize">
-                            {editing ? (label || platform) : (link.label || link.platform)}
+                            {editing ? (label || platform) : (link.customLabel || link.label || link.platform)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
                             {editing ? url : link.url}
@@ -195,6 +197,7 @@ export function LinkItem({
                             if (editing) {
                                 setUrl(link.url);
                                 setLabel(link.label || "");
+                                setCustomLabel(link.customLabel || "");
                                 setPlatform(initialPlatform);
                                 setStartDate(link.startDate ? new Date(link.startDate) : null);
                                 setEndDate(link.endDate ? new Date(link.endDate) : null);
@@ -254,6 +257,16 @@ export function LinkItem({
                             className="flex-1 px-2 py-4 text-sm"
                         />
                     </div>
+
+                    {/* Custom Label Input - Added */}
+                    <Input
+                        type="text"
+                        placeholder="Custom label (optional) — overrides detected platform name"
+                        value={customLabel}
+                        onChange={(e) => setCustomLabel(e.target.value)}
+                        maxLength={50}
+                        className="w-full"
+                    />
 
                     <details className="group border rounded-md p-3 [&_summary::-webkit-details-marker]:hidden">
                         <summary className="flex cursor-pointer items-center justify-between font-medium text-sm text-muted-foreground">

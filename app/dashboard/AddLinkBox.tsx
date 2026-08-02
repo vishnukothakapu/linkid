@@ -37,6 +37,7 @@ export default function AddLinkBox({
     const [label, setLabel] = useState("");
     const [alias, setAlias] = useState("");
     const [platform, setPlatform] = useState("");
+    const [customLabel, setCustomLabel] = useState(""); // Added for custom label
     const [loading, setLoading] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -45,6 +46,7 @@ export default function AddLinkBox({
         setLabel("");
         setAlias("");
         setPlatform("");
+        setCustomLabel("");
         onCancel?.();
     }
 
@@ -82,6 +84,7 @@ export default function AddLinkBox({
                     label: finalLabel,
                     alias,
                     platform,
+                    customLabel: customLabel.trim() || null, // Send customLabel
                 }),
             });
 
@@ -98,6 +101,7 @@ export default function AddLinkBox({
             setLabel("");
             setAlias("");
             setPlatform("");
+            setCustomLabel("");
             setShowAdvanced(false);
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "Failed to add link";
@@ -140,6 +144,16 @@ export default function AddLinkBox({
                 onChange={(e) => setUrl(e.target.value)}
             />
 
+            {/* Custom Label Input - Added */}
+            <Input
+                type="text"
+                placeholder="Custom label (optional) — overrides detected platform name"
+                value={customLabel}
+                onChange={(e) => setCustomLabel(e.target.value)}
+                maxLength={50}
+                className="w-full"
+            />
+
             <div>
                 <button
                     type="button"
@@ -167,7 +181,7 @@ export default function AddLinkBox({
                     Cancel
                 </Button>
                 <Button onClick={submit} disabled={loading} className="flex-1">
-                    {loading ? "Adding…" : "Add link"}
+                    {loading ? "Addingâ€¦" : "Add link"}
                 </Button>
             </div>
         </div>

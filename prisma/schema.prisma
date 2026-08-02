@@ -73,6 +73,7 @@ model Link {
   alias     String?
   label     String
   url       String
+  customLabel String? 
   position  Int      @default(0)
   clicks    Int      @default(0)
   isPublic  Boolean  @default(true)

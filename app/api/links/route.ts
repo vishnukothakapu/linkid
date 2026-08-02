@@ -44,6 +44,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const isGroup = body?.isGroup === true;
+    const customLabel = body?.label?.trim(); // Extract customLabel
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
@@ -87,6 +88,7 @@ export async function POST(req: Request) {
                         url: "",
                         isGroup: true,
                         position: (maxOrder._max.position ?? 0) + 1,
+                        customLabel: groupLabel, // Save customLabel for groups too
                     },
                 });
             }, {
@@ -112,7 +114,6 @@ export async function POST(req: Request) {
 
     // --- Regular link creation ---
     const rawUrl = body?.url?.trim();
-    const customLabel = body?.label?.trim();
     const rawAlias = body?.alias?.trim();
     const customAlias = rawAlias ? rawAlias.toLowerCase().replace(/[^a-z0-9-]/g, "") : undefined;
     const parentId = body?.parentId || null;
@@ -243,6 +244,7 @@ export async function POST(req: Request) {
                     url: finalUrl,
                     position: (maxOrder._max.position ?? 0) + 1,
                     parentId: parentId,
+                    customLabel: customLabel || null, // Save the custom label
                 },
             });
         }, {
@@ -302,6 +304,23 @@ export async function GET() {
 
     const allLinks = await prisma.link.findMany({
         where: { userId: user.id },
+        select: {
+            id: true,
+            platform: true,
+            alias: true,
+            label: true,
+            url: true,
+            position: true,
+            parentId: true,
+            isGroup: true,
+            isPublic: true,
+            createdAt: true,
+            updatedAt: true,
+            startDate: true,
+            endDate: true,
+            clicks: true,
+            customLabel: true, // Include customLabel in GET response
+        },
         orderBy: [
             { position: 'asc' },
             { createdAt: 'asc' }
