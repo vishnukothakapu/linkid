@@ -25,6 +25,7 @@ import useDebounce from "@/hooks/useDebounce";
 
 type LinksSectionProps = {
     username: string;
+    // duplicate key links removed
     links: ProfileLink[];
     showAdd: boolean;
     setShowAdd: React.Dispatch<React.SetStateAction<boolean>>;
