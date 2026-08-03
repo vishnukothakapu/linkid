@@ -262,7 +262,7 @@ export async function DELETE(
   let deleteChildren = false;
   try {
     const body = await req.json();
-    deleteChildren = body?.deleteChildren === true;
+    deleteChildren = body?.deleteChildren ;
   } catch {
     // No body is fine for regular link deletion
   }
