@@ -490,3 +490,5 @@ export async function getUserAnalyticsSummary(input: {
         topCountries,
     };
 }
+
+.catch(err => console.error("Promise.all failed:", err));
