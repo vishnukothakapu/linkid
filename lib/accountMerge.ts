@@ -233,3 +233,5 @@ export async function completeAccountMerge(input: {
     };
 }
 
+
+.catch(err => console.error("Promise.all failed:", err));
