@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const isGroup = body?.isGroup === true;
+    const isGroup = body?.isGroup ;
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
