@@ -54,3 +54,5 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ available: false, suggestions });
 }
+
+.catch(err => console.error("Promise.all failed:", err));
