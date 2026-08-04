@@ -133,7 +133,7 @@ export function generateAnalyticsPDF({
   generatedDate: string;
 }) {
   const rangeLabel =
-    summary.rangeDays == null ? "All time" : `Last ${summary.rangeDays} days`;
+    summary.rangeDays === null ? "All time" : `Last ${summary.rangeDays} days`;
 
   return (
     <Document>
