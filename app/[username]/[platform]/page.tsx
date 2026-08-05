@@ -9,6 +9,7 @@ import { resolveUserByUsername } from "@/lib/userLookup";
 // ✨ Fixed: Correct module reference target mapping
 import { getMobileOS, getDeepLink } from "@/lib/deeplink";
 import { isSafeRedirectUrl } from "@/lib/urlValidation";
+import LockedLinkView from "./LockedLinkView";
 
 // ✨ Platform package registry mapping fallback for Android Intents
 const ANDROID_PACKAGES: Record<string, string> = {
@@ -62,7 +63,7 @@ export default async function PlatformRedirect({
                 { OR: [{ endDate: null }, { endDate: { gte: now } }] },
             ],
         },
-        select: { id: true, url: true, userId: true, platform: true },
+        select: { id: true, url: true, userId: true, platform: true, pinCode: true },
     });
 
     if (!link) notFound();
@@ -74,6 +75,10 @@ export default async function PlatformRedirect({
     // or otherwise non-http(s) value must never reach any of those sinks.
     if (!isSafeRedirectUrl(link.url)) {
         notFound();
+    }
+
+    if (link.pinCode) {
+        return <LockedLinkView linkId={link.id} />;
     }
 
     // Track analytics asynchronously safely

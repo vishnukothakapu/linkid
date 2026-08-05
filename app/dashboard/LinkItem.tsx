@@ -44,7 +44,7 @@ export function LinkItem({
     dragAttributes?: DraggableAttributes;
     link: ProfileLink;
     username: string;
-    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }) {
@@ -56,6 +56,7 @@ export function LinkItem({
     const [platform, setPlatform] = useState(initialPlatform);
     const [startDate, setStartDate] = useState<Date | null>(link.startDate ? new Date(link.startDate) : null);
     const [endDate, setEndDate] = useState<Date | null>(link.endDate ? new Date(link.endDate) : null);
+    const [pinCode, setPinCode] = useState(link.pinCode || "");
     const [copied, setCopied] = useState(false);
     const Icon = PLATFORM_ICONS[editing ? platform : link.platform] ?? Globe;
 
@@ -112,7 +113,7 @@ export function LinkItem({
             return toast.error("Start date cannot be later than end date");
         }
 
-        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate);
+        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate, pinCode || null);
         if (success) {
             setEditing(false);
         }
@@ -198,6 +199,7 @@ export function LinkItem({
                                 setPlatform(initialPlatform);
                                 setStartDate(link.startDate ? new Date(link.startDate) : null);
                                 setEndDate(link.endDate ? new Date(link.endDate) : null);
+                                setPinCode(link.pinCode || "");
                             }
                             setEditing((v) => !v);
                         }}
@@ -278,6 +280,18 @@ export function LinkItem({
                                     type="datetime-local"
                                     value={toDatetimeLocal(endDate)}
                                     onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
+                                    className="w-full text-sm"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-3 flex flex-col sm:flex-row text-sm">
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">Lock with PIN/Password</label>
+                                <Input
+                                    type="text"
+                                    placeholder="Leave empty to disable"
+                                    value={pinCode}
+                                    onChange={(e) => setPinCode(e.target.value)}
                                     className="w-full text-sm"
                                 />
                             </div>

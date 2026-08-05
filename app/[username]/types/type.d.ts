@@ -10,6 +10,7 @@ export type Link = {
     isPublic: boolean;
     isGroup: boolean;
     parentId?: string | null;
+    pinCode?: string | null;
     children?: Link[];
     startDate?: Date | null;
     endDate?: Date | null;

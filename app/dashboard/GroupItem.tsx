@@ -64,7 +64,7 @@ export function GroupItem({
     username: string;
     dragListeners?: SyntheticListenerMap;
     dragAttributes?: DraggableAttributes;
-    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDeleteLink: (id: string) => Promise<void>;
     onDeleteGroup: (groupId: string, deleteChildren: boolean) => Promise<void>;
