@@ -17,6 +17,7 @@ model User {
   email         String   @unique
   emailVerified DateTime?
   image         String?
+  backgroundImage String?
 
   password      String?
 
@@ -214,6 +215,7 @@ model ProfileDraft {
   username  String?
   bio       String?
   image     String?
+  backgroundImage String?
   themeType String?
   themeColor String?
   themeCustom String?
@@ -232,6 +234,7 @@ model ProfileVersion {
   username  String?
   bio       String?
   image     String?
+  backgroundImage String?
   themeType String?
   themeColor String?
   themeCustom String?

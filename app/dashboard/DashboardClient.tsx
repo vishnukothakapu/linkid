@@ -19,6 +19,7 @@ export default function DashboardClient({
     initialSeoTitle,
     initialSeoDescription,
     initialLayout,
+    initialBackgroundImage,
     qrCode,
     enableEmailCapture,
     subscribers = [],
@@ -29,6 +30,7 @@ export default function DashboardClient({
     initialSeoTitle?: string;
     initialSeoDescription?: string;
     initialLayout?: LayoutStyle;
+    initialBackgroundImage?: string | null;
     qrCode?: React.ReactNode;
     enableEmailCapture?: boolean;
     subscribers?: { id: string; email: string; createdAt: Date }[];
@@ -36,6 +38,7 @@ export default function DashboardClient({
     const [links, setLinks] = useState(initialLinks);
     const [theme, setTheme] = useState(initialTheme || "default");
     const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>(initialLayout || "LIST");
+    const [backgroundImage, setBackgroundImage] = useState<string | null>(initialBackgroundImage || "");
     const [seoTitle, setSeoTitle] = useState(initialSeoTitle || "");
     const [seoDescription, setSeoDescription] = useState(initialSeoDescription || "");
     const [activeTab, setActiveTab] = useState<"links" | "appearance" | "seo">("links");
@@ -399,8 +402,10 @@ export default function DashboardClient({
                     <AppearanceSection 
                         initialTheme={theme} 
                         initialLayout={layoutStyle}
+                        initialBackgroundImage={backgroundImage ?? undefined}
                         onUpdateTheme={setTheme} 
                         onUpdateLayout={setLayoutStyle}
+                        onUpdateBackgroundImage={setBackgroundImage}
                     />
                 ) : (
                     <SeoSection 
