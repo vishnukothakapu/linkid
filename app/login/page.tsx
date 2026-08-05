@@ -29,13 +29,14 @@ export default function LoginPage() {
       setError("Please fill in both email and password.");
       return;
     }
+
     setLoading(true);
     setError(null);
 
     try {
       const response = await signIn("credentials", {
         email: trimmedEmail,
-        password: password,
+        password,
         callbackUrl: "/dashboard",
         redirect: false,
       });
@@ -48,63 +49,74 @@ export default function LoginPage() {
       if (response?.url) {
         window.location.href = response.url;
       }
-    } catch {
+    } catch (error) {
       setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  function isEmailAndPasswordEmpty() {
-    return !email.trim().length || !password.trim().length;
-  }
+  const isEmailAndPasswordEmpty = () =>
+    !email.trim().length || !password.trim().length;
 
   return (
     <>
       <Navbar />
       <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-3 rounded-xl border bg-background p-6 shadow-sm">
+        <div className="w-full max-w-md space-y-4 rounded-xl border bg-background p-6 shadow-sm">
           {/* HEADER */}       
-          <div className="text-center space-y-1">
+          <div className="space-y-1 text-center">
             <h1 className="text-2xl font-bold">Welcome back</h1>
             <p className="text-sm text-muted-foreground">
               Login to your LinkID
             </p>
           </div>
 
-          {/* OAUTH */}
+          {/* OAUTH BUTTONS */}
           <div className="space-y-2">
             <Button
               variant="outline"
-              className="w-full flex items-center justify-center gap-2 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 cursor-pointer"
               disabled={googleLoading || githubLoading}
               onClick={async () => {
                 setGoogleLoading(true);
                 try {
-                  await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
+                  await signIn(PLATFORMS.GOOGLE, {
+                    callbackUrl: "/dashboard",
+                  });
                 } finally {
                   setGoogleLoading(false);
                 }
               }}
             >
-              {googleLoading ? <Spinner className="h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
+              {googleLoading ? (
+                <Spinner className="h-5 w-5" />
+              ) : (
+                <FcGoogle className="h-5 w-5" />
+              )}
               {googleLoading ? "Connecting..." : "Continue with Google"}
             </Button>
 
             <Button
               variant="outline"
-              className="w-full flex items-center justify-center gap-2 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 cursor-pointer"
               disabled={googleLoading || githubLoading}
               onClick={async () => {
                 setGithubLoading(true);
                 try {
-                  await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
+                  await signIn(PLATFORMS.GITHUB, {
+                    callbackUrl: "/dashboard",
+                  });
                 } finally {
                   setGithubLoading(false);
                 }
               }}
             >
-              {githubLoading ? <Spinner className="h-5 w-5" /> : <FaGithub className="h-5 w-5" />}
+              {githubLoading ? (
+                <Spinner className="h-5 w-5" />
+              ) : (
+                <FaGithub className="h-5 w-5" />
+              )}
               {githubLoading ? "Connecting..." : "Continue with GitHub"}
             </Button>
           </div>
@@ -116,7 +128,7 @@ export default function LoginPage() {
             <div className="h-px w-full bg-border" />
           </div>
 
-          {/* FORM */}
+          {/* LOGIN FORM */}
           <form
             className="space-y-3"
             onSubmit={(e) => {
@@ -143,7 +155,7 @@ export default function LoginPage() {
               }}
             />
 
-            {/* PASSWORD WITH TOGGLE */}
+            {/* PASSWORD FIELD */}
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
@@ -161,7 +173,7 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -173,10 +185,11 @@ export default function LoginPage() {
               </button>
             </div>
 
+            {/* FORGOT PASSWORD LINK */}
             <div className="flex justify-end">
               <Link
-                href="/forgot-password"
-                className="text-sm text-muted-foreground hover:underline"
+                href="/password"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline"
               >
                 Forgot password?
               </Link>
@@ -187,15 +200,22 @@ export default function LoginPage() {
               type="submit"
               disabled={loading || isEmailAndPasswordEmpty()}
             >
-              {loading ? "Logging in..." : "Login with Email"}
+              {loading ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Logging in...
+                </>
+              ) : (
+                "Login with Email"
+              )}
             </Button>
           </form>
 
           {/* FOOTER */}
           <p className="text-center text-sm text-muted-foreground">
-            Don’t have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/register" className="font-medium hover:underline">
-              Signup
+              Sign up
             </Link>
           </p>
         </div>
