@@ -19,6 +19,7 @@ export interface ProfileSnapshot {
   themeType: string | null;
   themeColor: string | null;
   themeCustom: string | null;
+  backgroundImage: string | null;
 }
 
 /**
@@ -59,6 +60,7 @@ export async function upsertProfileDraft(
     themeType: draft.themeType,
     themeColor: draft.themeColor,
     themeCustom: draft.themeCustom,
+    backgroundImage: draft.backgroundImage,
   };
 }
 
@@ -77,7 +79,7 @@ export async function getEditableProfileState(
     // a subset of fields are being edited in the draft).
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { name: true, username: true, bio: true, image: true, themeType: true, themeColor: true, themeCustom: true },
+      select: { name: true, username: true, bio: true, image: true, themeType: true, themeColor: true, themeCustom: true, backgroundImage: true },
     });
 
     // If a draft exists but the live user record is missing, the system
@@ -96,6 +98,7 @@ export async function getEditableProfileState(
       themeType: draft.themeType ?? user.themeType ?? null,
       themeColor: draft.themeColor ?? user.themeColor ?? null,
       themeCustom: draft.themeCustom ?? user.themeCustom ?? null,
+      backgroundImage: draft.backgroundImage ?? user.backgroundImage ?? null,
     };
   }
 
@@ -109,6 +112,7 @@ export async function getEditableProfileState(
       themeType: true,
       themeColor: true,
       themeCustom: true,
+      backgroundImage: true,
     },
   });
 
@@ -124,6 +128,7 @@ export async function getEditableProfileState(
     themeType: user.themeType,
     themeColor: user.themeColor,
     themeCustom: user.themeCustom,
+    backgroundImage: user.backgroundImage,
   };
 }
 
@@ -181,6 +186,9 @@ function diffProfileSnapshots(
   }
   if (before.themeCustom !== after.themeCustom) {
     diff.themeCustom = { before: before.themeCustom, after: after.themeCustom };
+  }
+  if (before.backgroundImage !== after.backgroundImage) {
+    diff.backgroundImage = { before: before.backgroundImage, after: after.backgroundImage };
   }
 
   return diff;
@@ -243,6 +251,7 @@ export async function publishProfileDraft(
         themeType: true,
         themeColor: true,
         themeCustom: true,
+        backgroundImage: true,
       },
     });
 
@@ -259,6 +268,7 @@ export async function publishProfileDraft(
       themeType: draft.themeType ?? user.themeType,
       themeColor: draft.themeColor ?? user.themeColor,
       themeCustom: draft.themeCustom ?? user.themeCustom,
+      backgroundImage: draft.backgroundImage ?? user.backgroundImage,
     };
 
     // Calculate diff
@@ -287,6 +297,7 @@ export async function publishProfileDraft(
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
+        backgroundImage: afterSnapshot.backgroundImage,
       },
     });
 
@@ -301,6 +312,7 @@ export async function publishProfileDraft(
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
+        backgroundImage: afterSnapshot.backgroundImage,
         changeType: "publish",
         diffJson: JSON.stringify(diff),
       },
@@ -399,6 +411,7 @@ export async function resolvePreviewToken(
     themeType: draft.themeType,
     themeColor: draft.themeColor,
     themeCustom: draft.themeCustom,
+    backgroundImage: draft.backgroundImage,
   };
 
   return {
@@ -427,6 +440,7 @@ export async function getProfileVersions(userId: string, limit: number = 20) {
       themeType: v.themeType,
       themeColor: v.themeColor,
       themeCustom: v.themeCustom,
+      backgroundImage: v.backgroundImage,
     },
     changeType: v.changeType,
     diff: v.diffJson ? JSON.parse(v.diffJson) : {},
@@ -462,6 +476,7 @@ export async function rollbackProfileVersion(
         themeType: true,
         themeColor: true,
         themeCustom: true,
+        backgroundImage: true,
       },
     });
 
@@ -478,6 +493,7 @@ export async function rollbackProfileVersion(
       themeType: version.themeType,
       themeColor: version.themeColor,
       themeCustom: version.themeCustom,
+      backgroundImage: version.backgroundImage,
     };
 
     // Calculate diff
@@ -510,6 +526,7 @@ export async function rollbackProfileVersion(
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
+        backgroundImage: afterSnapshot.backgroundImage,
       },
     });
 
@@ -524,6 +541,7 @@ export async function rollbackProfileVersion(
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
+        backgroundImage: afterSnapshot.backgroundImage,
         changeType: "rollback",
         diffJson: JSON.stringify(diff),
       },

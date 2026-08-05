@@ -215,9 +215,10 @@ export function AppearanceSection({
                 <div className="max-w-md flex gap-2">
                     <input
                         type="url"
+                        aria-label="Background image URL"
                         placeholder="https://example.com/image.jpg"
                         className="flex-1 px-3 py-2 border rounded-md text-sm"
-                        value={backgroundImage}
+                        value={backgroundImage || ""}
                         onChange={(e) => setBackgroundImage(e.target.value)}
                         disabled={savingBg}
                     />

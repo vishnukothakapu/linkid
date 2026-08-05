@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { revalidateTag } from "next/cache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -21,6 +22,8 @@ export async function PATCH(req: NextRequest) {
             where: { email: session.user.email },
             data: { backgroundImage },
         });
+        
+        revalidateTag("public-profile", "default");
 
         return NextResponse.json({ success: true, backgroundImage: updatedUser.backgroundImage }, { status: 200 });
     } catch (error) {
