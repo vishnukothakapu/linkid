@@ -126,8 +126,21 @@ export default async function PublicProfile({
 
   return (
     <main className={`min-h-screen relative px-4 py-16 theme-${user.theme || "default"}`}>
+      {user.backgroundImage && (
+        <>
+          <div
+            className="fixed inset-0 z-[-2]"
+            style={{
+              backgroundImage: `url(${user.backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+          <div className="fixed inset-0 z-[-1] bg-black/40 backdrop-blur-[2px]" />
+        </>
+      )}
       <ShareProfileButton />
-      <div className="mx-auto max-w-md">
+      <div className="mx-auto max-w-md relative z-10">
         <ProfileCard
           user={{
             name: user.name,

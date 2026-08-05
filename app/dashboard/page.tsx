@@ -31,6 +31,7 @@ export default async function DashboardPage() {
             initialLinks={nestedLinks}
             initialTheme={user.theme}
             initialLayout={user.layoutStyle}
+            initialBackgroundImage={user.backgroundImage}
             initialSeoTitle={user.seoTitle || ""}
             initialSeoDescription={user.seoDescription || ""}
             qrCode={<QRCode />} 

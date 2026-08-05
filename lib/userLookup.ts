@@ -13,6 +13,7 @@ const publicProfileSelect = {
     username: true,
     bio: true,
     image: true,
+    backgroundImage: true,
     theme: true,
     themeType: true,
     themeColor: true,
