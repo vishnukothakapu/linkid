@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
+declare var chrome: any;
+
 function AuthFlowComponent({ username }: { username: string }) {
   const searchParams = useSearchParams();
   const extId = searchParams.get("extId");
@@ -28,7 +30,7 @@ function AuthFlowComponent({ username }: { username: string }) {
       chrome.runtime.sendMessage(
         extId,
         { type: "LINKID_CONNECT", username },
-        (response) => {
+        (response: any) => {
           if (chrome.runtime.lastError) {
              setStatus("error");
              setErrorMsg(chrome.runtime.lastError.message || "Failed to communicate with extension.");
