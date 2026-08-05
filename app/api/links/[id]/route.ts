@@ -45,6 +45,7 @@ export async function PUT(
   const startDate = body?.startDate;
   const endDate = body?.endDate;
   const parentId = body?.parentId;
+  const pinCode = body?.pinCode;
 
   const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
   const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
@@ -60,7 +61,7 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null; parentId?: string | null } = {};
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null; parentId?: string | null; pinCode?: string | null } = {};
 
   // Handle parentId changes (move link into/out of a group)
   if (parentId !== undefined) {
@@ -174,6 +175,10 @@ export async function PUT(
 
   if (finalStartDate && finalEndDate && finalStartDate > finalEndDate) {
     return NextResponse.json({ error: "Start date cannot be later than end date" }, { status: 400 });
+  }
+
+  if (pinCode !== undefined) {
+    data.pinCode = pinCode;
   }
 
   if (Object.keys(data).length === 0) {

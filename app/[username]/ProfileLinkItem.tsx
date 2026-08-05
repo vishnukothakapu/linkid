@@ -1,4 +1,4 @@
-import { ArrowRight,Globe } from "lucide-react";
+import { ArrowRight, Globe, Lock } from "lucide-react";
 import { PLATFORM_ICONS } from "../../lib/platformIcons";
 import { ProfileLinks } from "./types/type";
 
@@ -30,9 +30,10 @@ export function ProfileLinkItem({ link, username, layoutStyle }: ProfileLinks) {
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted group-hover:bg-background transition-colors">
                     <Icon className="h-6 w-6" />
                 </div>
-                <span className="font-medium text-xs text-center truncate w-full capitalize">
-                    {link.label || link.platform}
-                </span>
+                <div className="flex items-center gap-1 font-medium text-xs text-center truncate w-full justify-center">
+                    <span className="truncate capitalize">{link.label || link.platform}</span>
+                    {link.pinCode && <Lock className="h-3 w-3 flex-shrink-0 opacity-70" />}
+                </div>
             </a>
         );
     }
@@ -50,9 +51,12 @@ export function ProfileLinkItem({ link, username, layoutStyle }: ProfileLinks) {
                     <Icon className="h-5 w-5" />
                 </div>
 
-                <span className="font-medium capitalize">
-                    {link.label || link.platform}
-                </span>
+                <div className="flex items-center gap-1">
+                    <span className="font-medium capitalize">
+                        {link.label || link.platform}
+                    </span>
+                    {link.pinCode && <Lock className="h-3.5 w-3.5 opacity-70 ml-1" />}
+                </div>
             </div>
 
             <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:opacity-100" />

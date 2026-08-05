@@ -78,6 +78,7 @@ model Link {
   isPublic  Boolean  @default(true)
   isGroup   Boolean  @default(false)
   parentId  String?
+  pinCode   String?
   startDate DateTime?
   endDate   DateTime?
   userId    String

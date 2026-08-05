@@ -35,7 +35,8 @@ export const resolveUserByUsername = unstable_cache(
         });
 
         if (exactUser) {
-            return { user: { ...exactUser, links: nestLinks(exactUser.links) }, canonicalUsername: exactUser.username ?? username };
+            const safeLinks = exactUser.links.map(l => ({ ...l, pinCode: (l as any).pinCode ? "locked" : null }));
+            return { user: { ...exactUser, links: nestLinks(safeLinks as any) }, canonicalUsername: exactUser.username ?? username };
         }
 
         const alias = await prisma.userAlias.findUnique({
@@ -54,8 +55,8 @@ export const resolveUserByUsername = unstable_cache(
         if (!user) {
             return null;
         }
-
-        return { user: { ...user, links: nestLinks(user.links) }, canonicalUsername: user.username ?? username };
+        const safeLinks = user.links.map(l => ({ ...l, pinCode: (l as any).pinCode ? "locked" : null }));
+        return { user: { ...user, links: nestLinks(safeLinks as any) }, canonicalUsername: user.username ?? username };
     },
     ["resolveUserByUsername"],
     { revalidate: 60, tags: ["public-profile"] }
