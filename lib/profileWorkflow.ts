@@ -267,10 +267,8 @@ export async function publishProfileDraft(
     // Handle username change - create alias for old username
     if (beforeSnapshot.username && beforeSnapshot.username !== afterSnapshot.username) {
       // Recheck availability within the transaction to guard against TOCTOU races
-      const takenByOther = await tx.user.findFirst({
-        where: { username: afterSnapshot.username, NOT: { id: userId } },
-      });
-      if (takenByOther) {
+      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, userId, tx);
+      if (!isAvailable) {
         throw new Error("Username already taken");
       }
       await ensureUsernameAliases(tx, userId, beforeSnapshot.username);

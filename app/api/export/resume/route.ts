@@ -3,12 +3,23 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { generateResumePDF } from "@/lib/generateResumePDF";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return new Response("Unauthorized", { status: 401 });
+    }
+
+    const allowed = await checkRateLimit(
+      `export-resume:${session.user.email}`,
+      2,
+      60 * 1000
+    );
+
+    if (!allowed) {
+      return new Response("Too many requests. Please slow down.", { status: 429 });
     }
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
