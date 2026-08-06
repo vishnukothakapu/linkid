@@ -14,26 +14,58 @@ export class MergeError extends Error {
     }
 }
 
-async function verifyPasswordIfPresent(userId: string, password: string | undefined) {
+async function verifyMergeConfirmation(
+    userId: string,
+    confirmation: { password?: string; confirmEmail?: string }
+) {
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { password: true },
+        select: { password: true, email: true },
     });
 
+    // Password accounts confirm the destructive merge with their password.
     if (user?.password) {
-        if (!password) {
+        if (!confirmation.password) {
             throw new MergeError("Password confirmation is required", 400);
         }
 
-        const isValid = await bcrypt.compare(password, user.password);
+        const isValid = await bcrypt.compare(confirmation.password, user.password);
         if (!isValid) {
             throw new MergeError("Password confirmation failed", 401);
         }
+        return;
     }
+
+    // OAuth-only accounts have no password. Previously the check was skipped
+    // entirely, so a merge (irreversible) could be triggered with no
+    // confirmation at all. Require the owner to re-type their account email so
+    // the action can't proceed silently on a bare authenticated/replayed request.
+    if (user?.email) {
+        const provided = confirmation.confirmEmail?.trim().toLowerCase();
+        if (!provided) {
+            throw new MergeError(
+                "Please re-enter your account email to confirm this merge",
+                400
+            );
+        }
+        if (provided !== user.email.toLowerCase()) {
+            throw new MergeError("Email confirmation did not match", 401);
+        }
+        return;
+    }
+
+    throw new MergeError("This account cannot be verified for merge", 400);
 }
 
-export async function createMergeRequest(input: { targetUserId: string; password?: string }) {
-    await verifyPasswordIfPresent(input.targetUserId, input.password);
+export async function createMergeRequest(input: {
+    targetUserId: string;
+    password?: string;
+    confirmEmail?: string;
+}) {
+    await verifyMergeConfirmation(input.targetUserId, {
+        password: input.password,
+        confirmEmail: input.confirmEmail,
+    });
 
     const code = generateMergeCode();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
@@ -64,6 +96,7 @@ export async function completeAccountMerge(input: {
     sourceUserId: string;
     code: string;
     password?: string;
+    confirmEmail?: string;
 }) {
     const requestCodeHash = hashMergeCode(input.code);
     const mergeRequest = await prisma.accountMergeRequest.findUnique({
@@ -86,7 +119,10 @@ export async function completeAccountMerge(input: {
         throw new MergeError("You cannot merge an account into itself", 400);
     }
 
-    await verifyPasswordIfPresent(input.sourceUserId, input.password);
+    await verifyMergeConfirmation(input.sourceUserId, {
+        password: input.password,
+        confirmEmail: input.confirmEmail,
+    });
 
     const [sourceUser, targetUser] = await Promise.all([
         prisma.user.findUnique({

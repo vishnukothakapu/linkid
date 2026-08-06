@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const code = typeof body.code === "string" ? body.code : "";
     const password = typeof body.password === "string" ? body.password : undefined;
+    const confirmEmail = typeof body.confirmEmail === "string" ? body.confirmEmail : undefined;
 
     if (!code) {
         return NextResponse.json({ error: "Merge code is required" }, { status: 400 });
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
             sourceUserId: sourceUser.id,
             code,
             password,
+            confirmEmail,
         });
 
         return NextResponse.json({
