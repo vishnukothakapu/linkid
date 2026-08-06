@@ -82,7 +82,7 @@ export default function DashboardClient({
         setShowGroupAdd(false);
     }
 
-    async function updateLink(id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null): Promise<boolean> {
+    async function updateLink(id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null, isSocialIcon?: boolean): Promise<boolean> {
         const csrfToken = await getCsrfToken();
 
         try {
@@ -92,7 +92,7 @@ export default function DashboardClient({
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
                 },
-                body: JSON.stringify({ url, label, platform, startDate, endDate, pinCode }),
+                body: JSON.stringify({ url, label, platform, startDate, endDate, pinCode, isSocialIcon }),
             });
 
             if (!response.ok) {
