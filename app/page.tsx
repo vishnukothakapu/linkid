@@ -391,7 +391,7 @@ export default async function Home() {
                         <ol className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
                            <li className="flex gap-3">
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">1</span>
-                              <span>Download the <a href="https://github.com/vishnukothakapu/linkid/tree/main/chrome-extension" target="_blank" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">Extension folder</a> from our GitHub.</span>
+                              <span>Download the <a href="https://github.com/vishnukothakapu/linkid-extension" target="_blank" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">Extension folder</a> from our GitHub.</span>
                            </li>
                            <li className="flex gap-3">
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">2</span>

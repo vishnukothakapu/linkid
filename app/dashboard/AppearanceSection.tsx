@@ -17,18 +17,24 @@ import { LayoutStyle } from "@/app/[username]/types/type";
 export function AppearanceSection({
     initialTheme,
     initialLayout,
+    initialBackgroundImage,
     onUpdateTheme,
     onUpdateLayout,
+    onUpdateBackgroundImage,
 }: {
     initialTheme: string;
     initialLayout: LayoutStyle;
+    initialBackgroundImage?: string;
     onUpdateTheme: (theme: string) => void;
     onUpdateLayout: (layout: LayoutStyle) => void;
+    onUpdateBackgroundImage: (url: string | null) => void;
 }) {
     const [selectedTheme, setSelectedTheme] = useState(initialTheme || "default");
     const [selectedLayout, setSelectedLayout] = useState(initialLayout || "LIST");
+    const [backgroundImage, setBackgroundImage] = useState(initialBackgroundImage || "");
     const [savingTheme, setSavingTheme] = useState(false);
     const [savingLayout, setSavingLayout] = useState(false);
+    const [savingBg, setSavingBg] = useState(false);
 
     async function handleSaveTheme(themeId: string) {
         setSelectedTheme(themeId);
@@ -87,6 +93,34 @@ export function AppearanceSection({
             console.error(error);
         } finally {
             setSavingLayout(false);
+        }
+    }
+
+    async function handleSaveBackgroundImage() {
+        setSavingBg(true);
+        try {
+            const csrfToken = await getCsrfToken();
+            const res = await fetch("/api/user/background", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({ backgroundImage: backgroundImage || null }),
+            });
+            
+            if (!res.ok) {
+                throw new Error("Failed to save background image");
+            }
+
+            const data = await res.json();
+            onUpdateBackgroundImage(data.backgroundImage);
+            toast.success("Background image updated!");
+        } catch (error) {
+            toast.error("Failed to update background image");
+            console.error(error);
+        } finally {
+            setSavingBg(false);
         }
     }
 
@@ -168,6 +202,34 @@ export function AppearanceSection({
                     </button>
                 ))}
             </div>
+            </div>
+
+            {/* Background Image Section */}
+            <div className="space-y-6">
+                <div className="space-y-1">
+                    <h2 className="text-xl font-semibold">Custom Background</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Set a custom background image URL for your public profile.
+                    </p>
+                </div>
+                <div className="max-w-md flex gap-2">
+                    <input
+                        type="url"
+                        aria-label="Background image URL"
+                        placeholder="https://example.com/image.jpg"
+                        className="flex-1 px-3 py-2 border rounded-md text-sm"
+                        value={backgroundImage || ""}
+                        onChange={(e) => setBackgroundImage(e.target.value)}
+                        disabled={savingBg}
+                    />
+                    <button
+                        onClick={handleSaveBackgroundImage}
+                        disabled={savingBg}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium disabled:opacity-50"
+                    >
+                        {savingBg ? "Saving..." : "Save"}
+                    </button>
+                </div>
             </div>
         </section>
     );
