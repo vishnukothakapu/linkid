@@ -16,8 +16,16 @@ export function ProfileCard(props: ProfileCardProps) {
       themeType === "cyberpunk" ? "bg-zinc-950 border border-pink-500 text-cyan-400 shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:-translate-y-2 transition-all duration-300" :
       "transition-all duration-300 hover:-translate-y-2 hover:shadow-xl";
 
-    const socialLinks = (user.links ?? []).filter((link) => link.isSocialIcon);
-    const regularLinks = (user.links ?? []).filter((link) => !link.isSocialIcon);
+    const socialLinks = (user.links ?? []).flatMap((link) =>
+        link.isGroup ? (link.children ?? []).filter((c) => c.isSocialIcon) : (link.isSocialIcon ? [link] : [])
+    );
+    const regularLinks = (user.links ?? []).flatMap((link) => {
+        if (link.isGroup) {
+            const regularChildren = (link.children ?? []).filter((c) => !c.isSocialIcon);
+            return regularChildren.length > 0 ? [{ ...link, children: regularChildren }] : [];
+        }
+        return !link.isSocialIcon ? [link] : [];
+    });
 
     return (
         <Card className={cardClassName}>
@@ -55,12 +63,14 @@ export function ProfileCard(props: ProfileCardProps) {
                     <NewsletterSubscribeBlock username={username} />
                 )}
 
-                <ProfileLinks
-                    links={regularLinks}
-                    username={username}
-                    isOwner={isOwner}
-                    layoutStyle={user.layoutStyle}
-                />
+                {(regularLinks.length > 0 || socialLinks.length === 0) && (
+                    <ProfileLinks
+                        links={regularLinks}
+                        username={username}
+                        isOwner={isOwner}
+                        layoutStyle={user.layoutStyle}
+                    />
+                )}
 
                 {showCTA && <ProfileCTA />}
             </CardContent>
