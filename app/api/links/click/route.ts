@@ -27,8 +27,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
+    // Only public links are click-trackable. Without this filter, clicks were
+    // recorded against links the owner has marked private (isPublic: false),
+    // which aren't shown publicly in the first place.
     const link = await prisma.link.findFirst({
-        where: { platform, user: { username } },
+        where: { platform, user: { username }, isPublic: true },
         select: { id: true, userId: true },
     });
 

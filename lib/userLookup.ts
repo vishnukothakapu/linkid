@@ -22,6 +22,7 @@ const publicProfileSelect = {
     enableEmailCapture: true,
     seoTitle: true,
     seoDescription: true,
+    isVerified: true,
     links: {
         where: { isPublic: true },
         orderBy: [{ position: "asc" }, { createdAt: "asc" }],

@@ -274,8 +274,11 @@ export async function publishProfileDraft(
     // Calculate diff
     const diff = diffProfileSnapshots(beforeSnapshot, afterSnapshot);
 
-    // Handle username change - create alias for old username
-    if (beforeSnapshot.username && beforeSnapshot.username !== afterSnapshot.username) {
+    // Handle username being set or changed. Run the in-transaction uniqueness
+    // recheck whenever the username differs from before — including the first
+    // publish (beforeSnapshot.username empty), which previously skipped the
+    // check entirely and let two accounts claim the same handle concurrently.
+    if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
       // Recheck availability within the transaction to guard against TOCTOU races
       const takenByOther = await tx.user.findFirst({
         where: { username: afterSnapshot.username, NOT: { id: userId } },
@@ -283,7 +286,10 @@ export async function publishProfileDraft(
       if (takenByOther) {
         throw new Error("Username already taken");
       }
-      await ensureUsernameAliases(tx, userId, beforeSnapshot.username);
+      // Only alias the previous username on a rename, not on first publish.
+      if (beforeSnapshot.username) {
+        await ensureUsernameAliases(tx, userId, beforeSnapshot.username);
+      }
     }
 
     // Update the live profile

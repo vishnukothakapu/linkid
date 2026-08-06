@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const password = typeof body.password === "string" ? body.password : undefined;
+    const confirmEmail = typeof body.confirmEmail === "string" ? body.confirmEmail : undefined;
 
     try {
         const targetUser = await prisma.user.findUnique({
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
         const result = await createMergeRequest({
             targetUserId: targetUser.id,
             password,
+            confirmEmail,
         });
 
         return NextResponse.json({

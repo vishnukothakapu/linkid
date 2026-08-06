@@ -5,8 +5,18 @@ import type { NextRequest } from "next/server";
 import { applyCsrfProtection } from "@/lib/middleware/csrf";
 
 export async function middleware(req: NextRequest) {
-    const token = await getToken({ req });
     const { pathname } = req.nextUrl;
+
+    // API routes: apply CSRF protection only. The rest of this middleware
+    // (auth redirects, custom-domain rewrite, CSP nonce) is for page
+    // navigations, not API calls. The matcher previously excluded /api
+    // entirely, so applyCsrfProtection never ran on the mutating API routes.
+    if (pathname.startsWith("/api")) {
+        const csrfResponse = await applyCsrfProtection(req);
+        return csrfResponse ?? NextResponse.next();
+    }
+
+    const token = await getToken({ req });
 
     // If logged in & trying to access /login or /register → redirect to dashboard
     if (token && (pathname === "/login" || pathname === "/register")) {
@@ -76,11 +86,13 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except for the ones starting with:
-         * - api (API routes)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
+         *
+         * /api is intentionally included so CSRF protection runs on API
+         * routes; the handler short-circuits API requests to CSRF only.
          */
-        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+        "/((?!_next/static|_next/image|favicon.ico).*)",
     ],
 };
