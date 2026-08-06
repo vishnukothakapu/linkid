@@ -44,7 +44,7 @@ export function LinkItem({
     dragAttributes?: DraggableAttributes;
     link: ProfileLink;
     username: string;
-    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null) => Promise<boolean>;
+    onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null, isSocialIcon?: boolean) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 }) {
@@ -57,6 +57,7 @@ export function LinkItem({
     const [startDate, setStartDate] = useState<Date | null>(link.startDate ? new Date(link.startDate) : null);
     const [endDate, setEndDate] = useState<Date | null>(link.endDate ? new Date(link.endDate) : null);
     const [pinCode, setPinCode] = useState(link.pinCode || "");
+    const [isSocialIcon, setIsSocialIcon] = useState(link.isSocialIcon || false);
     const [copied, setCopied] = useState(false);
     const Icon = PLATFORM_ICONS[editing ? platform : link.platform] ?? Globe;
 
@@ -113,7 +114,7 @@ export function LinkItem({
             return toast.error("Start date cannot be later than end date");
         }
 
-        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate, pinCode || null);
+        const success = await onUpdate(link.id, url, trimmedLabel, platform, startDate, endDate, pinCode || null, isSocialIcon);
         if (success) {
             setEditing(false);
         }
@@ -200,6 +201,7 @@ export function LinkItem({
                                 setStartDate(link.startDate ? new Date(link.startDate) : null);
                                 setEndDate(link.endDate ? new Date(link.endDate) : null);
                                 setPinCode(link.pinCode || "");
+                                setIsSocialIcon(link.isSocialIcon || false);
                             }
                             setEditing((v) => !v);
                         }}
@@ -295,6 +297,17 @@ export function LinkItem({
                                     className="w-full text-sm"
                                 />
                             </div>
+                        </div>
+                        <div className="mt-3 flex flex-col sm:flex-row text-sm">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={isSocialIcon}
+                                    onChange={(e) => setIsSocialIcon(e.target.checked)}
+                                    className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                                />
+                                <span className="text-sm text-muted-foreground">Display as small social icon at top of profile</span>
+                            </label>
                         </div>
                     </details>
 

@@ -46,6 +46,7 @@ export async function PUT(
   const endDate = body?.endDate;
   const parentId = body?.parentId;
   const pinCode = body?.pinCode;
+  const isSocialIcon = body?.isSocialIcon;
 
   const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
   const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
@@ -61,7 +62,7 @@ export async function PUT(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null; parentId?: string | null; pinCode?: string | null } = {};
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null; parentId?: string | null; pinCode?: string | null; isSocialIcon?: boolean } = {};
 
   // Handle parentId changes (move link into/out of a group)
   if (parentId !== undefined) {
@@ -144,6 +145,10 @@ export async function PUT(
 
   if (typeof isPublic === "boolean") {
     data.isPublic = isPublic;
+  }
+
+  if (typeof isSocialIcon === "boolean") {
+    data.isSocialIcon = isSocialIcon;
   }
 
   if (startDate !== undefined) {

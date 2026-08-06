@@ -80,6 +80,7 @@ model Link {
   isGroup   Boolean  @default(false)
   parentId  String?
   pinCode   String?
+  isSocialIcon Boolean @default(false)
   startDate DateTime?
   endDate   DateTime?
   userId    String

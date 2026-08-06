@@ -12,6 +12,7 @@ export type Link = {
     parentId?: string | null;
     pinCode?: string | null;
     children?: Link[];
+    isSocialIcon?: boolean;
     startDate?: Date | null;
     endDate?: Date | null;
     updatedAt?: Date;
