@@ -36,6 +36,7 @@ export type User = {
         resumeUrl?: string | null;
         enableEmailCapture?: boolean;
         layoutStyle?: LayoutStyle | string;
+        isVerified?: boolean;
     };
     username: string;
     showCTA: boolean;
@@ -58,6 +59,7 @@ export type ProfileHeader = {
     username: string;
     bio?: string | null;
     image?: string | null;
+    isVerified?: boolean;
 }
 
 export type ProfileLinks = {

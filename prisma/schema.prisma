@@ -11,6 +11,11 @@ enum LayoutStyle {
   GRID
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id            String   @id @default(uuid())
   name          String?
@@ -46,6 +51,8 @@ model User {
   profileVersions ProfileVersion[]
   previewTokens ProfilePreviewToken[]
   subscribers   Subscriber[]
+  isVerified    Boolean  @default(false)
+  role          Role     @default(USER)
   createdAt     DateTime @default(now())
 
   theme         String   @default("default")

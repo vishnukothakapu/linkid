@@ -35,6 +35,7 @@ export function ProfileCard(props: ProfileCardProps) {
                     username={username}
                     bio={user.bio}
                     image={user.image}
+                    isVerified={user.isVerified}
                 />
             </CardHeader>
 
