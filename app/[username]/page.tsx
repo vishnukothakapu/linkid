@@ -153,6 +153,7 @@ export default async function PublicProfile({
             resumeUrl: publicUserData?.resumeUrl ?? null,
             enableEmailCapture: user.enableEmailCapture,
             layoutStyle: user.layoutStyle,
+            isVerified: user.isVerified,
           }}
           username={resolved.canonicalUsername}
           showCTA={!session}
