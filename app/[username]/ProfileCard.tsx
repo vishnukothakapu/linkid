@@ -87,6 +87,7 @@ export function ProfileCard(props: ProfileCardProps) {
                     <input
                         type="search"
                         placeholder="Search links..."
+                        aria-label="Search links"
                         className="w-full bg-background/50 border border-border rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
