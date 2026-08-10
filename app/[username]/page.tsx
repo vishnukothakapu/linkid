@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { Toaster } from "react-hot-toast";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { ProfileCard } from "./ProfileCard";
@@ -126,6 +127,7 @@ export default async function PublicProfile({
 
   return (
     <main className={`min-h-screen relative px-4 py-16 theme-${user.theme || "default"}`}>
+      <Toaster position="bottom-center" />
       {user.backgroundImage && (
         <>
           <div
