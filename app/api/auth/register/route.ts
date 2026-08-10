@@ -3,14 +3,17 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
 import { sendVerificationEmail } from "@/lib/email";
 
 const REGISTER_LIMIT = 5;
 const REGISTER_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: Request) {
-    const ip =
-        req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    // Use the spoof-resistant client IP (trusts x-real-ip set by the platform)
+    // rather than the raw first x-forwarded-for value, which a client can
+    // rotate to bypass the per-IP registration rate limit.
+    const ip = getForwardedIp(req.headers) ?? "unknown";
 
     if (!(await checkRateLimit(`register:${ip}`, REGISTER_LIMIT, REGISTER_WINDOW_MS))) {
         return NextResponse.json(
