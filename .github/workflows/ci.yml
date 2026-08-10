@@ -1,8 +1,62 @@
-﻿name: CI
+name: CI
+
 on: [push, pull_request]
+
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
+
+    # Ephemeral Postgres so `prisma db push` + `next build` (and anything that
+    # touches the DB at build time) have a real database to talk to.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: linkid_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/linkid_ci
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/linkid_ci
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo CI
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      # Required gate — the test suite runs green from a fresh checkout.
+      - name: Test
+        run: npm test
+
+      # Advisory for now (non-blocking): the repo has pre-existing lint/type
+      # errors, and a production build may need extra runtime secrets. Kept
+      # non-blocking so they surface in CI without failing every PR — flip
+      # continue-on-error to false as each is cleaned up.
+      - name: Build
+        run: npm run build
+        continue-on-error: true
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+        continue-on-error: true
