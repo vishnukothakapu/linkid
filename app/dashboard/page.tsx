@@ -37,6 +37,13 @@ export default async function DashboardPage() {
             qrCode={<QRCode />} 
             enableEmailCapture={user.enableEmailCapture}
             subscribers={user.subscribers}
+            initialName={user.name}
+            initialBio={user.bio}
+            initialImage={user.image}
+            initialIsVerified={user.isVerified}
+            initialThemeType={user.themeType}
+            initialThemeColor={user.themeColor}
+            initialThemeCustom={user.themeCustom}
         />
     );
 }

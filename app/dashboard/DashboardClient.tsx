@@ -11,6 +11,7 @@ import { VersionHistory } from "@/components/dashboard/VersionHistory";
 import { AppearanceSection } from "./AppearanceSection";
 import { SeoSection } from "./SeoSection";
 import { LayoutStyle } from "@/app/[username]/types/type";
+import { LivePreview } from "@/components/dashboard/LivePreview";
 
 export default function DashboardClient({
     username,
@@ -23,6 +24,13 @@ export default function DashboardClient({
     qrCode,
     enableEmailCapture,
     subscribers = [],
+    initialName,
+    initialBio,
+    initialImage,
+    initialIsVerified,
+    initialThemeType,
+    initialThemeColor,
+    initialThemeCustom,
 }: {
     username: string;
     initialLinks: ProfileLink[];
@@ -34,6 +42,13 @@ export default function DashboardClient({
     qrCode?: React.ReactNode;
     enableEmailCapture?: boolean;
     subscribers?: { id: string; email: string; createdAt: Date }[];
+    initialName?: string | null;
+    initialBio?: string | null;
+    initialImage?: string | null;
+    initialIsVerified?: boolean;
+    initialThemeType?: string;
+    initialThemeColor?: string;
+    initialThemeCustom?: string | null;
 }) {
     const [links, setLinks] = useState(initialLinks);
     const [theme, setTheme] = useState(initialTheme || "default");
@@ -293,8 +308,11 @@ export default function DashboardClient({
             <DashboardNavbar />
             <Toaster position="bottom-center" />
 
-            <main className="mx-auto max-w-6xl px-6 py-10 space-y-10">
-                <section>
+            <main className="mx-auto max-w-[1400px] px-6 py-10">
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Main Editor Area */}
+                    <div className="flex-1 space-y-10 min-w-0">
+                        <section>
                     <h1 className="text-3xl font-bold">Welcome, {username}</h1>
                     <p className="text-muted-foreground">
                         Manage and share your professional links
@@ -418,9 +436,35 @@ export default function DashboardClient({
                     />
                 )}
 
-                <footer className="pt-10 border-t text-center text-sm text-muted-foreground">
-                    © {new Date().getFullYear()} LinkID · Built for developers
-                </footer>
+                        <footer className="pt-10 border-t text-center text-sm text-muted-foreground">
+                            © {new Date().getFullYear()} LinkID · Built for developers
+                        </footer>
+                    </div>
+
+                    {/* Right Column - Live Preview */}
+                    <div className="w-full lg:w-[400px] shrink-0 mt-10 lg:mt-0">
+                        <div className="lg:sticky lg:top-10 mx-auto max-w-[400px] w-full border-[14px] border-zinc-900 rounded-[3rem] h-[800px] overflow-hidden shadow-2xl relative bg-background">
+                            {/* Mobile Notch */}
+                            <div className="absolute top-0 inset-x-0 h-6 bg-zinc-900 rounded-b-3xl w-40 mx-auto z-50"></div>
+                            
+                            <LivePreview 
+                                username={username}
+                                links={links}
+                                theme={theme}
+                                layoutStyle={layoutStyle}
+                                backgroundImage={backgroundImage}
+                                name={initialName || null}
+                                bio={initialBio || null}
+                                image={initialImage || null}
+                                isVerified={initialIsVerified || false}
+                                enableEmailCapture={isEmailCaptureEnabled}
+                                themeType={initialThemeType || "solid"}
+                                themeColor={initialThemeColor || "#64748b"}
+                                themeCustom={initialThemeCustom || null}
+                            />
+                        </div>
+                    </div>
+                </div>
             </main>
         </>
     );
