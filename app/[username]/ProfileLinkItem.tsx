@@ -25,7 +25,10 @@ export function ProfileLinkItem({ link, username, layoutStyle }: ProfileLinks) {
         e.stopPropagation();
 
         try {
-            await navigator.clipboard.writeText(link.url);
+            const copyTarget = link.pinCode
+                ? new URL(href, window.location.origin).href
+                : link.url;
+            await navigator.clipboard.writeText(copyTarget);
             toast.success("Link copied!");
         } catch {
             toast.error("Failed to copy link.");
