@@ -442,8 +442,8 @@ export default function DashboardClient({
                     </div>
 
                     {/* Right Column - Live Preview */}
-                    <div className="hidden lg:block w-[400px] shrink-0">
-                        <div className="sticky top-10 border-[14px] border-zinc-900 rounded-[3rem] h-[800px] overflow-hidden shadow-2xl relative bg-background">
+                    <div className="w-full lg:w-[400px] shrink-0 mt-10 lg:mt-0">
+                        <div className="lg:sticky lg:top-10 mx-auto max-w-[400px] w-full border-[14px] border-zinc-900 rounded-[3rem] h-[800px] overflow-hidden shadow-2xl relative bg-background">
                             {/* Mobile Notch */}
                             <div className="absolute top-0 inset-x-0 h-6 bg-zinc-900 rounded-b-3xl w-40 mx-auto z-50"></div>
                             
@@ -459,7 +459,7 @@ export default function DashboardClient({
                                 isVerified={initialIsVerified || false}
                                 enableEmailCapture={isEmailCaptureEnabled}
                                 themeType={initialThemeType || "solid"}
-                                themeColor={initialThemeColor || "slate"}
+                                themeColor={initialThemeColor || "#64748b"}
                                 themeCustom={initialThemeCustom || null}
                             />
                         </div>

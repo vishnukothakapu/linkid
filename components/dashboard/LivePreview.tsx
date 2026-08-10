@@ -56,11 +56,24 @@ export function LivePreview({
     }
 
     const now = new Date();
-    const activeLinks = (links || []).filter((link) => {
-        if (link.startDate && new Date(link.startDate) > now) return false;
-        if (link.endDate && new Date(link.endDate) < now) return false;
-        return true;
-    });
+    const filterLinks = (linksToFilter: ProfileLink[]): ProfileLink[] => {
+        return linksToFilter.reduce<ProfileLink[]>((acc, link) => {
+            if (!link.isPublic) return acc;
+            if (link.startDate && new Date(link.startDate) > now) return acc;
+            if (link.endDate && new Date(link.endDate) < now) return acc;
+
+            if (link.isGroup && link.children) {
+                const filteredChildren = filterLinks(link.children);
+                if (filteredChildren.length > 0) {
+                    acc.push({ ...link, children: filteredChildren });
+                }
+            } else if (!link.isGroup) {
+                acc.push(link);
+            }
+            return acc;
+        }, []);
+    };
+    const activeLinks = filterLinks(links || []);
 
     return (
         <div 
