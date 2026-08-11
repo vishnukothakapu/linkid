@@ -41,7 +41,6 @@ export const authOptions: NextAuthOptions = {
                   Google({
                       clientId: process.env.GOOGLE_CLIENT_ID,
                       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                      allowDangerousEmailAccountLinking: true,
                   }),
               ]
             : []),
@@ -51,7 +50,6 @@ export const authOptions: NextAuthOptions = {
                   GitHub({
                       clientId: process.env.GITHUB_CLIENT_ID,
                       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-                      allowDangerousEmailAccountLinking: true,
                   }),
               ]
             : []),
@@ -104,6 +102,58 @@ events: {
     },
 },
     callbacks: {
+        async signIn({ user, account, profile }) {
+            if (account && oauthProviders.has(account.provider)) {
+                if (!user.email) return true;
+
+                let isVerified = false;
+                if (account.provider === "google") {
+                    isVerified = (profile as any)?.email_verified === true;
+                } else if (account.provider === "github") {
+                    // NextAuth's GitHub provider only populates user.email with verified emails
+                    isVerified = true;
+                }
+
+                if (!isVerified) return true;
+
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: user.email },
+                    include: { accounts: true },
+                });
+
+                if (existingUser) {
+                    const isAlreadyLinked = existingUser.accounts.some(
+                        (acc) => acc.provider === account.provider
+                    );
+
+                    if (!isAlreadyLinked) {
+                        await prisma.account.create({
+                            data: {
+                                userId: existingUser.id,
+                                type: account.type,
+                                provider: account.provider,
+                                providerAccountId: account.providerAccountId,
+                                access_token: account.access_token,
+                                token_type: account.token_type,
+                                scope: account.scope,
+                                id_token: account.id_token,
+                                expires_at: account.expires_at,
+                                refresh_token: account.refresh_token,
+                                session_state: account.session_state as string | undefined,
+                            },
+                        });
+
+                        if (!existingUser.emailVerified) {
+                            await prisma.user.update({
+                                where: { id: existingUser.id },
+                                data: { emailVerified: new Date() },
+                            });
+                        }
+                    }
+                }
+            }
+            return true;
+        },
         async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted
             if (token.sub && (await isUserSessionInvalidated(token.sub))) {
