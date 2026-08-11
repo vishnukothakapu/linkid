@@ -16,7 +16,8 @@ export type Link = {
     startDate?: Date | null;
     endDate?: Date | null;
     updatedAt?: Date;
-    userId: string;
+    abTestVariant?: "A" | "B" | null;
+    abTestParentId?: string | null;
 }
 
 export type PlatformParams = {

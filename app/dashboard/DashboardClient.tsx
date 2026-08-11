@@ -303,6 +303,40 @@ export default function DashboardClient({
         );
     }
 
+    async function createABTest(linkId: string) {
+        try {
+            const csrfToken = await getCsrfToken();
+            const res = await fetch(`/api/links/ab-test`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({ linkId }),
+            });
+
+            if (!res.ok) {
+                toast.error("Failed to create A/B test");
+                return;
+            }
+
+            const data = await res.json();
+            toast.success("A/B test created");
+
+            setLinks((prev) => {
+                const index = prev.findIndex(l => l.id === linkId);
+                if (index === -1) return prev;
+                const newLinks = [...prev];
+                newLinks[index] = data.variantA;
+                newLinks.splice(index + 1, 0, data.variantB);
+                return newLinks;
+            });
+        } catch (error) {
+            console.error("A/B test creation failed:", error);
+            toast.error("Failed to create A/B test");
+        }
+    }
+
     return (
         <>
             <DashboardNavbar />
@@ -414,6 +448,7 @@ export default function DashboardClient({
                             onDeleteGroup={deleteGroup}
                             onRenameGroup={renameGroup}
                             onReorder={setLinks}
+                            onCreateABTest={createABTest}
                         />
                     </div>
                 ) : activeTab === 'appearance' ? (

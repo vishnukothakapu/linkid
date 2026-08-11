@@ -42,7 +42,16 @@ export async function middleware(req: NextRequest) {
 
     if (isCustomDomain) {
         // Rewrite to a special domain handler route that will fetch the user by domain
-        return NextResponse.rewrite(new URL(`/domain/${host}${pathname}`, req.url));
+        const response = NextResponse.rewrite(new URL(`/domain/${host}${pathname}`, req.url));
+        if (!req.cookies.has("visitor_id")) {
+            response.cookies.set("visitor_id", crypto.randomUUID(), {
+                path: "/",
+                maxAge: 365 * 24 * 60 * 60,
+                sameSite: "lax",
+                secure: req.nextUrl.protocol === "https:",
+            });
+        }
+        return response;
     }
 
     const csrfResponse = await applyCsrfProtection(req);
@@ -79,6 +88,16 @@ export async function middleware(req: NextRequest) {
     });
 
     response.headers.set("Content-Security-Policy", cspHeader);
+
+    if (!req.cookies.has("visitor_id")) {
+        response.cookies.set("visitor_id", crypto.randomUUID(), {
+            path: "/",
+            maxAge: 365 * 24 * 60 * 60,
+            sameSite: "lax",
+            secure: req.nextUrl.protocol === "https:",
+        });
+    }
+
     return response;
 }
 

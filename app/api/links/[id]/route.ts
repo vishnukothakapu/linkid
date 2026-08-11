@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
+const getMembership = async (userId: string, workspaceId: string) => {
+  return await prisma.workspaceMember.findFirst({
+    where: { userId, workspaceId },
+  });
+};
+
+
+
+
 import { Prisma } from "@prisma/client";
 
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
@@ -53,12 +63,25 @@ export async function PUT(
     ? rawExplicitPlatform as Platform
     : null;
 
-  const link = await prisma.link.findUnique({
-    where: { id },
-    include: { user: true },
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
   });
 
-  if (!link || link.user.email !== session.user.email) {
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const link = await prisma.link.findUnique({
+    where: { id },
+  });
+
+  if (!link) {
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
+
+  const membership = await getMembership(user.id, link.workspaceId);
+  if (!membership) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -76,7 +99,7 @@ export async function PUT(
       data.parentId = null;
     } else {
       const parentGroup = await prisma.link.findFirst({
-        where: { id: parentId, userId: link.userId, isGroup: true },
+        where: { id: parentId, workspaceId: link.workspaceId, isGroup: true },
       });
       if (!parentGroup) {
         return NextResponse.json(
@@ -197,7 +220,7 @@ export async function PUT(
             const proposedRoute = link.alias || data.platform;
             const existingLink = await tx.link.findFirst({
                 where: {
-                    userId: link.userId,
+                    workspaceId: link.workspaceId,
                     id: { not: link.id },
                     isGroup: false,
                     OR: [
@@ -277,12 +300,25 @@ export async function DELETE(
     // No body is fine for regular link deletion
   }
 
-  const link = await prisma.link.findUnique({
-    where: { id },
-    include: { user: true },
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
   });
 
-  if (!link || link.user.email !== session.user.email) {
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const link = await prisma.link.findUnique({
+    where: { id },
+  });
+
+  if (!link) {
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
+
+  const membership = await getMembership(user.id, link.workspaceId);
+  if (!membership) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -292,17 +328,17 @@ export async function DELETE(
       if (deleteChildren) {
         // Delete all children first, then the group
         await tx.link.deleteMany({
-          where: { parentId: id, userId: link.userId },
+          where: { parentId: id, workspaceId: link.workspaceId },
         });
       } else {
         // Ungroup: set children's parentId to null and reassign positions
         const children = await tx.link.findMany({
-            where: { parentId: id, userId: link.userId },
+            where: { parentId: id, workspaceId: link.workspaceId },
             orderBy: { position: 'asc' },
         });
 
         const maxOrder = await tx.link.aggregate({
-            where: { userId: link.userId, parentId: null },
+            where: { workspaceId: link.workspaceId, parentId: null },
             _max: { position: true },
         });
 
@@ -321,6 +357,43 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   }
 
+  // A/B test variant reversion logic
+  if (link.abTestParentId) {
+    const parentId = link.abTestParentId;
+    await prisma.$transaction(async (tx) => {
+      // Find the sibling variant
+      const sibling = await tx.link.findFirst({
+        where: {
+          abTestParentId: parentId,
+          id: { not: id },
+        },
+      });
+
+      if (sibling) {
+        // Revert sibling to a standard link
+        let cleanPlatform = sibling.platform;
+        if (cleanPlatform.endsWith("__ab_b")) {
+          cleanPlatform = cleanPlatform.replace(/__ab_b$/, "");
+        }
+        await tx.link.update({
+          where: { id: sibling.id },
+          data: {
+            abTestVariant: null,
+            abTestParentId: null,
+            platform: cleanPlatform,
+          },
+        });
+      }
+
+      // Delete the requested link
+      await tx.link.delete({
+        where: { id },
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  }
+
   // Regular link deletion
   await prisma.link.delete({
     where: { id },
@@ -328,6 +401,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-
-
-
