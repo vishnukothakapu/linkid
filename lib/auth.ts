@@ -66,8 +66,12 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 if (!credentials?.email || !credentials.password) return null;
 
+                // Registration stores email lowercased/trimmed, so look it up
+                // the same way — otherwise a differently-cased login is rejected.
+                const email = credentials.email.trim().toLowerCase();
+
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { email },
                 });
 
                 if (!user || !user.password) return null;
