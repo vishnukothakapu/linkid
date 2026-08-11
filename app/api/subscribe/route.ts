@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
+
+const SUBSCRIBE_LIMIT = 10;
+const SUBSCRIBE_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   try {
+    // This endpoint is intentionally public (profile subscribe form), so
+    // rate-limit per client IP to prevent subscriber bombing and username
+    // enumeration via unlimited requests.
+    const ip = getForwardedIp(req.headers) ?? "unknown";
+    if (!(await checkRateLimit(`subscribe:${ip}`, SUBSCRIBE_LIMIT, SUBSCRIBE_WINDOW_MS))) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(SUBSCRIBE_WINDOW_MS / 1000) } }
+      );
+    }
+
     const body = await req.json();
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const username = body.username;
