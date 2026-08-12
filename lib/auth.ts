@@ -8,6 +8,11 @@ import type { NextAuthOptions } from "next-auth";
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 import { PLATFORMS } from "@/lib/constants";
+import { consumeRecoveryCode, verifyTotpCode } from "@/lib/twoFactor";
+import {
+    TWO_FACTOR_INVALID_CODE_ERROR,
+    TWO_FACTOR_REQUIRED_ERROR,
+} from "@/lib/authErrors";
 
 
 const oauthProviders = new Set<string>([PLATFORMS.GITHUB, PLATFORMS.GOOGLE]);
@@ -59,6 +64,7 @@ export const authOptions: NextAuthOptions = {
             credentials: {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
+                totpCode: { label: "Two-factor code", type: "text" },
             },
 
             async authorize(credentials) {
@@ -83,7 +89,42 @@ export const authOptions: NextAuthOptions = {
                     user.password
                 );
 
-                return isValid ? user : null;
+                if (!isValid) return null;
+
+                if (user.twoFactorEnabled) {
+                    const code = credentials.totpCode ?? "";
+
+                    if (!code) {
+                        // Password is correct — now prompt for the 2FA code.
+                        throw new Error(TWO_FACTOR_REQUIRED_ERROR);
+                    }
+
+                    const isTotpValid =
+                        user.totpSecret && verifyTotpCode(user.totpSecret, code);
+
+                    if (isTotpValid) {
+                        return user;
+                    }
+
+                    // Fall back to a one-time recovery code.
+                    const remainingRecoveryCodes = consumeRecoveryCode(
+                        user.recoveryCodes,
+                        code
+                    );
+
+                    if (remainingRecoveryCodes === null) {
+                        throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                    }
+
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { recoveryCodes: remainingRecoveryCodes },
+                    });
+
+                    return user;
+                }
+
+                return user;
             },
         }),
     ],
@@ -108,7 +149,9 @@ events: {
 
                 let isVerified = false;
                 if (account.provider === "google") {
-                    isVerified = (profile as any)?.email_verified === true;
+                    isVerified =
+                        (profile as { email_verified?: boolean } | null | undefined)
+                            ?.email_verified === true;
                 } else if (account.provider === "github") {
                     // NextAuth's GitHub provider only populates user.email with verified emails
                     isVerified = true;

@@ -7,6 +7,7 @@ import { getProfileVersions } from "@/lib/profileWorkflow";
 
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
+import { TwoFactorCard } from "./TwoFactorCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
 import { DangerZoneCard } from "./DangerZoneCard";
 import { ResumeCard } from "./ResumeCard";
@@ -41,6 +42,11 @@ export default async function ProfilePage() {
                 />
 
                 <AccountInfoCard user={user} />
+
+                <TwoFactorCard
+                    enabled={user.twoFactorEnabled}
+                    hasPassword={Boolean(user.password)}
+                />
 
                 <ResumeCard
                     initialResumeUrl={user.resumeUrl}
