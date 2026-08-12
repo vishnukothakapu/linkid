@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
                 totpSecret: true,
                 twoFactorEnabled: true,
                 recoveryCodes: true,
+                lastTotpStep: true,
             },
         });
 
@@ -85,10 +86,14 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const isTotpValid =
-            user.totpSecret && verifyTotpCode(user.totpSecret, code);
+        const totpResult = user.totpSecret
+            ? await verifyTotpCode(user.totpSecret, code, user.lastTotpStep)
+            : null;
 
-        if (!isTotpValid && consumeRecoveryCode(user.recoveryCodes, code) === null) {
+        if (
+            !totpResult?.valid &&
+            (await consumeRecoveryCode(user.recoveryCodes, code)) === null
+        ) {
             return NextResponse.json(
                 { error: "Invalid verification code." },
                 { status: 400 }
@@ -101,6 +106,7 @@ export async function POST(req: NextRequest) {
                 totpSecret: null,
                 twoFactorEnabled: false,
                 recoveryCodes: null,
+                lastTotpStep: null,
             },
         });
 

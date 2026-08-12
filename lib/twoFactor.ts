@@ -1,4 +1,5 @@
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
+import bcrypt from "bcryptjs";
 import { generateSecret, generateURI, verifySync } from "otplib";
 
 export const TWO_FACTOR_ISSUER = "LinkID";
@@ -20,20 +21,32 @@ export function buildOtpAuthUri(secret: string, email: string): string {
     });
 }
 
-export function verifyTotpCode(secret: string, code: string): boolean {
+export async function verifyTotpCode(
+    secret: string,
+    code: string,
+    lastTotpStep?: number | null
+): Promise<{ valid: boolean; timeStep?: number }> {
     const normalized = code.replace(/\s+/g, "").trim();
     if (!/^\d{6}$/.test(normalized)) {
-        return false;
+        return { valid: false };
     }
 
     try {
-        return verifySync({
+        const result = verifySync({
             token: normalized,
             secret,
-            epochTolerance: TOTP_EPOCH_TOLERANCE_SECONDS,
-        }).valid;
+            epochTolerance: [TOTP_EPOCH_TOLERANCE_SECONDS, 0],
+            ...(lastTotpStep == null ? {} : { afterTimeStep: lastTotpStep }),
+        });
+        if (result.valid) {
+            const timeStep = (
+                result as { timeStep?: number }
+            ).timeStep;
+            return { valid: true, ...(timeStep == null ? {} : { timeStep }) };
+        }
+        return { valid: false };
     } catch {
-        return false;
+        return { valid: false };
     }
 }
 
@@ -54,12 +67,13 @@ export function generateRecoveryCodes(count: number = RECOVERY_CODES_COUNT): str
     return Array.from(codes);
 }
 
-export function hashRecoveryCode(code: string): string {
-    return createHash("sha256").update(code).digest("hex");
+export async function hashRecoveryCode(code: string): Promise<string> {
+    return bcrypt.hash(code, 10);
 }
 
-export function hashRecoveryCodes(codes: string[]): string {
-    return codes.map(hashRecoveryCode).join("\n");
+export async function hashRecoveryCodes(codes: string[]): Promise<string> {
+    const hashed = await Promise.all(codes.map(hashRecoveryCode));
+    return hashed.join("\n");
 }
 
 export function formatRecoveryCodes(codes: string[]): string {
@@ -69,31 +83,32 @@ export function formatRecoveryCodes(codes: string[]): string {
 /**
  * Attempts to consume a one-time recovery code.
  *
- * Recovery codes are stored hashed (SHA-256), one per line. When a code
+ * Recovery codes are stored hashed (bcrypt), one per line. When a code
  * matches, it is removed from the list so it cannot be reused.
  *
  * @returns the remaining hashed codes joined by newlines, or `null` when the
  *          supplied code is not a valid recovery code.
  */
-export function consumeRecoveryCode(
+export async function consumeRecoveryCode(
     storedHashedCodes: string | null,
     code: string
-): string | null {
+): Promise<string | null> {
     if (!storedHashedCodes || !code) {
         return null;
     }
 
-    const normalized = code.replace(/\s+/g, "").toUpperCase().trim();
+    const normalized = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     if (!normalized) {
         return null;
     }
 
-    const hashed = hashRecoveryCode(normalized);
     const codes = storedHashedCodes.split("\n");
 
-    if (!codes.includes(hashed)) {
-        return null;
+    for (const entry of codes) {
+        if (await bcrypt.compare(normalized, entry)) {
+            return codes.filter((hash) => hash !== entry).join("\n");
+        }
     }
 
-    return codes.filter((entry) => entry !== hashed).join("\n");
+    return null;
 }

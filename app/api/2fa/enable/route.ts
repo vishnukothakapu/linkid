@@ -72,7 +72,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!verifyTotpCode(user.totpSecret, code)) {
+        const totpResult = await verifyTotpCode(user.totpSecret, code);
+        if (!totpResult.valid) {
             return NextResponse.json(
                 { error: "Invalid verification code. Please try again." },
                 { status: 400 }
@@ -84,9 +85,9 @@ export async function POST(req: NextRequest) {
         await prisma.user.update({
             where: { id: user.id },
             data: {
-                totpSecret: user.totpSecret,
                 twoFactorEnabled: true,
-                recoveryCodes: hashRecoveryCodes(recoveryCodes),
+                recoveryCodes: await hashRecoveryCodes(recoveryCodes),
+                lastTotpStep: totpResult.timeStep,
             },
         });
 

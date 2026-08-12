@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast from "react-hot-toast";
 import {
@@ -58,18 +58,20 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
   const [disableLoading, setDisableLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!open) {
+  const handleDisableOpenChange = useCallback((next: boolean) => {
+    setOpen(next);
+    if (!next) {
       setPassword("");
       setShowPassword(false);
       setDisableCode("");
       setError("");
       setDisableLoading(false);
     }
-  }, [open]);
+  }, []);
 
-  useEffect(() => {
-    if (!setupOpen) {
+  const handleSetupOpenChange = useCallback((next: boolean) => {
+    setSetupOpen(next);
+    if (!next) {
       setSetupStep("loading");
       setQrCodeUrl("");
       setSecret("");
@@ -79,7 +81,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       setCodesCopied(false);
       setError("");
     }
-  }, [setupOpen]);
+  }, []);
 
   const startSetup = useCallback(async () => {
     setSetupOpen(true);
@@ -98,8 +100,8 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to start setup. Please try again.");
-        setSetupOpen(false);
+        toast.error(data.error || "Failed to start setup. Please try again.");
+        handleSetupOpenChange(false);
         return;
       }
 
@@ -108,10 +110,10 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       setSecret(data.secret);
       setSetupStep("setup");
     } catch {
-      setError("Failed to start setup. Please try again.");
-      setSetupOpen(false);
+      toast.error("Failed to start setup. Please try again.");
+      handleSetupOpenChange(false);
     }
-  }, []);
+  }, [handleSetupOpenChange]);
 
   const handleEnable = useCallback(async () => {
     const trimmedCode = verifyCode.replace(/\s+/g, "");
@@ -153,9 +155,9 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
 
   const finishSetup = useCallback(() => {
     setIsEnabled(true);
-    setSetupOpen(false);
+    handleSetupOpenChange(false);
     toast.success("Two-factor authentication enabled");
-  }, []);
+  }, [handleSetupOpenChange]);
 
   const copyRecoveryCodes = useCallback(async () => {
     try {
@@ -204,14 +206,14 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       }
 
       setIsEnabled(false);
-      setOpen(false);
+      handleDisableOpenChange(false);
       toast.success("Two-factor authentication disabled");
     } catch {
       setError("Failed to disable two-factor authentication.");
     } finally {
       setDisableLoading(false);
     }
-  }, [hasPassword, password, disableCode]);
+  }, [hasPassword, password, disableCode, handleDisableOpenChange]);
 
   return (
     <>
@@ -263,7 +265,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       </Card>
 
       {/* Setup dialog */}
-      <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
+      <Dialog open={setupOpen} onOpenChange={handleSetupOpenChange}>
         <DialogContent
           className="sm:max-w-md"
           showCloseButton={setupStep !== "loading"}
@@ -337,7 +339,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
               <DialogFooter>
                 <Button
                   variant="ghost"
-                  onClick={() => setSetupOpen(false)}
+                  onClick={() => handleSetupOpenChange(false)}
                   disabled={verifyLoading}
                 >
                   Cancel
@@ -408,7 +410,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       </Dialog>
 
       {/* Disable dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDisableOpenChange}>
         <DialogContent className="sm:max-w-md" showCloseButton={!disableLoading}>
           <DialogHeader>
             <DialogTitle>Disable Two-Factor Authentication</DialogTitle>
@@ -466,7 +468,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
               </Label>
               <Input
                 id="disable-2fa-code"
-                placeholder="123456 or XXXXX-XXXXX"
+                placeholder="123456 or XXXXXXXXXX"
                 value={disableCode}
                 onChange={(e) => {
                   setDisableCode(e.target.value.toUpperCase());
@@ -481,7 +483,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
           <DialogFooter>
             <Button
               variant="ghost"
-              onClick={() => setOpen(false)}
+              onClick={() => handleDisableOpenChange(false)}
               disabled={disableLoading}
             >
               Cancel

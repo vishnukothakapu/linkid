@@ -30,8 +30,12 @@ mock.module("@/lib/rateLimit", {
 
 mock.module("@/lib/twoFactor", {
     namedExports: {
-        verifyTotpCode: () => totpValid,
-        consumeRecoveryCode: () => recoveryConsumeResult,
+        verifyTotpCode: () =>
+            Promise.resolve({
+                valid: totpValid,
+                timeStep: totpValid ? 999 : undefined,
+            }),
+        consumeRecoveryCode: () => Promise.resolve(recoveryConsumeResult),
     },
 });
 
@@ -81,6 +85,7 @@ function defaultUser() {
         totpSecret: "FAKE2FASECRET",
         twoFactorEnabled: true,
         recoveryCodes: "hash:ABC2345678",
+        lastTotpStep: 12345,
     };
 }
 
@@ -169,6 +174,7 @@ test("disables 2FA after a valid TOTP code", async () => {
             totpSecret: null,
             twoFactorEnabled: false,
             recoveryCodes: null,
+            lastTotpStep: null,
         },
     });
 });
@@ -190,6 +196,7 @@ test("disables 2FA after a valid recovery code", async () => {
             totpSecret: null,
             twoFactorEnabled: false,
             recoveryCodes: null,
+            lastTotpStep: null,
         },
     });
 });

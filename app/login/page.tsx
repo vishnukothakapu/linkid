@@ -70,10 +70,12 @@ export default function LoginPage() {
   }
 
   async function handleTwoFactorSubmit() {
-    const trimmedCode = totpCode.replace(/\s+/g, "");
+    const trimmedCode = totpCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 
-    if (!/^\d{6}$/.test(trimmedCode)) {
-      setError("Please enter the 6-digit code from your authenticator app.");
+    if (!/^\d{6}$/.test(trimmedCode) && !/^[A-Z0-9]{10}$/.test(trimmedCode)) {
+      setError(
+        "Enter the 6-digit code from your authenticator app or your 10-character recovery code."
+      );
       return;
     }
 
@@ -90,7 +92,9 @@ export default function LoginPage() {
       });
 
       if (response?.error === TWO_FACTOR_INVALID_CODE_ERROR) {
-        setError("Invalid code. Check your authenticator app and try again.");
+        setError(
+          "Invalid code. Check your authenticator app or recovery code and try again."
+        );
         setTotpCode("");
         return;
       }
@@ -118,6 +122,10 @@ export default function LoginPage() {
 
   function isEmailAndPasswordEmpty() {
     return !email.trim().length || !password.trim().length;
+  }
+
+  function isTwoFactorCodeValid() {
+    return /^\d{6}$/.test(totpCode) || /^[A-Z0-9]{10}$/.test(totpCode);
   }
 
   return (
@@ -196,8 +204,8 @@ export default function LoginPage() {
                 </span>
                 <h2 className="text-lg font-semibold">Two-Factor Authentication</h2>
                 <p className="text-sm text-muted-foreground">
-                  Enter the 6-digit code from your authenticator app to finish
-                  signing in.
+                  Enter the 6-digit code from your authenticator app or a
+                  recovery code to finish signing in.
                 </p>
               </div>
 
@@ -209,13 +217,14 @@ export default function LoginPage() {
 
               <Input
                 type="text"
-                inputMode="numeric"
                 autoComplete="one-time-code"
-                placeholder="6-digit code"
-                maxLength={6}
+                placeholder="Code or recovery code"
+                maxLength={11}
                 value={totpCode}
                 onChange={(e) => {
-                  setTotpCode(e.target.value.replace(/\D/g, ""));
+                  setTotpCode(
+                    e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+                  );
                   setError(null);
                 }}
                 className="text-center text-lg tracking-[0.5em]"
@@ -225,7 +234,7 @@ export default function LoginPage() {
               <Button
                 className="w-full"
                 type="submit"
-                disabled={twoFactorLoading || totpCode.length !== 6}
+                disabled={twoFactorLoading || !isTwoFactorCodeValid()}
               >
                 {twoFactorLoading ? "Verifying..." : "Verify"}
               </Button>

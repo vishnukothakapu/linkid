@@ -5,40 +5,54 @@ import {
     buildOtpAuthUri,
     consumeRecoveryCode,
     generateRecoveryCodes,
-    hashRecoveryCode,
     hashRecoveryCodes,
     verifyTotpCode,
     TWO_FACTOR_ISSUER,
     RECOVERY_CODES_COUNT,
 } from "@/lib/twoFactor";
 
-test("verifyTotpCode accepts the current code for a secret", () => {
+test("verifyTotpCode accepts the current code for a secret", async () => {
     const secret = generateSecret();
     const code = generateSync({ secret });
 
-    assert.equal(verifyTotpCode(secret, code), true);
+    const result = await verifyTotpCode(secret, code);
+    assert.equal(result.valid, true);
+    assert.equal(typeof result.timeStep, "number");
 });
 
-test("verifyTotpCode rejects an invalid code", () => {
+test("verifyTotpCode rejects an invalid code", async () => {
     const secret = generateSecret();
 
-    assert.equal(verifyTotpCode(secret, "000000"), false);
+    assert.equal((await verifyTotpCode(secret, "000000")).valid, false);
 });
 
-test("verifyTotpCode rejects malformed input", () => {
+test("verifyTotpCode rejects malformed input", async () => {
     const secret = generateSecret();
 
-    assert.equal(verifyTotpCode(secret, "12345"), false);
-    assert.equal(verifyTotpCode(secret, "abcdef"), false);
-    assert.equal(verifyTotpCode(secret, ""), false);
-    assert.equal(verifyTotpCode(secret, "1234567"), false);
+    assert.equal((await verifyTotpCode(secret, "12345")).valid, false);
+    assert.equal((await verifyTotpCode(secret, "abcdef")).valid, false);
+    assert.equal((await verifyTotpCode(secret, "")).valid, false);
+    assert.equal((await verifyTotpCode(secret, "1234567")).valid, false);
 });
 
-test("verifyTotpCode accepts codes with surrounding whitespace", () => {
+test("verifyTotpCode accepts codes with surrounding whitespace", async () => {
     const secret = generateSecret();
     const code = generateSync({ secret });
 
-    assert.equal(verifyTotpCode(secret, ` ${code} `), true);
+    assert.equal((await verifyTotpCode(secret, ` ${code} `)).valid, true);
+});
+
+test("verifyTotpCode rejects a code from a previously used time step", async () => {
+    const secret = generateSecret();
+    const code = generateSync({ secret });
+
+    const first = await verifyTotpCode(secret, code);
+    assert.equal(first.valid, true);
+
+    assert.equal(
+        (await verifyTotpCode(secret, code, first.timeStep)).valid,
+        false
+    );
 });
 
 test("buildOtpAuthUri produces an otpauth URI with issuer and account", () => {
@@ -60,49 +74,64 @@ test("generateRecoveryCodes returns unique uppercase codes", () => {
     }
 });
 
-test("hashRecoveryCodes stores hashed codes, not plaintext", () => {
+test("hashRecoveryCodes stores hashed codes, not plaintext", async () => {
     const codes = generateRecoveryCodes();
-    const hashed = hashRecoveryCodes(codes);
+    const hashed = await hashRecoveryCodes(codes);
 
     assert.notEqual(hashed, codes.join("\n"));
     assert.equal(hashed.split("\n").length, codes.length);
     assert.equal(hashed.includes(codes[0]), false);
+    assert.match(hashed, /^\$2[aby]\$10\$/, "uses bcrypt hashes");
 });
 
-test("consumeRecoveryCode returns remaining codes after a match", () => {
+test("consumeRecoveryCode returns remaining codes after a match", async () => {
     const codes = generateRecoveryCodes(3);
-    const hashed = hashRecoveryCodes(codes);
+    const hashed = await hashRecoveryCodes(codes);
 
-    const remaining = consumeRecoveryCode(hashed, codes[0]);
+    const remaining = await consumeRecoveryCode(hashed, codes[0]);
     assert.ok(remaining !== null);
-    assert.equal(remaining.includes(hashRecoveryCode(codes[0])), false);
     assert.equal(remaining.split("\n").length, 2);
+
+    assert.equal(await consumeRecoveryCode(remaining, codes[0]), null);
+    assert.equal((await consumeRecoveryCode(remaining, codes[1]))?.split("\n").length, 1);
 });
 
-test("consumeRecoveryCode is case-insensitive", () => {
+test("consumeRecoveryCode is case-insensitive", async () => {
     const codes = generateRecoveryCodes(2);
-    const hashed = hashRecoveryCodes(codes);
+    const hashed = await hashRecoveryCodes(codes);
 
-    const remaining = consumeRecoveryCode(hashed, codes[0].toLowerCase());
+    const remaining = await consumeRecoveryCode(hashed, codes[0].toLowerCase());
     assert.ok(remaining !== null);
     assert.equal(remaining.split("\n").length, 1);
 });
 
-test("consumeRecoveryCode rejects unknown codes", () => {
-    const codes = generateRecoveryCodes(1);
-    const hashed = hashRecoveryCodes(codes);
+test("consumeRecoveryCode accepts dashed or grouped input", async () => {
+    const codes = generateRecoveryCodes(2);
+    const hashed = await hashRecoveryCodes(codes);
 
-    assert.equal(consumeRecoveryCode(hashed, "ABCDEFGHIJ"), null);
-    assert.equal(consumeRecoveryCode(hashed, ""), null);
-    assert.equal(consumeRecoveryCode(null, "ABCDEFGHIJ"), null);
+    const raw = codes[0];
+    const dashed = `${raw.slice(0, 5)}-${raw.slice(5)}`;
+    const grouped = `${raw.slice(0, 3)} ${raw.slice(3)}`;
+
+    assert.equal((await consumeRecoveryCode(hashed, dashed))?.split("\n").length, 1);
+    assert.equal((await consumeRecoveryCode(hashed, grouped))?.split("\n").length, 1);
 });
 
-test("consumeRecoveryCode cannot reuse a consumed code", () => {
+test("consumeRecoveryCode rejects unknown codes", async () => {
     const codes = generateRecoveryCodes(1);
-    const hashed = hashRecoveryCodes(codes);
+    const hashed = await hashRecoveryCodes(codes);
 
-    const remaining = consumeRecoveryCode(hashed, codes[0]);
+    assert.equal(await consumeRecoveryCode(hashed, "ABCDEFGHIJ"), null);
+    assert.equal(await consumeRecoveryCode(hashed, ""), null);
+    assert.equal(await consumeRecoveryCode(null, "ABCDEFGHIJ"), null);
+});
+
+test("consumeRecoveryCode cannot reuse a consumed code", async () => {
+    const codes = generateRecoveryCodes(1);
+    const hashed = await hashRecoveryCodes(codes);
+
+    const remaining = await consumeRecoveryCode(hashed, codes[0]);
     assert.ok(remaining !== null);
 
-    assert.equal(consumeRecoveryCode(remaining, codes[0]), null);
+    assert.equal(await consumeRecoveryCode(remaining, codes[0]), null);
 });

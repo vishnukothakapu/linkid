@@ -9,10 +9,16 @@ import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
 import { PLATFORMS } from "@/lib/constants";
 import { consumeRecoveryCode, verifyTotpCode } from "@/lib/twoFactor";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
 import {
     TWO_FACTOR_INVALID_CODE_ERROR,
     TWO_FACTOR_REQUIRED_ERROR,
 } from "@/lib/authErrors";
+
+const TWO_FACTOR_LOGIN_LIMIT = 5;
+const TWO_FACTOR_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const TWO_FACTOR_LOGIN_IP_LIMIT = 20;
 
 
 const oauthProviders = new Set<string>([PLATFORMS.GITHUB, PLATFORMS.GOOGLE]);
@@ -67,7 +73,7 @@ export const authOptions: NextAuthOptions = {
                 totpCode: { label: "Two-factor code", type: "text" },
             },
 
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 if (!credentials?.email || !credentials.password) return null;
 
                 // Registration stores email lowercased/trimmed, so look it up
@@ -99,15 +105,57 @@ export const authOptions: NextAuthOptions = {
                         throw new Error(TWO_FACTOR_REQUIRED_ERROR);
                     }
 
-                    const isTotpValid =
-                        user.totpSecret && verifyTotpCode(user.totpSecret, code);
+                    // Rate-limit 2FA attempts by account identity and source IP.
+                    const ip = req?.headers
+                        ? getForwardedIp(
+                              new Headers(
+                                  req.headers as Record<string, string>
+                              )
+                          ) ?? "unknown"
+                        : "unknown";
 
-                    if (isTotpValid) {
+                    const accountAllowed = await checkRateLimit(
+                        `2fa-login:${user.id}`,
+                        TWO_FACTOR_LOGIN_LIMIT,
+                        TWO_FACTOR_LOGIN_WINDOW_MS
+                    );
+                    const ipAllowed = await checkRateLimit(
+                        `2fa-login-ip:${ip}`,
+                        TWO_FACTOR_LOGIN_IP_LIMIT,
+                        TWO_FACTOR_LOGIN_WINDOW_MS
+                    );
+
+                    if (!accountAllowed || !ipAllowed) {
+                        throw new Error(
+                            "Too many attempts. Please try again later."
+                        );
+                    }
+
+                    const totpResult = user.totpSecret
+                        ? await verifyTotpCode(
+                              user.totpSecret,
+                              code,
+                              user.lastTotpStep
+                          )
+                        : null;
+
+                    if (totpResult?.valid) {
+                        // Persist the accepted time step atomically so the same
+                        // code cannot be replayed by a concurrent request.
+                        const updateResult = await prisma.user.updateMany({
+                            where: { id: user.id, lastTotpStep: user.lastTotpStep },
+                            data: { lastTotpStep: totpResult.timeStep },
+                        });
+
+                        if (updateResult.count === 0) {
+                            throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                        }
+
                         return user;
                     }
 
                     // Fall back to a one-time recovery code.
-                    const remainingRecoveryCodes = consumeRecoveryCode(
+                    const remainingRecoveryCodes = await consumeRecoveryCode(
                         user.recoveryCodes,
                         code
                     );
@@ -116,10 +164,16 @@ export const authOptions: NextAuthOptions = {
                         throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
                     }
 
-                    await prisma.user.update({
-                        where: { id: user.id },
+                    // Persist consumption conditionally so a raced consume
+                    // cannot silently reuse the same code.
+                    const updateResult = await prisma.user.updateMany({
+                        where: { id: user.id, recoveryCodes: user.recoveryCodes },
                         data: { recoveryCodes: remainingRecoveryCodes },
                     });
+
+                    if (updateResult.count === 0) {
+                        throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                    }
 
                     return user;
                 }

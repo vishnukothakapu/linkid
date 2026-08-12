@@ -29,7 +29,11 @@ mock.module("@/lib/rateLimit", {
 
 mock.module("@/lib/twoFactor", {
     namedExports: {
-        verifyTotpCode: () => codeValid,
+        verifyTotpCode: () =>
+            Promise.resolve({
+                valid: codeValid,
+                timeStep: codeValid ? 12345 : undefined,
+            }),
         generateRecoveryCodes: () => mockRecoveryCodes,
         hashRecoveryCodes: (codes: string[]) => codes.map((c) => `hash:${c}`).join("\n"),
     },
@@ -162,9 +166,9 @@ test("enables 2FA and stores hashed recovery codes", async () => {
     assert.deepEqual(capturedUpdateArgs, {
         where: { id: "user-1" },
         data: {
-            totpSecret: "FAKE2FASECRET",
             twoFactorEnabled: true,
             recoveryCodes: "hash:ABC2345678\nhash:XYZ9876543",
+            lastTotpStep: 12345,
         },
     });
 });
