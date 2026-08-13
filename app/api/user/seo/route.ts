@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -36,6 +37,9 @@ export async function PATCH(req: NextRequest) {
                 seoDescription: finalSeoDescription,
             },
         });
+
+        // SEO fields feed the public page metadata — purge the cache.
+        await invalidateProfileCache(updatedUser.id);
 
         return NextResponse.json({ 
             success: true, 

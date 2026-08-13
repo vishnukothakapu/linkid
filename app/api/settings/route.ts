@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -21,6 +22,9 @@ export async function PUT(req: NextRequest) {
       where: { id: userId },
       data: { enableEmailCapture },
     });
+
+    // enableEmailCapture renders on the public profile — purge the cache.
+    await invalidateProfileCache(user.id);
 
     return NextResponse.json({ success: true, enableEmailCapture: user.enableEmailCapture }, { status: 200 });
 

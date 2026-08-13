@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -21,6 +22,9 @@ export async function PATCH(req: NextRequest) {
             where: { email: session.user.email },
             data: { theme },
         });
+
+        // Theme is rendered on the public profile — purge the cache.
+        await invalidateProfileCache(updatedUser.id);
 
         return NextResponse.json({ success: true, theme: updatedUser.theme }, { status: 200 });
     } catch (error) {
