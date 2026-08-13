@@ -266,6 +266,8 @@ export async function completeAccountMerge(input: {
         mergedAccounts: sourceUser.accounts.length,
         transferredSessions: sourceUser.sessions.length,
         conflicts,
+        sourceUserId: sourceUser.id,
+        targetUserId: targetUser.id,
     };
 }
 

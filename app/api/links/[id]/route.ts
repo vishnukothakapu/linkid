@@ -9,6 +9,7 @@ import { PLATFORMS } from "@/lib/constants";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 const LINK_MUTATE_LIMIT = 20;
 const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 20 updates/deletes per minute per user
@@ -218,6 +219,9 @@ export async function PUT(
         });
     });
 
+    // The updated link may be rendered on the public profile — purge the cache.
+    await invalidateProfileCache(link.userId);
+
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
     const error = err as { code?: string; proposedRoute?: string };
@@ -318,6 +322,9 @@ export async function DELETE(
       await tx.link.delete({ where: { id } });
     });
 
+    // Deleted links disappear from the public profile — purge the cache.
+    await invalidateProfileCache(link.userId);
+
     return NextResponse.json({ success: true });
   }
 
@@ -325,6 +332,9 @@ export async function DELETE(
   await prisma.link.delete({
     where: { id },
   });
+
+  // Deleted links disappear from the public profile — purge the cache.
+  await invalidateProfileCache(link.userId);
 
   return NextResponse.json({ success: true });
 }

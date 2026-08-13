@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -23,6 +24,8 @@ export async function PATCH(req: NextRequest) {
             data: { backgroundImage },
         });
         
+        // Purge both cache layers so the background updates immediately.
+        await invalidateProfileCache(updatedUser.id);
         revalidateTag("public-profile", "default");
 
         return NextResponse.json({ success: true, backgroundImage: updatedUser.backgroundImage }, { status: 200 });

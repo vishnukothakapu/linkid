@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { verifyOtp, clearOtp } from "@/lib/deleteOtpStore";
 import { invalidateUserSessions } from "@/lib/sessionInvalidation";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -82,6 +83,9 @@ export async function DELETE(req: NextRequest) {
     await prisma.user.delete({
       where: { id: session.user.id },
     });
+
+    // The account no longer exists — drop its cached public profile.
+    await invalidateProfileCache(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

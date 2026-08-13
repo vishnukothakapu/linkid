@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { completeAccountMerge, MergeError } from "@/lib/accountMerge";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -36,6 +38,13 @@ export async function POST(req: Request) {
             password,
             confirmEmail,
         });
+
+        // The merge moves links/usernames into the target profile and deletes
+        // the source — purge both users' cached public profiles and refresh the
+        // sitemap-backed Next data cache.
+        await invalidateProfileCache(result.sourceUserId);
+        await invalidateProfileCache(result.targetUserId);
+        revalidateTag("public-profile", "default");
 
         return NextResponse.json({
             success: true,
