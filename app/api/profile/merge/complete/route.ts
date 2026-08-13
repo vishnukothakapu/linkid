@@ -5,7 +5,10 @@ import { authOptions } from "@/lib/auth";
 import { completeAccountMerge, MergeError } from "@/lib/accountMerge";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import {
+    invalidateProfileCache,
+    invalidateProfileUsername,
+} from "@/lib/profileCache";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -40,10 +43,16 @@ export async function POST(req: Request) {
         });
 
         // The merge moves links/usernames into the target profile and deletes
-        // the source — purge both users' cached public profiles and refresh the
-        // sitemap-backed Next data cache.
+        // the source — purge both users' cached public profiles, clear the
+        // source username's index (its ownership changed), and refresh the
+        // sitemap-backed Next data cache. The payload invalidation also bumps
+        // both users' cache generations, so an in-flight read of pre-merge data
+        // can never write a stale payload back afterwards.
         await invalidateProfileCache(result.sourceUserId);
         await invalidateProfileCache(result.targetUserId);
+        if (result.sourceUsername) {
+            await invalidateProfileUsername(result.sourceUsername);
+        }
         revalidateTag("public-profile", "default");
 
         return NextResponse.json({

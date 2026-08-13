@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateSecret, generateSync } from "otplib";
+import bcrypt from "bcryptjs";
 import {
     buildOtpAuthUri,
     consumeRecoveryCode,
@@ -81,7 +82,21 @@ test("hashRecoveryCodes stores hashed codes, not plaintext", async () => {
     assert.notEqual(hashed, codes.join("\n"));
     assert.equal(hashed.split("\n").length, codes.length);
     assert.equal(hashed.includes(codes[0]), false);
-    assert.match(hashed, /^\$2[aby]\$10\$/, "uses bcrypt hashes");
+    assert.match(
+        hashed,
+        /^[A-Z2-9]{4}:\$2[aby]\$10\$/,
+        "each entry is a prefixed bcrypt hash"
+    );
+});
+
+test("consumeRecoveryCode handles legacy bare-hash entries", async () => {
+    const code = generateRecoveryCodes(1)[0];
+    const normalized = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const legacyHash = await bcrypt.hash(normalized, 10);
+
+    const remaining = await consumeRecoveryCode(legacyHash, code);
+    assert.equal(remaining, "");
+    assert.equal(await consumeRecoveryCode(remaining, code), null);
 });
 
 test("consumeRecoveryCode returns remaining codes after a match", async () => {

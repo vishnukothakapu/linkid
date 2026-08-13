@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -37,7 +38,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }
 
-        const { code } = body as { code?: string };
+        const { code, password } = body as {
+            code?: string;
+            password?: string;
+        };
         if (!code) {
             return NextResponse.json(
                 { error: "Verification code is required" },
@@ -49,6 +53,7 @@ export async function POST(req: NextRequest) {
             where: { id: userId },
             select: {
                 id: true,
+                password: true,
                 totpSecret: true,
                 twoFactorEnabled: true,
             },
@@ -72,8 +77,38 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Reauthenticate with the account password before enabling 2FA. This
+        // prevents a session hijacker from binding their own authenticator and
+        // locking the real owner out. OAuth-only accounts (no password) skip it,
+        // mirroring the disable flow.
+        if (user.password) {
+            if (!password) {
+                return NextResponse.json(
+                    { error: "Password is required" },
+                    { status: 400 }
+                );
+            }
+
+            const isValid = await bcrypt.compare(password, user.password);
+            if (!isValid) {
+                return NextResponse.json(
+                    { error: "Incorrect password" },
+                    { status: 403 }
+                );
+            }
+        }
+
         const totpResult = await verifyTotpCode(user.totpSecret, code);
         if (!totpResult.valid) {
+            return NextResponse.json(
+                { error: "Invalid verification code. Please try again." },
+                { status: 400 }
+            );
+        }
+
+        // lastTotpStep must always be persisted so a validated code cannot be
+        // replayed — refuse to enable when the TOTP result omits the time step.
+        if (totpResult.timeStep == null) {
             return NextResponse.json(
                 { error: "Invalid verification code. Please try again." },
                 { status: 400 }

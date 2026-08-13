@@ -100,7 +100,15 @@ export default function LoginPage() {
       }
 
       if (response?.error) {
-        setError("Login failed. Check your email and password.");
+        // "CredentialsSignin" is NextAuth's default when authorize() returns
+        // null (wrong password). Every other error here is a message thrown
+        // by lib/auth.ts (e.g. the 2FA rate limit) — surface it verbatim so
+        // the user sees why the attempt was rejected.
+        setError(
+          response.error === "CredentialsSignin"
+            ? "Login failed. Check your email and password."
+            : response.error
+        );
         return;
       }
 

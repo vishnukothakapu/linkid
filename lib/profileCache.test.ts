@@ -39,6 +39,14 @@ class FakeRedis {
                 commands.push({ fn: "del", args });
                 return pipeline;
             },
+            incr: (...args: unknown[]) => {
+                commands.push({ fn: "incr", args });
+                return pipeline;
+            },
+            expire: (...args: unknown[]) => {
+                commands.push({ fn: "expire", args });
+                return pipeline;
+            },
             exec: () => {
                 const results = commands.map(({ fn, args }) => {
                     if (fn === "set") {
@@ -52,6 +60,15 @@ class FakeRedis {
                         for (const key of args as string[]) {
                             store.delete(key);
                         }
+                        return 1;
+                    }
+                    if (fn === "incr") {
+                        const [key] = args as [string];
+                        const next = (Number(store.get(key)) || 0) + 1;
+                        store.set(key, next);
+                        return next;
+                    }
+                    if (fn === "expire") {
                         return 1;
                     }
                     return null;
@@ -193,4 +210,63 @@ test("invalidation targets the payload key, not the (immutable) username index",
     // next read is a miss (DB fallback) rather than a wrong cache hit.
     assert.equal(store.get("profile:username:johndoe"), "user-1");
     assert.equal(store.has("profile:user-1"), false);
+});
+
+test("cacheResolvedProfile skips the write when the generation changed since capture", async () => {
+    withRedisConfigured();
+    store.clear();
+    setCalls.length = 0;
+
+    // Simulate the race: read the generation, then an invalidation bumps it
+    // before the write lands — the stale payload must not be repopulated.
+    await profileCache.invalidateProfileCache("user-1");
+    const captured = await profileCache.getProfileGeneration("user-1");
+    assert.equal(captured, 1);
+    await profileCache.invalidateProfileCache("user-1");
+
+    await profileCache.cacheResolvedProfile(
+        "johndoe",
+        "user-1",
+        { user: { id: "user-1", name: "John" } },
+        captured
+    );
+
+    assert.equal(setCalls.length, 0, "stale payload must not be written back");
+    assert.equal(store.has("profile:user-1"), false);
+    assert.equal(store.has("profile:username:johndoe"), false);
+});
+
+test("cacheResolvedProfile writes when the captured generation still matches", async () => {
+    withRedisConfigured();
+    store.clear();
+    setCalls.length = 0;
+
+    await profileCache.invalidateProfileCache("user-1");
+    const generation = await profileCache.getProfileGeneration("user-1");
+    assert.equal(generation, 1);
+
+    await profileCache.cacheResolvedProfile(
+        "johndoe",
+        "user-1",
+        { user: { id: "user-1", name: "John" } },
+        generation
+    );
+
+    assert.equal(setCalls.length, 2);
+    const payload = store.get("profile:user-1") as { user: { id: string } };
+    assert.equal(payload.user.id, "user-1");
+});
+
+test("invalidateProfileUsername clears the username index entry", async () => {
+    withRedisConfigured();
+    store.clear();
+
+    await profileCache.cacheResolvedProfile("johndoe", "user-1", {
+        user: { id: "user-1", name: "John" },
+        canonicalUsername: "johndoe",
+    });
+    await profileCache.invalidateProfileUsername("JohnDoe");
+
+    assert.equal(store.has("profile:username:johndoe"), false);
+    assert.equal(await profileCache.getCachedResolvedProfile("johndoe"), null);
 });

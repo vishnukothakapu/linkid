@@ -5,7 +5,10 @@ import { validateUsername } from "@/lib/validations/username";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import {
+    invalidateProfileCache,
+    invalidateProfileUsername,
+} from "@/lib/profileCache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,8 +45,10 @@ export async function POST(req: NextRequest) {
     });
 
     // Claiming a username publishes the profile — purge the Redis payload and
-    // the sitemap-backed Next data cache.
+    // the sitemap-backed Next data cache. Clear the claimed username's index
+    // too so any stale entry left by a previous owner never resolves to them.
     await invalidateProfileCache(userId);
+    await invalidateProfileUsername(username);
     revalidateTag("public-profile", "default");
 
     return NextResponse.json({ success: true, user }, { status: 200 });

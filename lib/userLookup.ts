@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { Prisma, type Link } from "@prisma/client";
 
 import { nestLinks } from "./linkTree";
-import { cacheResolvedProfile, getCachedResolvedProfile } from "./profileCache";
+import { cacheResolvedProfile, getProfileGeneration, readCachedResolvedProfile } from "./profileCache";
 
 // Only public profile fields — never `password`, `email`, `emailVerified`, or
 // TOTP columns. This object is cached in Redis and rendered into the
@@ -82,14 +82,29 @@ export type ResolvedUserProfile = NonNullable<
 export async function resolveUserByUsername(
     username: string
 ): Promise<ResolvedUserProfile | null> {
-    const cached = await getCachedResolvedProfile<ResolvedUserProfile>(username);
-    if (cached) {
-        return cached;
+    const { userId: cachedOwnerId, payload } =
+        await readCachedResolvedProfile<ResolvedUserProfile>(username);
+    if (payload) {
+        return payload;
     }
+
+    // Pin the cache generation *before* the database read so a mutation that
+    // invalidates the cache mid-read cannot have its stale payload written
+    // back afterwards. When the index has no owner yet (first-ever cache),
+    // there is nothing to pin — the write proceeds as before.
+    const capturedGeneration =
+        cachedOwnerId != null ? await getProfileGeneration(cachedOwnerId) : null;
 
     const resolved = await resolveUserByUsernameFromDb(username);
     if (resolved) {
-        await cacheResolvedProfile(username, resolved.user.id, resolved);
+        const ownerUnchanged =
+            cachedOwnerId != null && cachedOwnerId === resolved.user.id;
+        await cacheResolvedProfile(
+            username,
+            resolved.user.id,
+            resolved,
+            ownerUnchanged ? capturedGeneration : null
+        );
     }
     return resolved;
 }
