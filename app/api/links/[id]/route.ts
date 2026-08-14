@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
 import { PLATFORMS } from "@/lib/constants";
@@ -20,12 +21,12 @@ export async function PUT(
 ) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const allowed = await checkRateLimit(
-    `link-mutate:${session.user.email}`,
+    `link-mutate:${session.user.id}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS
   );
@@ -54,12 +55,14 @@ export async function PUT(
     ? rawExplicitPlatform as Platform
     : null;
 
-  const link = await prisma.link.findUnique({
-    where: { id },
-    include: { user: true },
-  });
+  const link = await prisma.link.findUnique({ where: { id } });
+  if (!link) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  if (!link || link.user.email !== session.user.email) {
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -77,7 +80,7 @@ export async function PUT(
       data.parentId = null;
     } else {
       const parentGroup = await prisma.link.findFirst({
-        where: { id: parentId, userId: link.userId, isGroup: true },
+        where: { id: parentId, workspaceId: link.workspaceId, isGroup: true },
       });
       if (!parentGroup) {
         return NextResponse.json(
@@ -198,7 +201,7 @@ export async function PUT(
             const proposedRoute = link.alias || data.platform;
             const existingLink = await tx.link.findFirst({
                 where: {
-                    userId: link.userId,
+                    workspaceId: link.workspaceId,
                     id: { not: link.id },
                     isGroup: false,
                     OR: [
@@ -220,7 +223,7 @@ export async function PUT(
     });
 
     // The updated link may be rendered on the public profile — purge the cache.
-    await invalidateProfileCache(link.userId);
+    await invalidateProfileCache(link.workspaceId);
 
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
@@ -253,12 +256,12 @@ export async function DELETE(
 ) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const allowed = await checkRateLimit(
-    `link-mutate:${session.user.email}`,
+    `link-mutate:${session.user.id}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS
   );
@@ -272,6 +275,17 @@ export async function DELETE(
 
   const { id } = await context.params;
 
+  const link = await prisma.link.findUnique({ where: { id } });
+  if (!link) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Parse body for group deletion options (may be empty for regular links)
   let deleteChildren = false;
   try {
@@ -281,32 +295,23 @@ export async function DELETE(
     // No body is fine for regular link deletion
   }
 
-  const link = await prisma.link.findUnique({
-    where: { id },
-    include: { user: true },
-  });
-
-  if (!link || link.user.email !== session.user.email) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   // Group deletion with transaction
   if (link.isGroup) {
     await prisma.$transaction(async (tx) => {
       if (deleteChildren) {
         // Delete all children first, then the group
         await tx.link.deleteMany({
-          where: { parentId: id, userId: link.userId },
+          where: { parentId: id, workspaceId: link.workspaceId },
         });
       } else {
         // Ungroup: set children's parentId to null and reassign positions
         const children = await tx.link.findMany({
-            where: { parentId: id, userId: link.userId },
+            where: { parentId: id, workspaceId: link.workspaceId },
             orderBy: { position: 'asc' },
         });
 
         const maxOrder = await tx.link.aggregate({
-            where: { userId: link.userId, parentId: null },
+            where: { workspaceId: link.workspaceId, parentId: null },
             _max: { position: true },
         });
 
@@ -323,7 +328,7 @@ export async function DELETE(
     });
 
     // Deleted links disappear from the public profile — purge the cache.
-    await invalidateProfileCache(link.userId);
+    await invalidateProfileCache(link.workspaceId);
 
     return NextResponse.json({ success: true });
   }
@@ -334,7 +339,7 @@ export async function DELETE(
   });
 
   // Deleted links disappear from the public profile — purge the cache.
-  await invalidateProfileCache(link.userId);
+  await invalidateProfileCache(link.workspaceId);
 
   return NextResponse.json({ success: true });
 }

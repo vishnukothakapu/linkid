@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 import { validateUsername } from "@/lib/validations/username";
 
 async function isAvailable(username: string): Promise<boolean> {
-    const [user, alias] = await Promise.all([
-        prisma.user.findUnique({ where: { username } }),
-        prisma.userAlias.findUnique({ where: { username } }),
+    const [workspace, alias] = await Promise.all([
+        prisma.workspace.findUnique({ where: { username } }),
+        prisma.workspaceAlias.findUnique({ where: { username } }),
     ]);
 
-    return !user && !alias;
+    return !workspace && !alias;
 }
 
 export async function GET(req: Request) {

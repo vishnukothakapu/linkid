@@ -16,64 +16,93 @@ enum Role {
   ADMIN
 }
 
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+}
+
 model User {
   id            String   @id @default(uuid())
   name          String?
   email         String   @unique
   emailVerified DateTime?
   image         String?
-  backgroundImage String?
 
   password      String?
 
-  username      String?  @unique
-
-  bio            String?
-
-  seoTitle       String?
-  seoDescription String?
-
-  resumeUrl           String?
-  resumeDownloadCount Int      @default(0)
-  themeType           String   @default("solid")
-  themeColor          String   @default("slate")
-  themeCustom         String?
-  enableEmailCapture  Boolean  @default(false)
-  layoutStyle         LayoutStyle @default(LIST)
-
-  links         Link[]
-  accounts      Account[]
-  sessions      Session[]
-  aliases       UserAlias[]
-  mergeRequests AccountMergeRequest[]
-  usernameHistory UsernameHistory[]
-  profileDraft  ProfileDraft?
-  profileVersions ProfileVersion[]
-  previewTokens ProfilePreviewToken[]
-  subscribers   Subscriber[]
-  isVerified    Boolean  @default(false)
   role          Role     @default(USER)
   createdAt     DateTime @default(now())
 
-  theme         String   @default("default")
-
-  customDomain  String?  @unique
   totpSecret       String?
   twoFactorEnabled Boolean  @default(false)
   recoveryCodes    String?
   lastTotpStep     Int?
 
+  accounts      Account[]
+  sessions      Session[]
+  mergeRequests AccountMergeRequest[]
+  workspaces    WorkspaceMember[]
+}
+
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String?  @default("My Workspace")
+  username    String?  @unique
+  bio         String?
+  seoTitle    String?
+  seoDescription String?
+  backgroundImage String?
+  isVerified  Boolean  @default(false)
+  customDomain String?  @unique
+  themeType   String   @default("solid")
+  themeColor  String   @default("slate")
+  themeCustom String?
+  theme       String   @default("default")
+  enableEmailCapture Boolean @default(false)
+  layoutStyle LayoutStyle @default(LIST)
+  resumeUrl   String?
+  resumeDownloadCount Int @default(0)
+
+  members     WorkspaceMember[]
+  aliases     WorkspaceAlias[]
+  links       Link[]
+  subscribers Subscriber[]
+  profileDraft ProfileDraft?
+  profileVersions ProfileVersion[]
+  previewTokens ProfilePreviewToken[]
+  usernameHistory UsernameHistory[]
+  clickEvents ClickEvent[]
+  dailyAnalytics DailyLinkAnalytics[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@index([username])
 }
 
-model UserAlias {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(EDITOR)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
+  @@unique([workspaceId, userId])
   @@index([userId])
+  @@index([workspaceId])
+}
+
+model WorkspaceAlias {
+  id          String   @id @default(uuid())
+  username    String   @unique
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
 }
 
 model Link {
@@ -91,15 +120,15 @@ model Link {
   isSocialIcon Boolean @default(false)
   startDate DateTime?
   endDate   DateTime?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parent    Link?    @relation("LinkGroup", fields: [parentId], references: [id], onDelete: SetNull)
   children  Link[]   @relation("LinkGroup")
   clickEvents ClickEvent[]
   dailyAnalytics DailyLinkAnalytics[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  @@index([userId])
+  @@index([workspaceId])
   @@index([platform])
   @@index([parentId])
 }
@@ -108,7 +137,8 @@ model ClickEvent {
   id              String   @id @default(uuid())
   linkId           String
   link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId           String
+  workspaceId      String
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   visitorKey       String?
   userAgent        String?
   referrer         String?
@@ -119,7 +149,7 @@ model ClickEvent {
   createdAt        DateTime @default(now())
 
   @@index([linkId, createdAt])
-  @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
   @@index([linkId, visitorKey, createdAt])
   @@index([createdAt])
 }
@@ -128,7 +158,8 @@ model DailyLinkAnalytics {
   id            String   @id @default(uuid())
   linkId         String
   link           Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  userId         String
+  workspaceId    String
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   date           DateTime
   totalClicks    Int      @default(0)
   uniqueClicks   Int      @default(0)
@@ -137,7 +168,7 @@ model DailyLinkAnalytics {
   updatedAt      DateTime @updatedAt
 
   @@unique([linkId, date])
-  @@index([userId, date])
+  @@index([workspaceId, date])
   @@index([date])
 }
 
@@ -212,62 +243,53 @@ model VerificationToken {
 model UsernameHistory {
   id               String   @id @default(cuid())
   previousUsername String   @unique
-  userId           String
+  workspaceId      String
   createdAt        DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model ProfileDraft {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  name      String?
-  username  String?
-  bio       String?
-  image     String?
+  id          String   @id @default(cuid())
+  workspaceId String   @unique
+  name        String?
+  username    String?
+  bio         String?
+  image       String?
   backgroundImage String?
-  themeType String?
-  themeColor String?
+  themeType   String?
+  themeColor  String?
   themeCustom String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model ProfileVersion {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String?
-  username  String?
-  bio       String?
-  image     String?
-  backgroundImage String?
-  themeType String?
-  themeColor String?
-  themeCustom String?
-  changeType String // "publish" or "rollback"
-  diffJson  String? // JSON stringified diff
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  workspaceId String
+  snapshot    Json     @default("{}")
+  changeType  String   // "publish" or "rollback"
+  diff        Json     @default("{}")
+  createdAt   DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
 }
 
 model ProfilePreviewToken {
-  id        String   @id @default(cuid())
-  userId    String
-  tokenHash String   @unique // SHA256 hash of the actual token
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  revokedAt DateTime?
+  id          String   @id @default(cuid())
+  workspaceId String
+  tokenHash   String   @unique // SHA256 hash of the actual token
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  revokedAt   DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@index([userId, expiresAt])
+  @@index([workspaceId, expiresAt])
 }
 
 enum JobStatus {
@@ -317,12 +339,12 @@ model InvalidatedSession {
 }
 
 model Subscriber {
-  id        String   @id @default(uuid())
-  email     String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  email       String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
-  @@unique([email, userId])
-  @@index([userId])
+  @@unique([email, workspaceId])
+  @@index([workspaceId])
 }

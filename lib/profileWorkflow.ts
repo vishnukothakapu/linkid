@@ -23,10 +23,10 @@ export interface ProfileSnapshot {
 }
 
 /**
- * Upsert a profile draft for a user
+ * Upsert a profile draft for a workspace
  */
 export async function upsertProfileDraft(
-  userId: string,
+  workspaceId: string,
   data: Partial<ProfileSnapshot>
 ): Promise<ProfileSnapshot> {
   // Validate username if it's being changed
@@ -37,17 +37,17 @@ export async function upsertProfileDraft(
     }
 
     // Check if username is available
-    const isAvailable = await isProfileUsernameAvailable(data.username, userId);
+    const isAvailable = await isProfileUsernameAvailable(data.username, workspaceId);
     if (!isAvailable) {
       throw new Error("Username already taken");
     }
   }
 
   const draft = await prisma.profileDraft.upsert({
-    where: { userId },
+    where: { workspaceId },
     update: data,
     create: {
-      userId,
+      workspaceId,
       ...data,
     },
   });
@@ -65,70 +65,60 @@ export async function upsertProfileDraft(
 }
 
 /**
- * Get the current editable profile state (draft if exists, otherwise live profile)
+ * Get the current editable profile state (draft if exists, otherwise live workspace profile)
  */
 export async function getEditableProfileState(
-  userId: string
+  workspaceId: string
 ): Promise<ProfileSnapshot> {
-  const draft = await prisma.profileDraft.findUnique({
-    where: { userId },
-  });
-  if (draft) {
-    // Merge draft with live user values so missing draft fields fall back
-    // to the current live profile (avoids returning nulls when only
-    // a subset of fields are being edited in the draft).
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, username: true, bio: true, image: true, themeType: true, themeColor: true, themeCustom: true, backgroundImage: true },
-    });
-
-    // If a draft exists but the live user record is missing, the system
-    // is in an inconsistent state. Remove the stale draft and surface
-    // a clear error so callers don't operate on orphaned drafts.
-    if (!user) {
-      await prisma.profileDraft.deleteMany({ where: { userId } });
-      throw new Error("User not found");
-    }
-
-    return {
-      name: draft.name ?? user.name ?? null,
-      username: draft.username ?? user.username ?? null,
-      bio: draft.bio ?? user.bio ?? null,
-      image: draft.image ?? user.image ?? null,
-      themeType: draft.themeType ?? user.themeType ?? null,
-      themeColor: draft.themeColor ?? user.themeColor ?? null,
-      themeCustom: draft.themeCustom ?? user.themeCustom ?? null,
-      backgroundImage: draft.backgroundImage ?? user.backgroundImage ?? null,
-    };
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
     select: {
       name: true,
       username: true,
       bio: true,
-      image: true,
+      backgroundImage: true,
       themeType: true,
       themeColor: true,
       themeCustom: true,
-      backgroundImage: true,
+      profileDraft: true,
+      members: {
+        where: { role: "OWNER" },
+        include: { user: { select: { image: true } } },
+        take: 1,
+      },
     },
   });
 
-  if (!user) {
-    throw new Error("User not found");
+  if (!workspace) {
+    await prisma.profileDraft.deleteMany({ where: { workspaceId } });
+    throw new Error("Workspace not found");
+  }
+
+  const liveImage = workspace.members[0]?.user?.image ?? null;
+  const draft = workspace.profileDraft;
+
+  if (draft) {
+    return {
+      name: draft.name ?? workspace.name ?? null,
+      username: draft.username ?? workspace.username ?? null,
+      bio: draft.bio ?? workspace.bio ?? null,
+      image: draft.image ?? liveImage,
+      themeType: draft.themeType ?? workspace.themeType ?? null,
+      themeColor: draft.themeColor ?? workspace.themeColor ?? null,
+      themeCustom: draft.themeCustom ?? workspace.themeCustom ?? null,
+      backgroundImage: draft.backgroundImage ?? workspace.backgroundImage ?? null,
+    };
   }
 
   return {
-    name: user.name,
-    username: user.username,
-    bio: user.bio,
-    image: user.image,
-    themeType: user.themeType,
-    themeColor: user.themeColor,
-    themeCustom: user.themeCustom,
-    backgroundImage: user.backgroundImage,
+    name: workspace.name,
+    username: workspace.username,
+    bio: workspace.bio,
+    image: liveImage,
+    themeType: workspace.themeType,
+    themeColor: workspace.themeColor,
+    themeCustom: workspace.themeCustom,
+    backgroundImage: workspace.backgroundImage,
   };
 }
 
@@ -137,21 +127,20 @@ export async function getEditableProfileState(
  */
 async function ensureUsernameAliases(
   tx: TransactionClient,
-  userId: string,
+  workspaceId: string,
   previousUsername: string | null
 ): Promise<void> {
   if (!previousUsername) return;
 
-  // Check if this username is already an alias
-  const existingAlias = await tx.userAlias.findUnique({
+  const existingAlias = await tx.workspaceAlias.findUnique({
     where: { username: previousUsername },
   });
 
   if (!existingAlias) {
-    await tx.userAlias.create({
+    await tx.workspaceAlias.create({
       data: {
         username: previousUsername,
-        userId,
+        workspaceId,
       },
     });
   }
@@ -195,29 +184,28 @@ function diffProfileSnapshots(
 }
 
 /**
- * Check if a username is available (not taken and not an alias)
+ * Check if a username is available (not taken by another workspace or alias)
  */
 export async function isProfileUsernameAvailable(
   username: string,
-  excludeUserId?: string,
+  excludeWorkspaceId?: string,
   tx?: TransactionClient | typeof prisma
 ): Promise<boolean> {
   const db = tx || prisma;
-  // Check if username is taken
-  const user = await db.user.findUnique({
+  const workspace = await db.workspace.findUnique({
     where: { username },
   });
 
-  if (user && user.id !== excludeUserId) {
+  if (workspace && workspace.id !== excludeWorkspaceId) {
     return false;
   }
 
-  // Check if username is an alias — but allow the user to reclaim their own alias
-  const alias = await db.userAlias.findUnique({
+  // Check if username is an alias — but allow workspace to reclaim its own alias
+  const alias = await db.workspaceAlias.findUnique({
     where: { username },
   });
 
-  if (alias && alias.userId !== excludeUserId) {
+  if (alias && alias.workspaceId !== excludeWorkspaceId) {
     return false;
   }
 
@@ -225,113 +213,121 @@ export async function isProfileUsernameAvailable(
 }
 
 /**
- * Publish a profile draft to live
+ * Publish a profile draft to live workspace
  */
 export async function publishProfileDraft(
-  userId: string
+  workspaceId: string
 ): Promise<{ published: ProfileSnapshot; diff: Record<string, unknown> }> {
   const result = await prisma.$transaction(async (tx) => {
-    // Get the draft
     const draft = await tx.profileDraft.findUnique({
-      where: { userId },
+      where: { workspaceId },
     });
 
     if (!draft) {
       throw new Error("No draft to publish");
     }
 
-    // Get the current live profile
-    const user = await tx.user.findUnique({
-      where: { id: userId },
+    const workspace = await tx.workspace.findUnique({
+      where: { id: workspaceId },
       select: {
         name: true,
         username: true,
         bio: true,
-        image: true,
+        backgroundImage: true,
         themeType: true,
         themeColor: true,
         themeCustom: true,
-        backgroundImage: true,
       },
     });
 
-    if (!user) {
-      throw new Error("User not found");
+    if (!workspace) {
+      throw new Error("Workspace not found");
     }
 
-    const beforeSnapshot: ProfileSnapshot = user;
+    // Resolve owner image for snapshot
+    const ownerMember = await tx.workspaceMember.findFirst({
+      where: { workspaceId, role: "OWNER" },
+      include: { user: { select: { image: true } } },
+    });
+    const liveImage = ownerMember?.user?.image ?? null;
+
+    const beforeSnapshot: ProfileSnapshot = {
+      ...workspace,
+      image: liveImage,
+    };
     const afterSnapshot: ProfileSnapshot = {
-      name: draft.name ?? user.name,
-      username: draft.username ?? user.username,
-      bio: draft.bio ?? user.bio,
-      image: draft.image ?? user.image,
-      themeType: draft.themeType ?? user.themeType,
-      themeColor: draft.themeColor ?? user.themeColor,
-      themeCustom: draft.themeCustom ?? user.themeCustom,
-      backgroundImage: draft.backgroundImage ?? user.backgroundImage,
+      name: draft.name ?? workspace.name,
+      username: draft.username ?? workspace.username,
+      bio: draft.bio ?? workspace.bio,
+      image: draft.image ?? liveImage,
+      themeType: draft.themeType ?? workspace.themeType,
+      themeColor: draft.themeColor ?? workspace.themeColor,
+      themeCustom: draft.themeCustom ?? workspace.themeCustom,
+      backgroundImage: draft.backgroundImage ?? workspace.backgroundImage,
     };
 
-    // Calculate diff
     const diff = diffProfileSnapshots(beforeSnapshot, afterSnapshot);
 
-    // Handle username being set or changed. Run the in-transaction uniqueness
-    // recheck whenever the username differs from before — including the first
-    // publish (beforeSnapshot.username empty), which previously skipped the
-    // check entirely and let two accounts claim the same handle concurrently.
+    // Handle username being set or changed
     if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
-      // Recheck availability within the transaction to guard against TOCTOU races
-      const takenByOther = await tx.user.findFirst({
-        where: { username: afterSnapshot.username, NOT: { id: userId } },
-      });
-      if (takenByOther) {
+      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
+      if (!isAvailable) {
         throw new Error("Username already taken");
       }
-      // Only alias the previous username on a rename, not on first publish.
       if (beforeSnapshot.username) {
-        await ensureUsernameAliases(tx, userId, beforeSnapshot.username);
+        await ensureUsernameAliases(tx, workspaceId, beforeSnapshot.username);
+
+        const existingHistory = await tx.usernameHistory.findUnique({
+          where: { previousUsername: beforeSnapshot.username },
+        });
+        if (!existingHistory) {
+          await tx.usernameHistory.create({
+            data: { previousUsername: beforeSnapshot.username, workspaceId },
+          });
+        }
       }
     }
 
-    // Update the live profile
-    await tx.user.update({
-      where: { id: userId },
+    // Update the live workspace
+    await tx.workspace.update({
+      where: { id: workspaceId },
       data: {
         name: afterSnapshot.name,
         username: afterSnapshot.username,
         bio: afterSnapshot.bio,
-        image: afterSnapshot.image,
+        backgroundImage: afterSnapshot.backgroundImage,
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
-        backgroundImage: afterSnapshot.backgroundImage,
       },
     });
 
-    // Create version record
+    // Update owner User.image if image changed (including removing image)
+    if (afterSnapshot.image !== liveImage && ownerMember) {
+      await tx.user.update({
+        where: { id: ownerMember.userId },
+        data: { image: afterSnapshot.image ?? null },
+      });
+    }
+
+    // Create version record using snapshot JSON
     await tx.profileVersion.create({
       data: {
-        userId,
-        name: afterSnapshot.name,
-        username: afterSnapshot.username,
-        bio: afterSnapshot.bio,
-        image: afterSnapshot.image,
-        themeType: afterSnapshot.themeType ?? "solid",
-        themeColor: afterSnapshot.themeColor ?? "slate",
-        themeCustom: afterSnapshot.themeCustom,
-        backgroundImage: afterSnapshot.backgroundImage,
+        workspaceId,
+        snapshot: afterSnapshot as unknown as Prisma.InputJsonValue,
         changeType: "publish",
-        diffJson: JSON.stringify(diff),
+        diff: diff as unknown as Prisma.InputJsonValue,
       },
     });
 
     // Delete the draft
     await tx.profileDraft.delete({
-      where: { userId },
+      where: { workspaceId },
     });
 
-    // Revoke all preview tokens for this user
+    // Revoke all preview tokens for this workspace
     await tx.profilePreviewToken.updateMany({
-      where: { userId },
+      where: { workspaceId },
       data: { revokedAt: new Date() },
     });
 
@@ -348,21 +344,18 @@ export async function publishProfileDraft(
  * Create a secure preview token for draft sharing
  */
 export async function createProfilePreviewToken(
-  userId: string,
+  workspaceId: string,
   expiresInDays: number = 7
 ): Promise<{ token: string; expiresAt: Date }> {
-  // Generate a random token
   const token = crypto.randomBytes(32).toString("hex");
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-  // Calculate expiry
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-  // Store the hash in database
   await prisma.profilePreviewToken.create({
     data: {
-      userId,
+      workspaceId,
       tokenHash,
       expiresAt,
     },
@@ -379,7 +372,7 @@ export async function createProfilePreviewToken(
  */
 export async function resolvePreviewToken(
   token: string
-): Promise<{ userId: string; snapshot: ProfileSnapshot } | null> {
+): Promise<{ workspaceId: string; snapshot: ProfileSnapshot } | null> {
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
   const previewToken = await prisma.profilePreviewToken.findUnique({
@@ -390,19 +383,16 @@ export async function resolvePreviewToken(
     return null;
   }
 
-  // Check if token is expired
   if (previewToken.expiresAt < new Date()) {
     return null;
   }
 
-  // Check if token is revoked
   if (previewToken.revokedAt) {
     return null;
   }
 
-  // Get the draft snapshot
   const draft = await prisma.profileDraft.findUnique({
-    where: { userId: previewToken.userId },
+    where: { workspaceId: previewToken.workspaceId },
   });
 
   if (!draft) {
@@ -421,146 +411,132 @@ export async function resolvePreviewToken(
   };
 
   return {
-    userId: previewToken.userId,
+    workspaceId: previewToken.workspaceId,
     snapshot,
   };
 }
 
 /**
- * Get profile version history
+ * Get profile version history for a workspace
  */
-export async function getProfileVersions(userId: string, limit: number = 20) {
+export async function getProfileVersions(workspaceId: string, limit: number = 20) {
   const versions = await prisma.profileVersion.findMany({
-    where: { userId },
+    where: { workspaceId },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
 
-  return versions.map((v) => ({
-    id: v.id,
-    snapshot: {
-      name: v.name,
-      username: v.username,
-      bio: v.bio,
-      image: v.image,
-      themeType: v.themeType,
-      themeColor: v.themeColor,
-      themeCustom: v.themeCustom,
-      backgroundImage: v.backgroundImage,
-    },
-    changeType: v.changeType,
-    diff: v.diffJson ? JSON.parse(v.diffJson) : {},
-    createdAt: v.createdAt,
-  }));
+  return versions
+    .filter((v) => v.snapshot && typeof v.snapshot === "object" && Object.keys(v.snapshot).length > 0)
+    .map((v) => ({
+      id: v.id,
+      snapshot: v.snapshot as unknown as ProfileSnapshot,
+      changeType: v.changeType,
+      diff: (v.diff as Record<string, unknown>) ?? {},
+      createdAt: v.createdAt,
+    }));
 }
 
 /**
  * Rollback to a specific profile version
  */
 export async function rollbackProfileVersion(
-  userId: string,
+  workspaceId: string,
   versionId: string
 ): Promise<{ snapshot: ProfileSnapshot; diff: Record<string, unknown> }> {
   const result = await prisma.$transaction(async (tx) => {
-    // Get the version to rollback to
     const version = await tx.profileVersion.findUnique({
       where: { id: versionId },
     });
 
-    if (!version || version.userId !== userId) {
+    if (!version || version.workspaceId !== workspaceId) {
       throw new Error("Version not found or access denied");
     }
 
-    // Get current profile
-    const user = await tx.user.findUnique({
-      where: { id: userId },
+    if (!version.snapshot || typeof version.snapshot !== "object" || Object.keys(version.snapshot).length === 0) {
+      throw new Error("Cannot rollback to a version with an empty snapshot");
+    }
+
+    const afterSnapshot = version.snapshot as unknown as ProfileSnapshot;
+
+    // Get current live workspace state for diff
+    const workspace = await tx.workspace.findUnique({
+      where: { id: workspaceId },
       select: {
         name: true,
         username: true,
         bio: true,
-        image: true,
+        backgroundImage: true,
         themeType: true,
         themeColor: true,
         themeCustom: true,
-        backgroundImage: true,
       },
     });
 
-    if (!user) {
-      throw new Error("User not found");
+    if (!workspace) {
+      throw new Error("Workspace not found");
     }
 
-    const beforeSnapshot: ProfileSnapshot = user;
-    const afterSnapshot: ProfileSnapshot = {
-      name: version.name,
-      username: version.username,
-      bio: version.bio,
-      image: version.image,
-      themeType: version.themeType,
-      themeColor: version.themeColor,
-      themeCustom: version.themeCustom,
-      backgroundImage: version.backgroundImage,
-    };
+    const ownerMember = await tx.workspaceMember.findFirst({
+      where: { workspaceId, role: "OWNER" },
+      include: { user: { select: { image: true } } },
+    });
+    const liveImage = ownerMember?.user?.image ?? null;
 
-    // Calculate diff
+    const beforeSnapshot: ProfileSnapshot = { ...workspace, image: liveImage };
     const diff = diffProfileSnapshots(beforeSnapshot, afterSnapshot);
 
     // Handle username change
-    if (beforeSnapshot.username && beforeSnapshot.username !== afterSnapshot.username) {
-      if (afterSnapshot.username) {
-        const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, userId, tx);
-        if (!isAvailable) {
-          throw new Error("The username in this profile version is no longer available.");
-        }
-      }
-      await ensureUsernameAliases(tx, userId, beforeSnapshot.username);
-    } else if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
-      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, userId, tx);
+    if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
+      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
       if (!isAvailable) {
         throw new Error("The username in this profile version is no longer available.");
       }
+      if (beforeSnapshot.username) {
+        await ensureUsernameAliases(tx, workspaceId, beforeSnapshot.username);
+      }
     }
 
-    // Update the live profile
-    await tx.user.update({
-      where: { id: userId },
+    // Update the live workspace (without image, which lives on User)
+    await tx.workspace.update({
+      where: { id: workspaceId },
       data: {
         name: afterSnapshot.name,
         username: afterSnapshot.username,
         bio: afterSnapshot.bio,
-        image: afterSnapshot.image,
+        backgroundImage: afterSnapshot.backgroundImage,
         themeType: afterSnapshot.themeType ?? "solid",
         themeColor: afterSnapshot.themeColor ?? "slate",
         themeCustom: afterSnapshot.themeCustom,
-        backgroundImage: afterSnapshot.backgroundImage,
       },
     });
+
+    // Update owner User.image if image changed during rollback
+    if (afterSnapshot.image !== liveImage && ownerMember) {
+      await tx.user.update({
+        where: { id: ownerMember.userId },
+        data: { image: afterSnapshot.image ?? null },
+      });
+    }
 
     // Create new version record for the rollback
     await tx.profileVersion.create({
       data: {
-        userId,
-        name: afterSnapshot.name,
-        username: afterSnapshot.username,
-        bio: afterSnapshot.bio,
-        image: afterSnapshot.image,
-        themeType: afterSnapshot.themeType ?? "solid",
-        themeColor: afterSnapshot.themeColor ?? "slate",
-        themeCustom: afterSnapshot.themeCustom,
-        backgroundImage: afterSnapshot.backgroundImage,
+        workspaceId,
+        snapshot: afterSnapshot as unknown as Prisma.InputJsonValue,
         changeType: "rollback",
-        diffJson: JSON.stringify(diff),
+        diff: diff as unknown as Prisma.InputJsonValue,
       },
     });
 
-    // Delete any existing draft (deleteMany never throws on missing record)
+    // Delete any existing draft
     await tx.profileDraft.deleteMany({
-      where: { userId },
+      where: { workspaceId },
     });
 
     // Revoke all preview tokens
     await tx.profilePreviewToken.updateMany({
-      where: { userId },
+      where: { workspaceId },
       data: { revokedAt: new Date() },
     });
 

@@ -17,10 +17,12 @@ export default function EditProfileModal({
     initialName,
     initialUsername,
     initialBio,
+    workspaceId,
 }: {
     initialName: string;
     initialUsername: string;
     initialBio?: string | null;
+    workspaceId?: string;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -61,6 +63,7 @@ export default function EditProfileModal({
                 )}
 
                 <EditProfileCard
+                    workspaceId={workspaceId}
                     initialName={initialName}
                     initialUsername={initialUsername}
                     initialBio={initialBio}

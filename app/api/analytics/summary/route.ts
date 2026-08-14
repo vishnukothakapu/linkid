@@ -4,21 +4,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { getUserAnalyticsSummary } from "@/lib/analytics";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { id: true },
-    });
-
-    if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
+        return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
     const daysQuery = request.nextUrl.searchParams.get("days");
@@ -37,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     const summary = await getUserAnalyticsSummary({
-        userId: user.id,
+        workspaceId: workspace.id,
         days,  // null = no date filter = all time
     });
 

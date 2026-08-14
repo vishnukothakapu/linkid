@@ -7,10 +7,12 @@ export function SeoSection({
     initialTitle,
     initialDescription,
     onUpdateSeo,
+    workspaceId,
 }: {
     initialTitle: string;
     initialDescription: string;
     onUpdateSeo: (title: string, desc: string) => void;
+    workspaceId: string;
 }) {
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
@@ -26,6 +28,7 @@ export function SeoSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    "x-workspace-id": workspaceId,
                 },
                 body: JSON.stringify({ seoTitle: title, seoDescription: description }),
             });

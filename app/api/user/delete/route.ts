@@ -41,7 +41,7 @@ export async function DELETE(req: NextRequest) {
     const { password, otp } = body as { password?: string; otp?: string };
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, password: true, email: true, username: true },
+      select: { id: true, password: true, email: true },
     });
 
     if (!user) {
@@ -81,6 +81,11 @@ export async function DELETE(req: NextRequest) {
     }
 
 
+    const userWorkspaces = await prisma.workspaceMember.findMany({
+      where: { userId },
+      include: { workspace: { select: { id: true, username: true } } },
+    });
+
     await invalidateUserSessions(userId);
     await clearOtp(userId);
     await prisma.user.delete({
@@ -88,10 +93,12 @@ export async function DELETE(req: NextRequest) {
     });
 
     // The account no longer exists — drop its cached public profile and clear
-    // its username→userId index entry so the freed username resolves fresh.
-    await invalidateProfileCache(userId);
-    if (user.username) {
-      await invalidateProfileUsername(user.username);
+    // its username→workspaceId index entry so any freed usernames resolve fresh.
+    for (const member of userWorkspaces) {
+      await invalidateProfileCache(member.workspace.id);
+      if (member.workspace.username) {
+        await invalidateProfileUsername(member.workspace.username);
+      }
     }
 
     return NextResponse.json({ success: true });

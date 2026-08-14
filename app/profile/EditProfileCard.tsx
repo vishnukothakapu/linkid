@@ -14,11 +14,13 @@ export default function EditProfileCard({
     initialName,
     initialUsername,
     initialBio,
+    workspaceId,
     onSuccess,
 }: {
     initialName: string;
     initialUsername: string;
     initialBio?: string | null;
+    workspaceId?: string;
     onSuccess?: () => void;
 }) {
     const [name, setName] = useState(initialName);
@@ -101,11 +103,12 @@ export default function EditProfileCard({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
             },
             body: JSON.stringify({ 
                 name: name.trim(), 
                 username: username.trim(),
-                bio: bio.trim()
+                bio: bio.trim(),
             }),
         });
 

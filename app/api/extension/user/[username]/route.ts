@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
 
 export async function GET(
     req: Request,
@@ -8,18 +9,24 @@ export async function GET(
     try {
         const { username } = await params;
         const normalizedUsername = username.toLowerCase();
+        const resolved = await resolveWorkspaceByUsernameOrAlias(normalizedUsername);
+        if (!resolved) {
+            return NextResponse.json(
+                { error: "User not found" },
+                { status: 404 }
+            );
+        }
 
-        const user = await prisma.user.findUnique({
-            where: { username: normalizedUsername },
-            select: {
-                id: true,
-                name: true,
-                username: true,
-                image: true,
+        const workspace = await prisma.workspace.findUnique({
+            where: { id: resolved.workspaceId },
+            include: {
+                members: {
+                    where: { role: "OWNER" },
+                    include: { user: true },
+                    take: 1,
+                },
                 links: {
-                    where: {
-                        isPublic: true,
-                    },
+                    where: { isPublic: true },
                     select: {
                         id: true,
                         platform: true,
@@ -27,29 +34,29 @@ export async function GET(
                         label: true,
                         pinCode: true,
                     },
-                    orderBy: {
-                        position: 'asc'
-                    }
-                }
-            }
+                    orderBy: { position: 'asc' },
+                },
+            },
         });
 
-        if (!user) {
+        if (!workspace) {
             return NextResponse.json(
                 { error: "User not found" },
                 { status: 404 }
             );
         }
 
+        const owner = workspace.members[0]?.user;
+
         return NextResponse.json({
             user: {
-                name: user.name,
-                username: user.username,
-                image: user.image,
+                name: owner?.name ?? workspace.name ?? workspace.username ?? "",
+                username: workspace.username ?? null,
+                image: owner?.image ?? null,
             },
             // PIN-locked links must not expose their destination here (same as
             // the public profile, which hides it behind PIN verification).
-            links: user.links.map(({ pinCode, url, ...link }) => ({
+            links: workspace.links.map(({ pinCode, url, ...link }) => ({
                 ...link,
                 url: pinCode ? null : url,
                 locked: Boolean(pinCode),

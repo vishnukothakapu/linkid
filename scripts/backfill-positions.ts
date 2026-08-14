@@ -4,14 +4,14 @@ import { PrismaClient, Prisma } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Starting backfill: set sequential `position` per user')
-  const users = await prisma.user.findMany({ select: { id: true } })
+  console.log('Starting backfill: set sequential `position` per workspace')
+  const workspaces = await prisma.workspace.findMany({ select: { id: true } })
   let updated = 0
   let processedLinks = 0
 
-  for (const u of users) {
+  for (const ws of workspaces) {
         const links = await prisma.link.findMany({
-      where: { userId: u.id },
+      where: { workspaceId: ws.id },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { id: true, position: true }
         })

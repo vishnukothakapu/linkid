@@ -3,24 +3,52 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { generateResumePDF } from "@/lib/generateResumePDF";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return new Response("Unauthorized", { status: 401 });
     }
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { links: true },
-    });
-    if (!user) {
-      return new Response("User not found", { status: 404 });
+
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
+      return new Response("Workspace not found", { status: 404 });
     }
+
+    const workspaceData = await prisma.workspace.findUnique({
+      where: { id: workspace.id },
+      include: {
+        members: {
+          where: { role: "OWNER" },
+          include: { user: { select: { name: true, image: true } } },
+          take: 1,
+        },
+        links: {
+          where: { isPublic: true },
+          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+        },
+      },
+    });
+
+    if (!workspaceData) {
+      return new Response("Workspace not found", { status: 404 });
+    }
+
+    const owner = workspaceData.members[0]?.user;
+    const user = {
+      name: owner?.name ?? workspaceData.name ?? workspaceData.username ?? "",
+      username: workspaceData.username ?? null,
+      image: owner?.image ?? null,
+      bio: workspaceData.bio ?? null,
+      email: null,
+    };
+
     const buffer = await renderToBuffer(
       generateResumePDF({
         user,
-        links: user.links,
+        links: workspaceData.links,
       }),
     );
     const uint8 = new Uint8Array(buffer);
