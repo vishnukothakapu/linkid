@@ -65,6 +65,7 @@ model User {
   totpSecret       String?
   twoFactorEnabled Boolean           @default(false)
   recoveryCodes    String?
+  lastTotpStep     Int?
   profileDraftId   String?
   workspaceMembers WorkspaceMember[]
 
