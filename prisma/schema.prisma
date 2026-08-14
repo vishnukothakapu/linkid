@@ -63,6 +63,8 @@ model Workspace {
   layoutStyle LayoutStyle @default(LIST)
   resumeUrl   String?
   resumeDownloadCount Int @default(0)
+  webhookUrl  String?
+  webhookSecret String?
 
   members     WorkspaceMember[]
   aliases     WorkspaceAlias[]
