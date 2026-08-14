@@ -109,7 +109,6 @@ export default function EditProfileCard({
                 name: name.trim(), 
                 username: username.trim(),
                 bio: bio.trim(),
-                workspaceId,
             }),
         });
 

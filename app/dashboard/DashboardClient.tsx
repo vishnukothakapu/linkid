@@ -33,7 +33,7 @@ export default function DashboardClient({
     initialThemeColor,
     initialThemeCustom,
 }: {
-    workspaceId?: string;
+    workspaceId: string;
     username: string;
     initialLinks: ProfileLink[];
     initialTheme?: string;
@@ -75,9 +75,9 @@ export default function DashboardClient({
                 headers: {
                     'Content-Type': 'application/json',
                     'x-csrf-token': csrfToken,
-                    ...(workspaceId ? { 'x-workspace-id': workspaceId } : {}),
+                    'x-workspace-id': workspaceId,
                 },
-                body: JSON.stringify({ enableEmailCapture: newValue, workspaceId }),
+                body: JSON.stringify({ enableEmailCapture: newValue }),
             });
             if (!response.ok) throw new Error();
             const data = await response.json();
@@ -109,6 +109,7 @@ export default function DashboardClient({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    "x-workspace-id": workspaceId,
                 },
                 body: JSON.stringify({ url, label, platform, startDate, endDate, pinCode, isSocialIcon }),
             });
@@ -157,6 +158,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ isPublic }),
         });
@@ -185,7 +187,9 @@ export default function DashboardClient({
     }
 
     async function exportCsv() {
-        const response = await fetch("/api/links/export");
+        const response = await fetch(`/api/links/export?workspaceId=${encodeURIComponent(workspaceId)}`, {
+            headers: { "x-workspace-id": workspaceId },
+        });
 
         if (!response.ok) {
             toast.error("Unable to export CSV");
@@ -203,7 +207,9 @@ export default function DashboardClient({
 
     async function exportSubscribersCsv() {
         try {
-            const response = await fetch("/api/subscribers/export");
+            const response = await fetch(`/api/subscribers/export?workspaceId=${encodeURIComponent(workspaceId)}`, {
+                headers: { "x-workspace-id": workspaceId },
+            });
             if (!response.ok) throw new Error();
 
             const blob = await response.blob();
@@ -226,6 +232,7 @@ export default function DashboardClient({
         await fetch(`/api/links/${id}`, {
             headers: {
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             method: "DELETE",
         });
@@ -252,6 +259,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ deleteChildren }),
         });
@@ -289,6 +297,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ label: newName }),
         });

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { DashboardNavbar } from "@/app/components/DashboardNavbar";
-import { getProfileVersions } from "@/lib/profileWorkflow";
+
 
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
@@ -62,7 +62,6 @@ export default async function ProfilePage() {
     if (!workspaceData) redirect("/login");
 
     const owner = workspaceData.members[0]?.user;
-    const profileVersions = await getProfileVersions(workspace.id);
 
     return (
         <>
@@ -70,6 +69,7 @@ export default async function ProfilePage() {
 
             <main className="mx-auto max-w-4xl px-6 py-10 space-y-8">
                 <ProfileHeaderCard
+                    workspaceId={workspaceData.id}
                     user={{
                         name: workspaceData.name,
                         username: workspaceData.username,
@@ -113,7 +113,6 @@ export default async function ProfilePage() {
                     workspaceId={workspaceData.id}
                     hasPassword={Boolean(currentUser?.password)}
                     profileDraft={workspaceData.profileDraft}
-                    profileVersions={profileVersions}
                 />
 
                 <DangerZoneCard

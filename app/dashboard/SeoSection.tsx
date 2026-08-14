@@ -12,7 +12,7 @@ export function SeoSection({
     initialTitle: string;
     initialDescription: string;
     onUpdateSeo: (title: string, desc: string) => void;
-    workspaceId?: string;
+    workspaceId: string;
 }) {
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
@@ -28,9 +28,9 @@ export function SeoSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
-                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
+                    "x-workspace-id": workspaceId,
                 },
-                body: JSON.stringify({ seoTitle: title, seoDescription: description, workspaceId }),
+                body: JSON.stringify({ seoTitle: title, seoDescription: description }),
             });
             
             if (!res.ok) {

@@ -51,7 +51,11 @@ CREATE TABLE IF NOT EXISTS "WorkspaceAlias" (
     CONSTRAINT "WorkspaceAlias_pkey" PRIMARY KEY ("id")
 );
 
--- Step 5: Backfill Workspace for every existing User (using User.id as Workspace.id so IDs match)
+-- Step 5: Ensure unique indexes required for ON CONFLICT backfill statements exist
+CREATE UNIQUE INDEX IF NOT EXISTS "WorkspaceMember_workspaceId_userId_key" ON "WorkspaceMember"("workspaceId", "userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "WorkspaceAlias_username_key" ON "WorkspaceAlias"("username");
+
+-- Step 6: Backfill Workspace for every existing User (using User.id as Workspace.id so IDs match)
 INSERT INTO "Workspace" (
     "id",
     "name",
@@ -96,7 +100,7 @@ SELECT
 FROM "User" u
 ON CONFLICT ("id") DO NOTHING;
 
--- Step 6: Backfill WorkspaceMember (OWNER role) for every existing User
+-- Step 7: Backfill WorkspaceMember (OWNER role) for every existing User
 INSERT INTO "WorkspaceMember" ("id", "workspaceId", "userId", "role", "createdAt")
 SELECT
     md5(random()::text || clock_timestamp()::text),
@@ -107,7 +111,7 @@ SELECT
 FROM "User" u
 ON CONFLICT ("workspaceId", "userId") DO NOTHING;
 
--- Step 7: Backfill WorkspaceAlias from existing UserAlias if table exists
+-- Step 8: Backfill WorkspaceAlias from existing UserAlias if table exists
 DO $$ BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'UserAlias') THEN
         INSERT INTO "WorkspaceAlias" ("id", "username", "workspaceId", "createdAt")
@@ -121,7 +125,7 @@ DO $$ BEGIN
     END IF;
 END $$;
 
--- Step 8: Add nullable workspaceId columns to dependent tables if they don't exist yet
+-- Step 9: Add nullable workspaceId columns to dependent tables if they don't exist yet
 ALTER TABLE "Link" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
 ALTER TABLE "ClickEvent" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
 ALTER TABLE "DailyLinkAnalytics" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
@@ -133,7 +137,7 @@ ALTER TABLE "ProfilePreviewToken" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
 ALTER TABLE "UsernameHistory" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
 ALTER TABLE "Subscriber" ADD COLUMN IF NOT EXISTS "workspaceId" TEXT;
 
--- Step 9: Populate workspaceId from userId for existing rows in all dependent tables
+-- Step 10: Populate workspaceId from userId for existing rows in all dependent tables
 UPDATE "Link" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
 UPDATE "ClickEvent" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
 UPDATE "DailyLinkAnalytics" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
@@ -142,6 +146,34 @@ UPDATE "ProfileVersion" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL
 UPDATE "ProfilePreviewToken" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
 UPDATE "UsernameHistory" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
 UPDATE "Subscriber" SET "workspaceId" = "userId" WHERE "workspaceId" IS NULL AND "userId" IS NOT NULL;
+
+-- Backfill NULL snapshot and diff fields in ProfileVersion to match non-nullable Prisma model fields
+UPDATE "ProfileVersion" SET "snapshot" = '{}'::jsonb WHERE "snapshot" IS NULL;
+UPDATE "ProfileVersion" SET "diff" = '{}'::jsonb WHERE "diff" IS NULL;
+
+ALTER TABLE "ProfileVersion" ALTER COLUMN "snapshot" SET NOT NULL;
+ALTER TABLE "ProfileVersion" ALTER COLUMN "diff" SET NOT NULL;
+
+-- Audit orphan rows without a workspaceId before cleanup
+DO $$ 
+DECLARE
+    orphan_count INTEGER;
+BEGIN
+    SELECT 
+        (SELECT COUNT(*) FROM "ClickEvent" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "DailyLinkAnalytics" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "Link" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "ProfileDraft" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "ProfileVersion" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "ProfilePreviewToken" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "UsernameHistory" WHERE "workspaceId" IS NULL) +
+        (SELECT COUNT(*) FROM "Subscriber" WHERE "workspaceId" IS NULL)
+    INTO orphan_count;
+
+    IF orphan_count > 0 THEN
+        RAISE NOTICE 'Audit found % orphan records with NULL workspaceId before cleanup.', orphan_count;
+    END IF;
+END $$;
 
 -- Clean up any orphaned rows without a matching workspaceId
 DELETE FROM "ClickEvent" WHERE "workspaceId" IS NULL;
@@ -153,7 +185,7 @@ DELETE FROM "ProfilePreviewToken" WHERE "workspaceId" IS NULL;
 DELETE FROM "UsernameHistory" WHERE "workspaceId" IS NULL;
 DELETE FROM "Subscriber" WHERE "workspaceId" IS NULL;
 
--- Step 10: Set NOT NULL on workspaceId columns
+-- Step 11: Set NOT NULL on workspaceId columns
 ALTER TABLE "Link" ALTER COLUMN "workspaceId" SET NOT NULL;
 ALTER TABLE "ClickEvent" ALTER COLUMN "workspaceId" SET NOT NULL;
 ALTER TABLE "DailyLinkAnalytics" ALTER COLUMN "workspaceId" SET NOT NULL;
@@ -163,7 +195,7 @@ ALTER TABLE "ProfilePreviewToken" ALTER COLUMN "workspaceId" SET NOT NULL;
 ALTER TABLE "UsernameHistory" ALTER COLUMN "workspaceId" SET NOT NULL;
 ALTER TABLE "Subscriber" ALTER COLUMN "workspaceId" SET NOT NULL;
 
--- Step 11: Drop old userId columns
+-- Step 12: Drop old userId columns
 ALTER TABLE "Link" DROP COLUMN IF EXISTS "userId";
 ALTER TABLE "ClickEvent" DROP COLUMN IF EXISTS "userId";
 ALTER TABLE "DailyLinkAnalytics" DROP COLUMN IF EXISTS "userId";
@@ -173,16 +205,14 @@ ALTER TABLE "ProfilePreviewToken" DROP COLUMN IF EXISTS "userId";
 ALTER TABLE "UsernameHistory" DROP COLUMN IF EXISTS "userId";
 ALTER TABLE "Subscriber" DROP COLUMN IF EXISTS "userId";
 
--- Step 12: Add Indexes & Unique Constraints
+-- Step 13: Add Indexes & Unique Constraints
 CREATE UNIQUE INDEX IF NOT EXISTS "Workspace_username_key" ON "Workspace"("username");
 CREATE UNIQUE INDEX IF NOT EXISTS "Workspace_customDomain_key" ON "Workspace"("customDomain");
 CREATE INDEX IF NOT EXISTS "Workspace_username_idx" ON "Workspace"("username");
 
-CREATE UNIQUE INDEX IF NOT EXISTS "WorkspaceMember_workspaceId_userId_key" ON "WorkspaceMember"("workspaceId", "userId");
 CREATE INDEX IF NOT EXISTS "WorkspaceMember_userId_idx" ON "WorkspaceMember"("userId");
 CREATE INDEX IF NOT EXISTS "WorkspaceMember_workspaceId_idx" ON "WorkspaceMember"("workspaceId");
 
-CREATE UNIQUE INDEX IF NOT EXISTS "WorkspaceAlias_username_key" ON "WorkspaceAlias"("username");
 CREATE INDEX IF NOT EXISTS "WorkspaceAlias_workspaceId_idx" ON "WorkspaceAlias"("workspaceId");
 
 CREATE INDEX IF NOT EXISTS "Link_workspaceId_idx" ON "Link"("workspaceId");
@@ -199,7 +229,7 @@ DROP INDEX IF EXISTS "Subscriber_email_userId_key";
 CREATE UNIQUE INDEX IF NOT EXISTS "Subscriber_email_workspaceId_key" ON "Subscriber"("email", "workspaceId");
 CREATE INDEX IF NOT EXISTS "Subscriber_workspaceId_idx" ON "Subscriber"("workspaceId");
 
--- Step 13: Add Foreign Key Constraints
+-- Step 14: Add Foreign Key Constraints
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'WorkspaceMember_workspaceId_fkey') THEN
         ALTER TABLE "WorkspaceMember" ADD CONSTRAINT "WorkspaceMember_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -29,7 +29,7 @@ export function AppearanceSection({
     onUpdateTheme: (theme: string) => void;
     onUpdateLayout: (layout: LayoutStyle) => void;
     onUpdateBackgroundImage: (url: string | null) => void;
-    workspaceId?: string;
+    workspaceId: string;
 }) {
     const [selectedTheme, setSelectedTheme] = useState(initialTheme || "default");
     const [selectedLayout, setSelectedLayout] = useState(initialLayout || "LIST");
@@ -48,9 +48,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
-                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
+                    "x-workspace-id": workspaceId,
                 },
-                body: JSON.stringify({ theme: themeId, workspaceId }),
+                body: JSON.stringify({ theme: themeId }),
             });
             
             if (!res.ok) {
@@ -79,9 +79,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
-                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
+                    "x-workspace-id": workspaceId,
                 },
-                body: JSON.stringify({ layoutStyle: layoutId, workspaceId }),
+                body: JSON.stringify({ layoutStyle: layoutId }),
             });
             
             if (!res.ok) {
@@ -109,9 +109,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
-                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
+                    "x-workspace-id": workspaceId,
                 },
-                body: JSON.stringify({ backgroundImage: backgroundImage || null, workspaceId }),
+                body: JSON.stringify({ backgroundImage: backgroundImage || null }),
             });
             
             if (!res.ok) {
