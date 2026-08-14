@@ -52,7 +52,7 @@ export default async function PlatformRedirect({
 
     const link = await prisma.link.findFirst({
         where: {
-            userId: resolved.user.id,
+            workspaceId: resolved.user.id,
             isPublic: true,
             OR: [
                 { alias: normalizedPlatform },
@@ -63,7 +63,7 @@ export default async function PlatformRedirect({
                 { OR: [{ endDate: null }, { endDate: { gte: now } }] },
             ],
         },
-        select: { id: true, url: true, userId: true, platform: true, pinCode: true },
+        select: { id: true, url: true, workspaceId: true, platform: true, pinCode: true },
     });
 
     if (!link) notFound();
@@ -84,7 +84,7 @@ export default async function PlatformRedirect({
     // Track analytics asynchronously safely
     await trackLinkClick({
         linkId: link.id,
-        userId: link.userId,
+        workspaceId: link.workspaceId,
         headers: requestHeaders,
     });
 

@@ -27,13 +27,14 @@ type PeriodComparison = {
 
 type TrackClickInput = {
     linkId: string;
-    userId: string;
+    workspaceId: string;
     headers: Headers;
 };
 
 export type AnalyticsJobPayload = {
     linkId: string;
-    userId: string;
+    workspaceId?: string;
+    userId?: string;
     userAgent: string | null;
     referrer: string | null;
     country: string | null;
@@ -42,7 +43,7 @@ export type AnalyticsJobPayload = {
 };
 
 export async function trackLinkClick(input: TrackClickInput): Promise<void> {
-    const { linkId, userId, headers } = input;
+    const { linkId, workspaceId, headers } = input;
 
     const userAgent = headers.get("user-agent");
     const referrer = headers.get("referer") ?? headers.get("referrer");
@@ -52,7 +53,7 @@ export async function trackLinkClick(input: TrackClickInput): Promise<void> {
 
     const jobPayload: AnalyticsJobPayload = {
         linkId,
-        userId,
+        workspaceId,
         userAgent,
         referrer,
         country,
@@ -64,7 +65,23 @@ export async function trackLinkClick(input: TrackClickInput): Promise<void> {
 }
 
 export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise<void> {
-    const { linkId, userId, userAgent, referrer, country, acceptLanguage, ip } = payload;
+    const { linkId, userAgent, referrer, country, acceptLanguage, ip } = payload;
+
+    let effectiveWorkspaceId = payload.workspaceId;
+    if (!effectiveWorkspaceId) {
+        const link = await prisma.link.findUnique({
+            where: { id: linkId },
+            select: { workspaceId: true },
+        });
+        effectiveWorkspaceId = link?.workspaceId;
+    }
+
+    if (!effectiveWorkspaceId) {
+        console.error(`processAnalyticsJob: Could not resolve workspaceId for link ${linkId}`);
+        return;
+    }
+
+    const workspaceId = effectiveWorkspaceId;
 
     const isBot = isLikelyBot(userAgent);
     const deviceType = detectDeviceType(userAgent);
@@ -97,7 +114,7 @@ export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise
         prisma.clickEvent.create({
             data: {
                 linkId,
-                userId,
+                workspaceId,
                 visitorKey,
                 userAgent,
                 referrer,
@@ -121,7 +138,7 @@ export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise
             },
             create: {
                 linkId,
-                userId,
+                workspaceId,
                 date: today,
                 totalClicks: isBot ? 0 : 1,
                 uniqueClicks: isUniqueVisitor ? 1 : 0,
@@ -148,9 +165,11 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
         },
         select: {
             linkId: true,
-            userId: true,
             isBot: true,
             isUniqueVisitor: true,
+            link: {
+                select: { workspaceId: true },
+            },
         },
     });
 
@@ -158,7 +177,7 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
     string,
         {
             linkId: string;
-            userId: string;
+            workspaceId: string;
             totalClicks: number;
             uniqueClicks: number;
             botClicks: number;
@@ -169,7 +188,7 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
         const key = event.linkId;
         const current = counters.get(key) ?? {
             linkId: event.linkId,
-            userId: event.userId,
+            workspaceId: event.link.workspaceId,
             totalClicks: 0,
             uniqueClicks: 0,
             botClicks: 0,
@@ -197,14 +216,14 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
                 },
             },
             update: {
-                userId: entry.userId,
+                workspaceId: entry.workspaceId,
                 totalClicks: entry.totalClicks,
                 uniqueClicks: entry.uniqueClicks,
                 botClicks: entry.botClicks,
             },
             create: {
                 linkId: entry.linkId,
-                userId: entry.userId,
+                workspaceId: entry.workspaceId,
                 date: start,
                 totalClicks: entry.totalClicks,
                 uniqueClicks: entry.uniqueClicks,
@@ -220,10 +239,11 @@ export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows
     return { rows: upserts.length };
 }
 
-export type UserAnalyticsSummary = Awaited<ReturnType<typeof getUserAnalyticsSummary>>;
+export type WorkspaceAnalyticsSummary = Awaited<ReturnType<typeof getWorkspaceAnalyticsSummary>>;
+export type UserAnalyticsSummary = WorkspaceAnalyticsSummary;
 
-export async function getUserAnalyticsSummary(input: {
-    userId: string;
+export async function getWorkspaceAnalyticsSummary(input: {
+    workspaceId: string;
     days: number | null;
 }) {
     const rangeDays = input.days === null
@@ -252,7 +272,7 @@ export async function getUserAnalyticsSummary(input: {
     ] = await Promise.all([
         prisma.dailyLinkAnalytics.aggregate({
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 ...(start !== null && { date: { gte: start } }),
             },
             _sum: {
@@ -264,7 +284,7 @@ export async function getUserAnalyticsSummary(input: {
         prisma.dailyLinkAnalytics.groupBy({
             by: ["linkId"],
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 ...(start !== null && { date: { gte: start } }),
             },
             _sum: {
@@ -276,7 +296,7 @@ export async function getUserAnalyticsSummary(input: {
         prisma.dailyLinkAnalytics.groupBy({
             by: ["date"],
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 ...(start !== null && { date: { gte: start } }),
             },
             _sum: {
@@ -288,7 +308,7 @@ export async function getUserAnalyticsSummary(input: {
         }),
         prisma.clickEvent.findFirst({
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 ...(start !== null && { createdAt: { gte: start } }),
             },
             orderBy: { createdAt: "desc" },
@@ -307,7 +327,7 @@ export async function getUserAnalyticsSummary(input: {
         previousStart !== null && start !== null && allowedComparison
             ? prisma.dailyLinkAnalytics.aggregate({
                   where: {
-                      userId: input.userId,
+                      workspaceId: input.workspaceId,
                       date: { gte: previousStart, lt: start },
                   },
                   _sum: { totalClicks: true, uniqueClicks: true },
@@ -316,7 +336,7 @@ export async function getUserAnalyticsSummary(input: {
         prisma.clickEvent.groupBy({
             by: ["referrer"],
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 isBot: false,
                 ...(start !== null && { createdAt: { gte: start } }),
             },
@@ -325,7 +345,7 @@ export async function getUserAnalyticsSummary(input: {
         prisma.clickEvent.groupBy({
             by: ["deviceType"],
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 isBot: false,
                 ...(start !== null && { createdAt: { gte: start } }),
             },
@@ -334,7 +354,7 @@ export async function getUserAnalyticsSummary(input: {
         prisma.clickEvent.groupBy({
             by: ["country"],
             where: {
-                userId: input.userId,
+                workspaceId: input.workspaceId,
                 isBot: false,
                 ...(start !== null && { createdAt: { gte: start } }),
             },
@@ -490,3 +510,5 @@ export async function getUserAnalyticsSummary(input: {
         topCountries,
     };
 }
+
+export const getUserAnalyticsSummary = getWorkspaceAnalyticsSummary;

@@ -24,26 +24,13 @@ type MergeResult = {
     error?: string;
 };
 
-type ProfileVersion = {
-    id: string;
-    snapshot: {
-        name: string | null;
-        username: string | null;
-        bio: string | null;
-        image: string | null;
-    };
-    changeType: string;
-    diff: Record<string, unknown>;
-    createdAt: Date;
-};
-
 interface ProfileActionsCardProps {
     hasPassword: boolean;
     profileDraft?: ProfileDraft | null;
-    profileVersions?: ProfileVersion[];
+    workspaceId?: string;
 }
 
-export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActionsCardProps) {
+export function ProfileActionsCard({ hasPassword, profileDraft, workspaceId }: ProfileActionsCardProps) {
     const [generateOpen, setGenerateOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
@@ -133,6 +120,7 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
             });
 
@@ -161,6 +149,7 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
             });
 
@@ -276,7 +265,7 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                                 className="w-full sm:w-auto font-medium"
                                 asChild
                             >
-                                <Link href="/api/export/vcard">
+                                <Link href={workspaceId ? `/api/export/vcard?workspaceId=${encodeURIComponent(workspaceId)}` : "/api/export/vcard"}>
                                     <Download className="h-4 w-4" />
                                     Contact Card (.vcf)
                                 </Link>
@@ -287,7 +276,7 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                                 className="w-full sm:w-auto font-medium"
                                 asChild
                             >
-                                <Link href="/api/export/resume">
+                                <Link href={workspaceId ? `/api/export/resume?workspaceId=${encodeURIComponent(workspaceId)}` : "/api/export/resume"}>
                                     <FileText className="h-4 w-4" />
                                     PDF Profile
                                 </Link>

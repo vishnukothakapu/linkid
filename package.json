@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "prisma generate",
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "postinstall": "node scripts/postinstall-prisma-generate.mjs",
     "migrate:deploy:safe": "node scripts/safe-prisma-migrate-deploy.mjs",
@@ -32,6 +32,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-pdf/renderer": "^4.5.1",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",

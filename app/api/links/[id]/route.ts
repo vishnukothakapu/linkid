@@ -13,12 +13,14 @@ const getMembership = async (userId: string, workspaceId: string) => {
 
 
 import { Prisma } from "@prisma/client";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
 import { PLATFORMS } from "@/lib/constants";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 const LINK_MUTATE_LIMIT = 20;
 const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 20 updates/deletes per minute per user
@@ -29,12 +31,12 @@ export async function PUT(
 ) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const allowed = await checkRateLimit(
-    `link-mutate:${session.user.email}`,
+    `link-mutate:${session.user.id}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS
   );
@@ -241,6 +243,9 @@ export async function PUT(
         });
     });
 
+    // The updated link may be rendered on the public profile — purge the cache.
+    await invalidateProfileCache(link.workspaceId);
+
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
     const error = err as { code?: string; proposedRoute?: string };
@@ -272,12 +277,12 @@ export async function DELETE(
 ) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const allowed = await checkRateLimit(
-    `link-mutate:${session.user.email}`,
+    `link-mutate:${session.user.id}`,
     LINK_MUTATE_LIMIT,
     LINK_MUTATE_WINDOW_MS
   );
@@ -290,6 +295,17 @@ export async function DELETE(
   }
 
   const { id } = await context.params;
+
+  const link = await prisma.link.findUnique({ where: { id } });
+  if (!link) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // Parse body for group deletion options (may be empty for regular links)
   let deleteChildren = false;
@@ -354,6 +370,9 @@ export async function DELETE(
       await tx.link.delete({ where: { id } });
     });
 
+    // Deleted links disappear from the public profile — purge the cache.
+    await invalidateProfileCache(link.workspaceId);
+
     return NextResponse.json({ success: true });
   }
 
@@ -398,6 +417,9 @@ export async function DELETE(
   await prisma.link.delete({
     where: { id },
   });
+
+  // Deleted links disappear from the public profile — purge the cache.
+  await invalidateProfileCache(link.workspaceId);
 
   return NextResponse.json({ success: true });
 }

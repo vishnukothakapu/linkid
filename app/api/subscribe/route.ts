@@ -28,16 +28,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid email and username are required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
+    const workspace = await prisma.workspace.findUnique({
       where: { username },
       select: { id: true, enableEmailCapture: true },
     });
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!workspace) {
+      return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
-    if (!user.enableEmailCapture) {
+    if (!workspace.enableEmailCapture) {
       return NextResponse.json({ error: "Email capture is not enabled for this profile" }, { status: 403 });
     }
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     await prisma.subscriber.create({
       data: {
         email,
-        userId: user.id,
+        workspaceId: workspace.id,
       },
     }).catch(err => {
         // If unique constraint fails, it means already subscribed

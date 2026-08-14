@@ -43,11 +43,17 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
   if (session) redirect("/dashboard");
 
-  const demoUser = await prisma.user.findUnique({
+  const demoWorkspace = await prisma.workspace.findUnique({
     where: { username: "vishnu" },
-    select: { image: true }
+    include: {
+      members: {
+        where: { role: "OWNER" },
+        include: { user: { select: { image: true } } },
+        take: 1,
+      },
+    },
   });
-  const demoImage = demoUser?.image || "https://github.com/vishnukothakapu.png";
+  const demoImage = demoWorkspace?.members[0]?.user?.image || "https://github.com/vishnukothakapu.png";
 
   // Split into two arrays if you want an asynchronous double-row marquee feel,
   // or keep it in one loop. Here all features are passed cleanly into the marquee track rows.

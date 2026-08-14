@@ -16,6 +16,11 @@ enum Role {
   ADMIN
 }
 
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+}
+
 model User {
   id              String    @id @default(uuid())
   name            String?

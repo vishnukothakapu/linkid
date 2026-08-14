@@ -14,6 +14,7 @@ import { LayoutStyle } from "@/app/[username]/types/type";
 import { LivePreview } from "@/components/dashboard/LivePreview";
 
 export default function DashboardClient({
+    workspaceId,
     username,
     initialLinks,
     initialTheme,
@@ -32,6 +33,7 @@ export default function DashboardClient({
     initialThemeColor,
     initialThemeCustom,
 }: {
+    workspaceId: string;
     username: string;
     initialLinks: ProfileLink[];
     initialTheme?: string;
@@ -73,6 +75,7 @@ export default function DashboardClient({
                 headers: {
                     'Content-Type': 'application/json',
                     'x-csrf-token': csrfToken,
+                    'x-workspace-id': workspaceId,
                 },
                 body: JSON.stringify({ enableEmailCapture: newValue }),
             });
@@ -106,6 +109,7 @@ export default function DashboardClient({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    "x-workspace-id": workspaceId,
                 },
                 body: JSON.stringify({ url, label, platform, startDate, endDate, pinCode, isSocialIcon }),
             });
@@ -154,6 +158,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ isPublic }),
         });
@@ -182,7 +187,9 @@ export default function DashboardClient({
     }
 
     async function exportCsv() {
-        const response = await fetch("/api/links/export");
+        const response = await fetch(`/api/links/export?workspaceId=${encodeURIComponent(workspaceId)}`, {
+            headers: { "x-workspace-id": workspaceId },
+        });
 
         if (!response.ok) {
             toast.error("Unable to export CSV");
@@ -200,7 +207,9 @@ export default function DashboardClient({
 
     async function exportSubscribersCsv() {
         try {
-            const response = await fetch("/api/subscribers/export");
+            const response = await fetch(`/api/subscribers/export?workspaceId=${encodeURIComponent(workspaceId)}`, {
+                headers: { "x-workspace-id": workspaceId },
+            });
             if (!response.ok) throw new Error();
 
             const blob = await response.blob();
@@ -223,6 +232,7 @@ export default function DashboardClient({
         await fetch(`/api/links/${id}`, {
             headers: {
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             method: "DELETE",
         });
@@ -249,6 +259,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ deleteChildren }),
         });
@@ -286,6 +297,7 @@ export default function DashboardClient({
             headers: {
                 "Content-Type": "application/json",
                 "x-csrf-token": csrfToken,
+                "x-workspace-id": workspaceId,
             },
             body: JSON.stringify({ label: newName }),
         });
@@ -453,6 +465,7 @@ export default function DashboardClient({
                     </div>
                 ) : activeTab === 'appearance' ? (
                     <AppearanceSection 
+                        workspaceId={workspaceId}
                         initialTheme={theme} 
                         initialLayout={layoutStyle}
                         initialBackgroundImage={backgroundImage ?? undefined}
@@ -462,6 +475,7 @@ export default function DashboardClient({
                     />
                 ) : (
                     <SeoSection 
+                        workspaceId={workspaceId}
                         initialTitle={seoTitle}
                         initialDescription={seoDescription}
                         onUpdateSeo={(title, desc) => {
