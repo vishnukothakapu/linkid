@@ -1,34 +1,8 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
+import { authRateLimit, linksRateLimit, usernameRateLimit, checkLocalRateLimit } from "@/lib/rate-limit";
 import { applyCsrfProtection } from "@/lib/middleware/csrf";
-
-const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
-const redis = hasRedis ? Redis.fromEnv() : null;
-
-const authRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 m") })
-    : null;
-
-const usernameRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(15, "1 m") })
-    : null;
-
-const linksRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 m") })
-    : null;
-
-const localFallbackMap = new Map<string, number>();
-function checkLocalRateLimit(ip: string, limit: number): boolean {
-    const key = `${ip}-${Math.floor(Date.now() / 60000)}`;
-    const current = localFallbackMap.get(key) || 0;
-    if (current >= limit) return false;
-    localFallbackMap.set(key, current + 1);
-    return true;
-}
 
 export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;

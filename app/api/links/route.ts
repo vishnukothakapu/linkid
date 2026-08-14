@@ -13,21 +13,14 @@ import { nestLinks } from "@/lib/linkTree";
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
-import { rateLimit } from "@/lib/rateLimit";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { globalDbCircuitBreaker, CircuitBreakerError } from "@/lib/circuit-breaker";
 
 // Maximum number of links a single user can add to their profile.
 // Prevents unbounded database growth and degraded public profile performance.
 const MAX_LINKS_PER_USER = 20;
 
-// Rate limiter for link creation: 30 requests per minute per IP
-const linksLimiter = rateLimit(30, 60_000);
-
 export async function POST(req: NextRequest) {
-    // Apply IP‑based rate limiting first
-    const limited = await linksLimiter(req);
-    if (limited) return limited;
-
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -37,9 +30,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const isGroup = body?.isGroup === true;
 
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-    });
+    let user;
+    try {
+        user = await globalDbCircuitBreaker.fire(() => prisma.user.findUnique({
+            where: { email: session.user.email },
+        }));
+    } catch (error) {
+        if (error instanceof CircuitBreakerError) {
+            return NextResponse.json({ error: "Service Unavailable - Database Down" }, { status: 503 });
+        }
+        throw error;
+    }
 
     if (!user) {
         return NextResponse.json(
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-            const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const link = await globalDbCircuitBreaker.fire(async () => await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
                 const maxOrder = await tx.link.aggregate({
                     where: { userId: user.id, parentId: null },
                     _max: { position: true },
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
                 });
             }, {
                 isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-            });
+            }), ["LINK_LIMIT_REACHED"]);
 
             // New link is public — purge the cached public profile.
             await invalidateProfileCache(user.id);
@@ -91,6 +92,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ link: { ...link, children: [] } });
         } catch (err: unknown) {
             const error = err as { code?: string };
+            if (err instanceof CircuitBreakerError) {
+                return NextResponse.json({ error: "Service Unavailable - Database Down" }, { status: 503 });
+            }
             if (error?.code === "LINK_LIMIT_REACHED") {
                 return NextResponse.json(
                     { error: `You can add a maximum of ${MAX_LINKS_PER_USER} links.` },
@@ -190,7 +194,7 @@ export async function POST(req: NextRequest) {
     const proposedRoute = customAlias || finalPlatform;
 
     try {
-        const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const link = await globalDbCircuitBreaker.fire(async () => await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const existingLink = await tx.link.findFirst({
                 where: {
                     userId: user.id,
@@ -242,7 +246,7 @@ export async function POST(req: NextRequest) {
             });
         }, {
             isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        });
+        }), ["ROUTE_ALREADY_EXISTS", "INVALID_GROUP", "LINK_LIMIT_REACHED"]);
 
         // New link is public — purge the cached public profile.
         await invalidateProfileCache(user.id);
@@ -250,6 +254,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ link });
     } catch (err: unknown) {
         const error = err as { code?: string };
+
+        if (err instanceof CircuitBreakerError) {
+            return NextResponse.json({ error: "Service Unavailable - Database Down" }, { status: 503 });
+        }
 
         if (error?.code === "ROUTE_ALREADY_EXISTS") {
             return NextResponse.json(
@@ -295,16 +303,32 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    let user;
+    try {
+        user = await globalDbCircuitBreaker.fire(() => prisma.user.findUnique({ where: { email: session.user.email } }));
+    } catch (error) {
+        if (error instanceof CircuitBreakerError) {
+            return NextResponse.json({ error: "Service Unavailable - Database Down" }, { status: 503 });
+        }
+        throw error;
+    }
     if (!user) return NextResponse.json({ links: [] });
 
-    const allLinks = await prisma.link.findMany({
-        where: { userId: user.id },
-        orderBy: [
-            { position: 'asc' },
-            { createdAt: 'asc' }
-        ],
-    });
+    let allLinks;
+    try {
+        allLinks = await globalDbCircuitBreaker.fire(() => prisma.link.findMany({
+            where: { userId: user.id },
+            orderBy: [
+                { position: 'asc' },
+                { createdAt: 'asc' }
+            ],
+        }));
+    } catch (error) {
+        if (error instanceof CircuitBreakerError) {
+            return NextResponse.json({ error: "Service Unavailable - Database Down" }, { status: 503 });
+        }
+        throw error;
+    }
 
     const links = nestLinks(allLinks);
 
