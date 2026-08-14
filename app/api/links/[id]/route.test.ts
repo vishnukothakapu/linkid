@@ -6,6 +6,7 @@ import { PLATFORMS } from "@/lib/constants";
 let mockSession: unknown = null;
 let mockLink: unknown = null;
 let capturedUpdateArgs: unknown = null;
+const invalidatedUserIds: string[] = [];
 
 // ── Register mocks synchronously BEFORE any module import ─────────────────────
 
@@ -17,6 +18,15 @@ mock.module("next-auth", {
 
 mock.module("@/lib/auth", {
     namedExports: { authOptions: {} },
+});
+
+mock.module("@/lib/profileCache", {
+    namedExports: {
+        invalidateProfileCache: (userId: string) => {
+            invalidatedUserIds.push(userId);
+            return Promise.resolve();
+        },
+    },
 });
 
 mock.module("@/lib/prisma", {
@@ -84,7 +94,7 @@ function ctx(id = "test-id") {
 }
 
 function ownerLink(platform = PLATFORMS.GITHUB) {
-    return { id: "test-id", platform, user: { email: "owner@example.com" } };
+    return { id: "test-id", userId: "owner-user-id", platform, user: { email: "owner@example.com" } };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -141,12 +151,31 @@ test("PUT 200 — valid URL matching stored platform updates the link", async ()
     mockSession = { user: { email: "owner@example.com" } };
     mockLink = ownerLink(PLATFORMS.GITHUB);
     capturedUpdateArgs = null;
+    invalidatedUserIds.length = 0;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.success, true);
     assert.ok(data.link, "expected link object in response");
     assert.ok(capturedUpdateArgs, "prisma.link.update should have been called");
+});
+
+test("PUT 200 — successful update invalidates the owner's cached public profile", async () => {
+    mockSession = { user: { email: "owner@example.com" } };
+    mockLink = ownerLink(PLATFORMS.GITHUB);
+    invalidatedUserIds.length = 0;
+    const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
+    assert.equal(res.status, 200);
+    assert.deepEqual(invalidatedUserIds, ["owner-user-id"]);
+});
+
+test("PUT 400 — failed update does not invalidate the cache", async () => {
+    mockSession = { user: { email: "owner@example.com" } };
+    mockLink = ownerLink(PLATFORMS.GITHUB);
+    invalidatedUserIds.length = 0;
+    const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
+    assert.equal(res.status, 400);
+    assert.deepEqual(invalidatedUserIds, []);
 });
 
 test("PUT 200 — isPublic boolean update without URL", async () => {

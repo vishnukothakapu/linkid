@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -27,6 +28,9 @@ export async function PUT(req: NextRequest) {
       where: { id: workspace.id },
       data: { enableEmailCapture },
     });
+
+    // enableEmailCapture renders on the public profile — purge the cache.
+    await invalidateProfileCache(workspace.id);
 
     return NextResponse.json({ success: true, enableEmailCapture: updatedWorkspace.enableEmailCapture }, { status: 200 });
 

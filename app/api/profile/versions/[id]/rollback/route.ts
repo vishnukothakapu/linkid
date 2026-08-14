@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function POST(
   request: NextRequest,
@@ -42,6 +44,11 @@ export async function POST(
     }
 
     const { snapshot, diff } = await rollbackProfileVersion(workspace.id, versionId);
+
+    // Rollback changes the live profile (and possibly the username) — purge the
+    // Redis payload and the Next data cache feeding the sitemap.
+    await invalidateProfileCache(workspace.id);
+    revalidateTag("public-profile", "default");
 
     return NextResponse.json(
       {

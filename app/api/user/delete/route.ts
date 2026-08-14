@@ -6,6 +6,10 @@ import bcrypt from "bcryptjs";
 import { verifyOtp, clearOtp } from "@/lib/deleteOtpStore";
 import { invalidateUserSessions } from "@/lib/sessionInvalidation";
 import { checkRateLimit } from "@/lib/rateLimit";
+import {
+    invalidateProfileCache,
+    invalidateProfileUsername,
+} from "@/lib/profileCache";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -77,11 +81,25 @@ export async function DELETE(req: NextRequest) {
     }
 
 
+    const userWorkspaces = await prisma.workspaceMember.findMany({
+      where: { userId },
+      include: { workspace: { select: { id: true, username: true } } },
+    });
+
     await invalidateUserSessions(userId);
     await clearOtp(userId);
     await prisma.user.delete({
       where: { id: session.user.id },
     });
+
+    // The account no longer exists — drop its cached public profile and clear
+    // its username→workspaceId index entry so any freed usernames resolve fresh.
+    for (const member of userWorkspaces) {
+      await invalidateProfileCache(member.workspace.id);
+      if (member.workspace.username) {
+        await invalidateProfileUsername(member.workspace.username);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

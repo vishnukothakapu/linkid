@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 type Body = { orderedIds?: unknown; groupOrders?: unknown };
 
@@ -153,6 +154,9 @@ export async function POST(req: Request) {
       }
       throw err;
     }
+
+    // Link order is part of the public profile payload — purge the cache.
+    await invalidateProfileCache(workspace.id);
 
     return NextResponse.json({ ok: true, changed: updates.length });
   } catch (err) {

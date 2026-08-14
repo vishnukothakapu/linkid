@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { hasSupportedImageMagicBytes } from "@/lib/imageValidation";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -69,6 +70,9 @@ export async function POST(req: Request) {
         data: { image: result.secure_url },
     });
 
+    // Avatar is rendered on the public profile — purge the cache.
+    await invalidateProfileCache(session.user.id);
+
     return NextResponse.json({ success: true, imageUrl: result.secure_url });
 }
 export async function DELETE() {
@@ -81,6 +85,9 @@ export async function DELETE() {
         where: { id: session.user.id },
         data: { image: null },
     });
+
+    // Avatar removal is reflected on the public profile — purge the cache.
+    await invalidateProfileCache(session.user.id);
 
     return NextResponse.json({ success: true });
 }

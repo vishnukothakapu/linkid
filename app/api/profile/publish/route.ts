@@ -3,6 +3,8 @@ import { resolveActiveWorkspace } from "@/lib/workspace";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +26,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { published, diff } = await publishProfileDraft(workspace.id);
+
+    // Publishing flips the live profile — purge Redis and the Next data cache
+    // (which feeds the sitemap and resume lookup) so the change is immediate.
+    await invalidateProfileCache(workspace.id);
+    revalidateTag("public-profile", "default");
 
     return NextResponse.json(
       {

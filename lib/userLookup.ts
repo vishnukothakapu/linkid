@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import type { Prisma } from "@prisma/client";
 
 import { nestLinks } from "./linkTree";
+import { cacheResolvedProfile, getProfileGeneration, readCachedResolvedProfile } from "./profileCache";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -76,58 +77,76 @@ function shapeWorkspaceProfile(
     return { user, canonicalUsername };
 }
 
-// ---------------------------------------------------------------------------
-// Public API — backward-compatible replacements for the old user-based fns
-// ---------------------------------------------------------------------------
+/**
+ * Database-backed username resolution for workspaces.
+ */
+async function resolveUserByUsernameFromDb(username: string) {
+    const exactWorkspace = await prisma.workspace.findUnique({
+        where: { username },
+        include: workspaceInclude,
+    });
+
+    if (exactWorkspace) {
+        return shapeWorkspaceProfile(
+            exactWorkspace,
+            exactWorkspace.username ?? username
+        );
+    }
+
+    const alias = await prisma.workspaceAlias.findUnique({
+        where: { username },
+    });
+
+    if (!alias) return null;
+
+    const aliasedWorkspace = await prisma.workspace.findUnique({
+        where: { id: alias.workspaceId },
+        include: workspaceInclude,
+    });
+
+    if (!aliasedWorkspace || !aliasedWorkspace.username) return null;
+
+    return shapeWorkspaceProfile(
+        aliasedWorkspace,
+        aliasedWorkspace.username
+    );
+}
+
+export type ResolvedUserProfile = NonNullable<
+    Awaited<ReturnType<typeof resolveUserByUsernameFromDb>>
+>;
 
 /**
- * Resolve a public profile by username.
+ * Resolve a username (canonical or alias) to a public profile.
  *
- * Lookup order:
- *  1. Workspace.username (direct match)
- *  2. WorkspaceAlias.username → Workspace (alias fallback)
- *
- * Returns `{ user, canonicalUsername }` or `null`.
+ * Cache-first: reads the resolved payload from Redis, and only queries
+ * PostgreSQL on a miss. Cache hits are served without touching the database.
  */
-export const resolveUserByUsername = unstable_cache(
-    async (username: string) => {
-        // 1. Direct workspace username match
-        const exactWorkspace = await prisma.workspace.findUnique({
-            where: { username },
-            include: workspaceInclude,
-        });
+export async function resolveUserByUsername(
+    username: string
+): Promise<ResolvedUserProfile | null> {
+    const { userId: cachedOwnerId, payload } =
+        await readCachedResolvedProfile<ResolvedUserProfile>(username);
+    if (payload) {
+        return payload;
+    }
 
-        if (exactWorkspace) {
-            return shapeWorkspaceProfile(
-                exactWorkspace,
-                exactWorkspace.username ?? username
-            );
-        }
+    const capturedGeneration =
+        cachedOwnerId != null ? await getProfileGeneration(cachedOwnerId) : null;
 
-        // 2. Alias fallback
-        const alias = await prisma.workspaceAlias.findUnique({
-            where: { username },
-        });
-
-        if (!alias) return null;
-
-        const aliasedWorkspace = await prisma.workspace.findUnique({
-            where: { id: alias.workspaceId },
-            include: workspaceInclude,
-        });
-
-        if (!aliasedWorkspace) return null;
-
-        if (!aliasedWorkspace || !aliasedWorkspace.username) return null;
-
-        return shapeWorkspaceProfile(
-            aliasedWorkspace,
-            aliasedWorkspace.username
+    const resolved = await resolveUserByUsernameFromDb(username);
+    if (resolved) {
+        const ownerUnchanged =
+            cachedOwnerId != null && cachedOwnerId === resolved.user.id;
+        await cacheResolvedProfile(
+            username,
+            resolved.user.id,
+            resolved,
+            ownerUnchanged ? capturedGeneration : null
         );
-    },
-    ["resolveUserByUsername"],
-    { revalidate: 60, tags: ["public-profile"] }
-);
+    }
+    return resolved;
+}
 
 /**
  * Get public workspace data including resume URL (used by resume download routes).

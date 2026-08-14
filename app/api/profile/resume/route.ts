@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 // Allowed file extensions for resume URLs
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
@@ -110,6 +112,10 @@ export async function PATCH(req: NextRequest) {
                 },
             });
         }
+
+        // The resume URL renders on the public profile (via both cache layers).
+        await invalidateProfileCache(workspace.id);
+        revalidateTag("public-profile", "default");
 
         return NextResponse.json({ success: true });
     } catch (error) {

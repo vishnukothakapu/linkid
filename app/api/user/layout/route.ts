@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { LayoutStyle } from "@/app/[username]/types/type";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -31,6 +32,9 @@ export async function PATCH(req: NextRequest) {
             where: { id: workspace.id },
             data: { layoutStyle: validLayout },
         });
+
+        // Layout style is rendered on the public profile — purge the cache.
+        await invalidateProfileCache(workspace.id);
 
         return NextResponse.json({ success: true, layoutStyle: updatedWorkspace.layoutStyle }, { status: 200 });
     } catch (error) {

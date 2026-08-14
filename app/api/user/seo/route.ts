@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -48,6 +49,8 @@ export async function PATCH(req: NextRequest) {
             },
         });
 
+        // SEO fields feed the public page metadata — purge the cache.
+        await invalidateProfileCache(workspace.id);
         const { revalidateTag } = await import("next/cache");
         revalidateTag("public-profile", "default");
 

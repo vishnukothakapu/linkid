@@ -8,7 +8,8 @@ export async function GET(
 ) {
     try {
         const { username } = await params;
-        const resolved = await resolveWorkspaceByUsernameOrAlias(username);
+        const normalizedUsername = username.toLowerCase();
+        const resolved = await resolveWorkspaceByUsernameOrAlias(normalizedUsername);
         if (!resolved) {
             return NextResponse.json(
                 { error: "User not found" },
@@ -31,6 +32,7 @@ export async function GET(
                         platform: true,
                         url: true,
                         label: true,
+                        pinCode: true,
                     },
                     orderBy: { position: 'asc' },
                 },
@@ -52,7 +54,13 @@ export async function GET(
                 username: workspace.username ?? null,
                 image: owner?.image ?? null,
             },
-            links: workspace.links
+            // PIN-locked links must not expose their destination here (same as
+            // the public profile, which hides it behind PIN verification).
+            links: workspace.links.map(({ pinCode, url, ...link }) => ({
+                ...link,
+                url: pinCode ? null : url,
+                locked: Boolean(pinCode),
+            }))
         }, {
             // Allow CORS for the chrome extension
             headers: {

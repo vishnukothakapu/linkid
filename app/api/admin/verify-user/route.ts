@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         const updatedWorkspace = await prisma.workspace.update({
             where: { id: workspace.id },
             data: { isVerified },
+            select: { id: true, username: true, isVerified: true },
         });
 
         return NextResponse.json({ success: true, workspace: updatedWorkspace });

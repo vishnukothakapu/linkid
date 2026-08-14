@@ -389,5 +389,11 @@ export async function completeAccountMerge(input: {
         transferredSessions: sourceUser.sessions.length,
         deletedSubscribers,
         conflicts,
+        sourceUserId: sourceUser.id,
+        targetUserId: targetUser.id,
+        // The source username's ownership changes on merge (it becomes the
+        // target's alias/canonical username or is freed) — callers clear its
+        // cached username→userId index entry alongside the payload purge.
+        sourceUsername: sourceWorkspace.username ?? null,
     };
 }

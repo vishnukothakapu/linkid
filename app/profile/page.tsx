@@ -8,6 +8,7 @@ import { getProfileVersions } from "@/lib/profileWorkflow";
 
 import { ProfileHeaderCard } from "./ProfileHeaderCard";
 import { AccountInfoCard } from "./AccountInfoCard";
+import { TwoFactorCard } from "./TwoFactorCard";
 import { ProfileActionsCard } from "./ProfileActionsCard";
 import { DangerZoneCard } from "./DangerZoneCard";
 import { ResumeCard } from "./ResumeCard";
@@ -50,6 +51,7 @@ export default async function ProfilePage() {
                 email: true,
                 image: true,
                 password: true,
+                twoFactorEnabled: true,
                 accounts: {
                     select: { provider: true },
                 },
@@ -85,6 +87,11 @@ export default async function ProfilePage() {
                         image: currentUser?.image ?? null,
                         accounts: currentUser?.accounts ?? [],
                     }}
+                />
+
+                <TwoFactorCard
+                    enabled={currentUser?.twoFactorEnabled ?? false}
+                    hasPassword={Boolean(currentUser?.password)}
                 />
 
                 <ResumeCard
