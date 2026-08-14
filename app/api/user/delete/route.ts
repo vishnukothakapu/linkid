@@ -6,6 +6,10 @@ import bcrypt from "bcryptjs";
 import { verifyOtp, clearOtp } from "@/lib/deleteOtpStore";
 import { invalidateUserSessions } from "@/lib/sessionInvalidation";
 import { checkRateLimit } from "@/lib/rateLimit";
+import {
+    invalidateProfileCache,
+    invalidateProfileUsername,
+} from "@/lib/profileCache";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -37,7 +41,7 @@ export async function DELETE(req: NextRequest) {
     const { password, otp } = body as { password?: string; otp?: string };
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, password: true, email: true },
+      select: { id: true, password: true, email: true, username: true },
     });
 
     if (!user) {
@@ -82,6 +86,13 @@ export async function DELETE(req: NextRequest) {
     await prisma.user.delete({
       where: { id: session.user.id },
     });
+
+    // The account no longer exists — drop its cached public profile and clear
+    // its username→userId index entry so the freed username resolves fresh.
+    await invalidateProfileCache(userId);
+    if (user.username) {
+      await invalidateProfileUsername(user.username);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

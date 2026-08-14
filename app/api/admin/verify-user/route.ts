@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         const updatedUser = await prisma.user.update({
             where: { id: targetUserId },
             data: { isVerified },
+            select: { id: true, username: true, isVerified: true },
         });
 
         return NextResponse.json({ success: true, user: updatedUser });
