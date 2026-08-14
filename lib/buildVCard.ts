@@ -1,10 +1,20 @@
-import type { User as PrismaUser, Link as PrismaLink } from "@prisma/client";
+import type { Link as PrismaLink } from "@prisma/client";
+
+export type PublicProfileUser = {
+  name: string | null;
+  username: string | null;
+  email: string | null;
+  bio: string | null;
+  image: string | null;
+};
+
+export type VCardUser = PublicProfileUser;
 
 export function buildVCard({
   user,
   links,
 }: {
-  user: Pick<PrismaUser, "name" | "username" | "email" | "bio" | "image">;
+  user: PublicProfileUser;
   links: PrismaLink[];
 }): string {
   const CRLF = "\r\n";
@@ -31,8 +41,10 @@ export function buildVCard({
     vcard += `URL;TYPE=${escapeText(link.platform.toUpperCase())}:${sanitizeUri(link.url)}${CRLF}`;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
-  vcard += `URL:${sanitizeUri(`${baseUrl}/${user.username}`)}${CRLF}`;
+  if (user.username) {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+    vcard += `URL:${sanitizeUri(`${baseUrl}/${user.username}`)}${CRLF}`;
+  }
   vcard += `END:VCARD${CRLF}`;
   return vcard;
 }

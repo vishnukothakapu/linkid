@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
 
 export async function GET(
     req: Request,
@@ -7,46 +8,51 @@ export async function GET(
 ) {
     try {
         const { username } = await params;
-        const normalizedUsername = username.toLowerCase();
-
-        const user = await prisma.user.findUnique({
-            where: { username: normalizedUsername },
-            select: {
-                id: true,
-                name: true,
-                username: true,
-                image: true,
-                links: {
-                    where: {
-                        isPublic: true,
-                    },
-                    select: {
-                        id: true,
-                        platform: true,
-                        url: true,
-                        label: true,
-                    },
-                    orderBy: {
-                        position: 'asc'
-                    }
-                }
-            }
-        });
-
-        if (!user) {
+        const resolved = await resolveWorkspaceByUsernameOrAlias(username);
+        if (!resolved) {
             return NextResponse.json(
                 { error: "User not found" },
                 { status: 404 }
             );
         }
 
+        const workspace = await prisma.workspace.findUnique({
+            where: { id: resolved.workspaceId },
+            include: {
+                members: {
+                    where: { role: "OWNER" },
+                    include: { user: true },
+                    take: 1,
+                },
+                links: {
+                    where: { isPublic: true },
+                    select: {
+                        id: true,
+                        platform: true,
+                        url: true,
+                        label: true,
+                    },
+                    orderBy: { position: 'asc' },
+                },
+            },
+        });
+
+        if (!workspace) {
+            return NextResponse.json(
+                { error: "User not found" },
+                { status: 404 }
+            );
+        }
+
+        const owner = workspace.members[0]?.user;
+
         return NextResponse.json({
             user: {
-                name: user.name,
-                username: user.username,
-                image: user.image,
+                name: owner?.name ?? workspace.name ?? workspace.username ?? "",
+                username: workspace.username ?? null,
+                image: owner?.image ?? null,
             },
-            links: user.links
+            links: workspace.links
         }, {
             // Allow CORS for the chrome extension
             headers: {

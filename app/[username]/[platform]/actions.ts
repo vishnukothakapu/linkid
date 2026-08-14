@@ -29,7 +29,7 @@ export async function verifyPinAction(linkId: string, pinCode: string) {
     const requestHeaders = await headers();
     await trackLinkClick({
         linkId: link.id,
-        userId: link.userId,
+        workspaceId: link.workspaceId,
         headers: requestHeaders,
     });
 

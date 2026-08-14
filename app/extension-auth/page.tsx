@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 import ClientAuthFlow from "./ClientAuthFlow";
 
 export default async function ExtensionAuthPage({ searchParams }: { searchParams: { extId?: string } }) {
@@ -17,9 +18,16 @@ export default async function ExtensionAuthPage({ searchParams }: { searchParams
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true },
   });
 
-  if (!user?.username) {
+  if (!user) {
+    redirect("/dashboard");
+  }
+
+  const workspace = await resolveActiveWorkspace(user.id);
+
+  if (!workspace?.username) {
     redirect("/dashboard");
   }
 
@@ -29,7 +37,7 @@ export default async function ExtensionAuthPage({ searchParams }: { searchParams
        
        <div className="w-full max-w-md">
          <div className="rounded-3xl border border-white/70 bg-white/70 p-8 shadow-2xl shadow-violet-900/5 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70">
-           <ClientAuthFlow username={user.username} />
+           <ClientAuthFlow username={workspace.username} />
          </div>
        </div>
     </div>

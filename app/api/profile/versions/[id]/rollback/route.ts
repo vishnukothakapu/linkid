@@ -1,8 +1,9 @@
 import { rollbackProfileVersion } from "@/lib/profileWorkflow";
-import { prisma } from "@/lib/prisma";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
@@ -10,22 +11,10 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       );
     }
 
@@ -33,7 +22,7 @@ export async function POST(
 
     const version = await prisma.profileVersion.findUnique({
       where: { id: versionId },
-      select: { userId: true },
+      select: { workspaceId: true },
     });
 
     if (!version) {
@@ -43,14 +32,16 @@ export async function POST(
       );
     }
 
-    if (version.userId !== user.id) {
+    const preferredWorkspaceId = request.headers.get("x-workspace-id") || version.workspaceId;
+    const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+    if (!workspace || workspace.id !== version.workspaceId) {
       return NextResponse.json(
         { error: "Access denied" },
         { status: 403 }
       );
     }
 
-    const { snapshot, diff } = await rollbackProfileVersion(user.id, versionId);
+    const { snapshot, diff } = await rollbackProfileVersion(workspace.id, versionId);
 
     return NextResponse.json(
       {
@@ -62,10 +53,19 @@ export async function POST(
     );
   } catch (error) {
     console.error("Profile rollback error:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to rollback profile";
+    if (error instanceof Error) {
+      if (error.message.includes("empty snapshot")) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      if (error.message.includes("no longer available") || error.message.includes("taken")) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+      if (error.message.includes("not found")) {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+    }
     return NextResponse.json(
-      { error: message },
+      { error: "Failed to rollback profile" },
       { status: 500 }
     );
   }

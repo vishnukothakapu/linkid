@@ -4,7 +4,7 @@ import type { Account } from "@prisma/client";
 export function ConnectedAccounts({
     accounts,
 }: {
-    accounts: Account[];
+    accounts: { id?: string; provider: string }[];
 }) {
     if (accounts.length === 0) {
         return (
@@ -18,7 +18,7 @@ export function ConnectedAccounts({
         <div className="flex flex-wrap gap-2">
             {accounts.map((account) => (
                 <Badge
-                    key={account.id}
+                    key={account.id ?? account.provider}
                     variant="outline"
                     className="capitalize"
                 >

@@ -26,7 +26,7 @@ const PRESET_SOLIDS = [
 ];
 
 export function ThemeBuilderCard({
-  userId,
+  workspaceId,
   initialThemeType,
   initialThemeColor,
   initialThemeCustom,
@@ -34,7 +34,7 @@ export function ThemeBuilderCard({
   userBio,
   userImage,
 }: {
-  userId: string;
+  workspaceId: string;
   initialThemeType?: string | null;
   initialThemeColor?: string | null;
   initialThemeCustom?: string | null;
@@ -125,11 +125,13 @@ export function ThemeBuilderCard({
         headers: {
           "Content-Type": "application/json",
           "x-csrf-token": csrfToken,
+          ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
         },
         body: JSON.stringify({
           themeType,
           themeColor,
           themeCustom,
+          workspaceId,
         }),
       });
 

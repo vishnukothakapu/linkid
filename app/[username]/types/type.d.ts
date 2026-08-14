@@ -16,7 +16,7 @@ export type Link = {
     startDate?: Date | null;
     endDate?: Date | null;
     updatedAt?: Date;
-    userId: string;
+    workspaceId: string;
 }
 
 export type PlatformParams = {

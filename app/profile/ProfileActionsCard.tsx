@@ -41,9 +41,10 @@ interface ProfileActionsCardProps {
     hasPassword: boolean;
     profileDraft?: ProfileDraft | null;
     profileVersions?: ProfileVersion[];
+    workspaceId?: string;
 }
 
-export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActionsCardProps) {
+export function ProfileActionsCard({ hasPassword, profileDraft, workspaceId }: ProfileActionsCardProps) {
     const [generateOpen, setGenerateOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
@@ -133,7 +134,9 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
+                body: JSON.stringify({ workspaceId }),
             });
 
             const data = await response.json();
@@ -161,7 +164,9 @@ export function ProfileActionsCard({ hasPassword, profileDraft }: ProfileActions
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
+                body: JSON.stringify({ workspaceId }),
             });
 
             const data = await response.json();

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 import {
     detectPlatform,
@@ -29,23 +30,17 @@ export async function POST(req: NextRequest) {
 
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
+        return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
     const body = await req.json();
     const isGroup = body?.isGroup === true;
-
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-    });
-
-    if (!user) {
-        return NextResponse.json(
-            { error: "User not found" },
-            { status: 404 }
-        );
-    }
 
     // --- Group creation ---
     if (isGroup) {
@@ -60,19 +55,19 @@ export async function POST(req: NextRequest) {
         try {
             const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
                 const maxOrder = await tx.link.aggregate({
-                    where: { userId: user.id, parentId: null },
+                    where: { workspaceId: workspace.id, parentId: null },
                     _max: { position: true },
                     _count: { id: true },
                 });
 
-                const totalCount = await tx.link.count({ where: { userId: user.id } });
+                const totalCount = await tx.link.count({ where: { workspaceId: workspace.id } });
                 if (totalCount >= MAX_LINKS_PER_USER) {
                     throw Object.assign(new Error("LINK_LIMIT_REACHED"), { code: "LINK_LIMIT_REACHED" });
                 }
 
                 return tx.link.create({
                     data: {
-                        userId: user.id,
+                        workspaceId: workspace.id,
                         platform: "system_group",
                         label: groupLabel,
                         url: "",
@@ -189,7 +184,7 @@ export async function POST(req: NextRequest) {
         const link = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const existingLink = await tx.link.findFirst({
                 where: {
-                    userId: user.id,
+                    workspaceId: workspace.id,
                     OR: [
                         { alias: proposedRoute },
                         { platform: proposedRoute, alias: null }
@@ -204,14 +199,14 @@ export async function POST(req: NextRequest) {
             // Validate parentId if provided
             if (parentId) {
                 const parentGroup = await tx.link.findFirst({
-                    where: { id: parentId, userId: user.id, isGroup: true },
+                    where: { id: parentId, workspaceId: workspace.id, isGroup: true },
                 });
                 if (!parentGroup) {
                     throw Object.assign(new Error("INVALID_GROUP"), { code: "INVALID_GROUP" });
                 }
             }
 
-            const totalCount = await tx.link.count({ where: { userId: user.id } });
+            const totalCount = await tx.link.count({ where: { workspaceId: workspace.id } });
 
             // Enforce per-user link limit atomically inside the transaction
             // to prevent race conditions where concurrent requests bypass the check.
@@ -221,13 +216,13 @@ export async function POST(req: NextRequest) {
 
             // Position within parent scope (top-level or inside group)
             const maxOrder = await tx.link.aggregate({
-                where: { userId: user.id, parentId: parentId },
+                where: { workspaceId: workspace.id, parentId: parentId },
                 _max: { position: true },
             });
 
             return tx.link.create({
                 data: {
-                    userId: user.id,
+                    workspaceId: workspace.id,
                     platform: finalPlatform,
                     alias: customAlias || null,
                     label: finalLabel,
@@ -284,15 +279,15 @@ export async function POST(req: NextRequest) {
 export async function GET() {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!user) return NextResponse.json({ links: [] });
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) return NextResponse.json({ links: [] });
 
     const allLinks = await prisma.link.findMany({
-        where: { userId: user.id },
+        where: { workspaceId: workspace.id },
         orderBy: [
             { position: 'asc' },
             { createdAt: 'asc' }

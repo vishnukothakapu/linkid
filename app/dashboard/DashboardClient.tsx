@@ -14,6 +14,7 @@ import { LayoutStyle } from "@/app/[username]/types/type";
 import { LivePreview } from "@/components/dashboard/LivePreview";
 
 export default function DashboardClient({
+    workspaceId,
     username,
     initialLinks,
     initialTheme,
@@ -32,6 +33,7 @@ export default function DashboardClient({
     initialThemeColor,
     initialThemeCustom,
 }: {
+    workspaceId?: string;
     username: string;
     initialLinks: ProfileLink[];
     initialTheme?: string;
@@ -73,8 +75,9 @@ export default function DashboardClient({
                 headers: {
                     'Content-Type': 'application/json',
                     'x-csrf-token': csrfToken,
+                    ...(workspaceId ? { 'x-workspace-id': workspaceId } : {}),
                 },
-                body: JSON.stringify({ enableEmailCapture: newValue }),
+                body: JSON.stringify({ enableEmailCapture: newValue, workspaceId }),
             });
             if (!response.ok) throw new Error();
             const data = await response.json();
@@ -418,6 +421,7 @@ export default function DashboardClient({
                     </div>
                 ) : activeTab === 'appearance' ? (
                     <AppearanceSection 
+                        workspaceId={workspaceId}
                         initialTheme={theme} 
                         initialLayout={layoutStyle}
                         initialBackgroundImage={backgroundImage ?? undefined}
@@ -427,6 +431,7 @@ export default function DashboardClient({
                     />
                 ) : (
                     <SeoSection 
+                        workspaceId={workspaceId}
                         initialTitle={seoTitle}
                         initialDescription={seoDescription}
                         onUpdateSeo={(title, desc) => {

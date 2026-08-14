@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getUserAnalyticsSummary } from "@/lib/analytics";
 import { generateAnalyticsPDF } from "@/lib/generateAnalyticsPDF";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 // Click history is exported in bounded batches instead of a single
 // unbounded findMany. A link with tens of thousands of clicks would
@@ -37,12 +38,12 @@ function clickToCSVRow(c: ExportClick): string {
     ].join(",");
 }
 
-async function* iterateClicksInBatches(userId: string): AsyncGenerator<ExportClick[]> {
+async function* iterateClicksInBatches(workspaceId: string): AsyncGenerator<ExportClick[]> {
     let cursor: string | undefined;
 
     while (true) {
         const batch: ExportClick[] = await prisma.clickEvent.findMany({
-            where: { userId },
+            where: { workspaceId },
             orderBy: { id: "asc" },
             take: EXPORT_BATCH_SIZE,
             ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -79,7 +80,12 @@ export async function GET(req: NextRequest) {
         return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const userId = session.user.id;
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
+        return new NextResponse("Workspace not found", { status: 404 });
+    }
+
+    const workspaceId = workspace.id;
     const { searchParams } = new URL(req.url);
     const format = searchParams.get("format") ?? "csv";
 
@@ -93,7 +99,7 @@ export async function GET(req: NextRequest) {
 
                 let isFirstRow = true;
                 try {
-                    for await (const batch of iterateClicksInBatches(userId)) {
+                    for await (const batch of iterateClicksInBatches(workspaceId)) {
                         const rows = batch.map(clickToCSVRow);
                         const chunk = (isFirstRow ? "" : "\r\n") + rows.join("\r\n");
                         controller.enqueue(encoder.encode(chunk));
@@ -123,7 +129,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: range.error }, { status: 400 });
         }
 
-        const summary = await getUserAnalyticsSummary({ userId, days: range.days });
+        const summary = await getUserAnalyticsSummary({ workspaceId, days: range.days });
 
         if (format === "json") {
             return NextResponse.json(
@@ -137,11 +143,7 @@ export async function GET(req: NextRequest) {
         }
 
         // format === "pdf"
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { name: true, username: true },
-        });
-        const displayName = user?.name ?? user?.username ?? "";
+        const displayName = workspace.name ?? workspace.username ?? "";
         const generatedDate = new Date().toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
@@ -173,7 +175,7 @@ export async function GET(req: NextRequest) {
         const limit = Math.max(1, Math.min(2000, limitParam ? Number.parseInt(limitParam, 10) || 500 : 500));
 
         const clicks = await prisma.clickEvent.findMany({
-            where: { userId },
+            where: { workspaceId },
             orderBy: { id: "asc" },
             take: limit + 1,
             ...(cursorParam ? { skip: 1, cursor: { id: cursorParam } } : {}),

@@ -10,7 +10,12 @@ import type { User, Account } from "@prisma/client";
 import { ConnectedAccounts } from "./ConnectedAccounts";
 
 type AccountInfoCardProps = {
-    user: User & { accounts: Account[] };
+    user: {
+        name?: string | null;
+        email: string;
+        image?: string | null;
+        accounts?: { provider: string }[];
+    };
 };
 
 export function AccountInfoCard({ user }: AccountInfoCardProps) {
@@ -40,7 +45,7 @@ export function AccountInfoCard({ user }: AccountInfoCardProps) {
                         Connected Accounts
                     </h3>
 
-                    <ConnectedAccounts accounts={user.accounts} />
+                    <ConnectedAccounts accounts={user.accounts ?? []} />
                 </div>
             </CardContent>
         </Card>

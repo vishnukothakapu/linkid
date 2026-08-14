@@ -85,16 +85,12 @@ export default async function PublicProfile({
   const { getPublicUserData } = await import("@/lib/userLookup");
   const publicUserData = await getPublicUserData(resolved.canonicalUsername);
 
-  // Compare against the owner's email fetched separately (server-side, uncached)
-  // so credential/PII fields never enter the public profile cache.
+  // Compare against workspace membership for the authenticated user
   let isOwner = false;
-  if (session?.user?.email) {
-    const owner = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { email: true },
-    });
-    isOwner =
-      owner?.email?.toLowerCase() === session.user.email.toLowerCase();
+  if (session?.user?.id) {
+    const { getWorkspaceMembership } = await import("@/lib/workspace");
+    const role = await getWorkspaceMembership(session.user.id, user.id);
+    isOwner = role !== null;
   }
 
   const bgStyle: React.CSSProperties = {};

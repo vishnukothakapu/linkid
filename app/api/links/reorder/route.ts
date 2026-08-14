@@ -2,18 +2,21 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 
 type Body = { orderedIds?: unknown; groupOrders?: unknown };
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
+      return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+    }
 
     let body: Body;
     try {
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     // Verify ownership: fetch user's link ids
-    const existingLinks = await prisma.link.findMany({ where: { userId: user.id }, select: { id: true, parentId: true, isGroup: true } });
+    const existingLinks = await prisma.link.findMany({ where: { workspaceId: workspace.id }, select: { id: true, parentId: true, isGroup: true } });
     const existingMap = new Map(existingLinks.map((l) => [l.id, l]));
     const existingIds = new Set(existingLinks.map((l) => l.id));
 
@@ -99,7 +102,7 @@ export async function POST(req: Request) {
     }
 
     // Fetch current positions and parentIds
-    const current = await prisma.link.findMany({ where: { userId: user.id }, select: { id: true, position: true, parentId: true } });
+    const current = await prisma.link.findMany({ where: { workspaceId: workspace.id }, select: { id: true, position: true, parentId: true } });
     const currentMap = new Map(current.map((c) => [c.id, { position: c.position, parentId: c.parentId }]));
 
     type UpdatePayload = { id: string; newOrder: number; newParentId: string | null };
@@ -134,7 +137,7 @@ export async function POST(req: Request) {
       await prisma.$transaction(async (tx) => {
         for (const u of updates) {
           const result = await tx.link.updateMany({
-            where: { id: u.id, userId: user.id },
+            where: { id: u.id, workspaceId: workspace.id },
             data: { position: u.newOrder, parentId: u.newParentId },
           });
 

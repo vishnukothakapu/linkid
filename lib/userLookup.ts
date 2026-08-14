@@ -1,107 +1,219 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
-import { Prisma, type Link } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import { nestLinks } from "./linkTree";
 
-// Only public profile fields — never `password`, `email`, `emailVerified`, or
-// TOTP columns. This object is cached by unstable_cache and rendered into the
-// public, unauthenticated profile tree, so credential material must not be here.
-const publicProfileSelect = {
-    id: true,
-    name: true,
-    username: true,
-    bio: true,
-    image: true,
-    backgroundImage: true,
-    theme: true,
-    themeType: true,
-    themeColor: true,
-    themeCustom: true,
-    layoutStyle: true,
-    enableEmailCapture: true,
-    seoTitle: true,
-    seoDescription: true,
-    isVerified: true,
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Shape a Workspace + its OWNER User into the public profile object that the
+ * rest of the app expects (backward-compatible with the old User-based shape).
+ */
+const workspaceInclude = {
+    members: {
+        where: { role: "OWNER" as const },
+        include: {
+            user: {
+                select: { image: true, email: true },
+            },
+        },
+    },
     links: {
         where: { isPublic: true },
-        orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+        orderBy: [
+            { position: "asc" as const },
+            { createdAt: "asc" as const },
+        ],
     },
-} satisfies Prisma.UserSelect;
+} satisfies Prisma.WorkspaceInclude;
 
+type WorkspaceWithOwner = Prisma.WorkspaceGetPayload<{
+    include: typeof workspaceInclude;
+}>;
+
+function shapeWorkspaceProfile(
+    workspace: WorkspaceWithOwner,
+    canonicalUsername: string
+) {
+    const owner = workspace.members.find((m) => m.role === "OWNER")?.user ?? null;
+
+    const rawLinks = workspace.links ?? [];
+    const safeLinks = rawLinks.map((l) => ({
+        ...l,
+        pinCode: l.pinCode ? "locked" : null,
+    }));
+
+    const user = {
+        // Use workspace id as the profile id so downstream code that passes
+        // this id to workspace-scoped APIs gets the right entity.
+        id: workspace.id,
+        name: workspace.name ?? null,
+        username: workspace.username ?? null,
+        bio: workspace.bio ?? null,
+        // image comes from OWNER user, email is omitted for privacy in public lookup
+        image: owner?.image ?? null,
+        email: null,
+        backgroundImage: workspace.backgroundImage ?? null,
+        theme: workspace.theme,
+        themeType: workspace.themeType,
+        themeColor: workspace.themeColor,
+        themeCustom: workspace.themeCustom ?? null,
+        layoutStyle: workspace.layoutStyle,
+        enableEmailCapture: workspace.enableEmailCapture,
+        seoTitle: workspace.seoTitle ?? null,
+        seoDescription: workspace.seoDescription ?? null,
+        isVerified: workspace.isVerified,
+        customDomain: workspace.customDomain ?? null,
+        resumeUrl: workspace.resumeUrl ?? null,
+        resumeDownloadCount: workspace.resumeDownloadCount,
+        links: nestLinks(safeLinks as Parameters<typeof nestLinks>[0]),
+        createdAt: workspace.createdAt,
+    };
+
+    return { user, canonicalUsername };
+}
+
+// ---------------------------------------------------------------------------
+// Public API — backward-compatible replacements for the old user-based fns
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a public profile by username.
+ *
+ * Lookup order:
+ *  1. Workspace.username (direct match)
+ *  2. WorkspaceAlias.username → Workspace (alias fallback)
+ *
+ * Returns `{ user, canonicalUsername }` or `null`.
+ */
 export const resolveUserByUsername = unstable_cache(
     async (username: string) => {
-        const exactUser = await prisma.user.findUnique({
+        // 1. Direct workspace username match
+        const exactWorkspace = await prisma.workspace.findUnique({
             where: { username },
-            select: publicProfileSelect,
+            include: workspaceInclude,
         });
 
-        if (exactUser) {
-            const safeLinks = exactUser.links.map(l => ({ ...l, pinCode: (l as any).pinCode ? "locked" : null }));
-            return { user: { ...exactUser, links: nestLinks(safeLinks as any) }, canonicalUsername: exactUser.username ?? username };
+        if (exactWorkspace) {
+            return shapeWorkspaceProfile(
+                exactWorkspace,
+                exactWorkspace.username ?? username
+            );
         }
 
-        const alias = await prisma.userAlias.findUnique({
+        // 2. Alias fallback
+        const alias = await prisma.workspaceAlias.findUnique({
             where: { username },
         });
 
-        if (!alias) {
-            return null;
-        }
+        if (!alias) return null;
 
-        const user = await prisma.user.findUnique({
-            where: { id: alias.userId },
-            select: publicProfileSelect,
+        const aliasedWorkspace = await prisma.workspace.findUnique({
+            where: { id: alias.workspaceId },
+            include: workspaceInclude,
         });
 
-        if (!user) {
-            return null;
-        }
-        const safeLinks = user.links.map(l => ({ ...l, pinCode: (l as any).pinCode ? "locked" : null }));
-        return { user: { ...user, links: nestLinks(safeLinks as any) }, canonicalUsername: user.username ?? username };
+        if (!aliasedWorkspace) return null;
+
+        if (!aliasedWorkspace || !aliasedWorkspace.username) return null;
+
+        return shapeWorkspaceProfile(
+            aliasedWorkspace,
+            aliasedWorkspace.username
+        );
     },
     ["resolveUserByUsername"],
     { revalidate: 60, tags: ["public-profile"] }
 );
 
 /**
- * Get public user data including resume URL
+ * Get public workspace data including resume URL (used by resume download routes).
  */
 export const getPublicUserData = unstable_cache(
     async (username: string) => {
-        const user = await prisma.user.findUnique({
+        const workspace = await prisma.workspace.findUnique({
             where: { username },
             select: {
                 id: true,
                 name: true,
                 username: true,
                 bio: true,
-                image: true,
                 resumeUrl: true,
+                members: {
+                    where: { role: "OWNER" },
+                    include: { user: { select: { image: true } } },
+                    take: 1,
+                },
             },
         });
 
-        return user;
+        if (!workspace) return null;
+
+        const owner = workspace.members[0]?.user ?? null;
+
+        return {
+            id: workspace.id,
+            name: workspace.name ?? null,
+            username: workspace.username ?? null,
+            bio: workspace.bio ?? null,
+            image: owner?.image ?? null,
+            resumeUrl: workspace.resumeUrl ?? null,
+        };
     },
     ["getPublicUserData"],
     { revalidate: 60, tags: ["public-profile"] }
 );
 
 /**
- * Get all users with a published (public) profile, for sitemap generation.
- * A profile is considered "published" once the user has claimed a username.
+ * Get all workspaces with a published (public) profile, for sitemap generation.
+ * A profile is considered "published" once the workspace has claimed a username.
  */
 export const getPublishedUsernames = unstable_cache(
     async () => {
-        const users = await prisma.user.findMany({
+        const workspaces = await prisma.workspace.findMany({
             where: { username: { not: null } },
             select: { username: true, createdAt: true },
         });
 
-        return users.filter(
-            (u): u is { username: string; createdAt: Date } => u.username !== null
+        return workspaces.filter(
+            (w): w is { username: string; createdAt: Date } => w.username !== null
         );
     },
     ["getPublishedUsernames"],
     { revalidate: 3600, tags: ["public-profile"] }
 );
+
+export async function resolveWorkspaceByUsernameOrAlias(username: string) {
+    const exactWorkspace = await prisma.workspace.findUnique({
+        where: { username },
+        select: { id: true, username: true },
+    });
+
+    if (exactWorkspace) {
+        return {
+            workspaceId: exactWorkspace.id,
+            canonicalUsername: exactWorkspace.username ?? username,
+        };
+    }
+
+    const alias = await prisma.workspaceAlias.findUnique({
+        where: { username },
+    });
+
+    if (!alias) return null;
+
+    const aliasedWorkspace = await prisma.workspace.findUnique({
+        where: { id: alias.workspaceId },
+        select: { id: true, username: true },
+    });
+
+    if (!aliasedWorkspace) return null;
+
+    return {
+        workspaceId: aliasedWorkspace.id,
+        canonicalUsername: aliasedWorkspace.username ?? username,
+    };
+}

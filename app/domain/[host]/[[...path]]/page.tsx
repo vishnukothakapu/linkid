@@ -3,8 +3,8 @@ import prisma from "@/lib/prisma";
 import PublicProfile from "@/app/[username]/page";
 
 // Custom-domain handler. middleware.ts rewrites requests on a pointed custom
-// domain to /domain/{host}{path}; resolve the owner by customDomain and render
-// the same public profile the /{username} route renders.
+// domain to /domain/{host}{path}; resolve the owner workspace by customDomain
+// and render the same public profile the /{username} route renders.
 export default async function DomainProfile({
     params,
 }: {
@@ -12,14 +12,14 @@ export default async function DomainProfile({
 }) {
     const { host } = await params;
 
-    const owner = await prisma.user.findUnique({
+    const workspace = await prisma.workspace.findUnique({
         where: { customDomain: host },
         select: { username: true },
     });
 
-    if (!owner?.username) {
+    if (!workspace?.username) {
         notFound();
     }
 
-    return <PublicProfile params={Promise.resolve({ username: owner.username })} />;
+    return <PublicProfile params={Promise.resolve({ username: workspace.username })} />;
 }

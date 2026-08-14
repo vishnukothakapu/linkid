@@ -21,6 +21,7 @@ export function AppearanceSection({
     onUpdateTheme,
     onUpdateLayout,
     onUpdateBackgroundImage,
+    workspaceId,
 }: {
     initialTheme: string;
     initialLayout: LayoutStyle;
@@ -28,6 +29,7 @@ export function AppearanceSection({
     onUpdateTheme: (theme: string) => void;
     onUpdateLayout: (layout: LayoutStyle) => void;
     onUpdateBackgroundImage: (url: string | null) => void;
+    workspaceId?: string;
 }) {
     const [selectedTheme, setSelectedTheme] = useState(initialTheme || "default");
     const [selectedLayout, setSelectedLayout] = useState(initialLayout || "LIST");
@@ -46,8 +48,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
-                body: JSON.stringify({ theme: themeId }),
+                body: JSON.stringify({ theme: themeId, workspaceId }),
             });
             
             if (!res.ok) {
@@ -76,8 +79,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
-                body: JSON.stringify({ layoutStyle: layoutId }),
+                body: JSON.stringify({ layoutStyle: layoutId, workspaceId }),
             });
             
             if (!res.ok) {
@@ -105,8 +109,9 @@ export function AppearanceSection({
                 headers: {
                     "Content-Type": "application/json",
                     "x-csrf-token": csrfToken,
+                    ...(workspaceId ? { "x-workspace-id": workspaceId } : {}),
                 },
-                body: JSON.stringify({ backgroundImage: backgroundImage || null }),
+                body: JSON.stringify({ backgroundImage: backgroundImage || null, workspaceId }),
             });
             
             if (!res.ok) {
