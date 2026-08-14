@@ -351,10 +351,7 @@ model Subscriber {
   @@index([workspaceId])
 }
 
-enum WorkspaceRole {
-  OWNER
-  EDITOR
-}
+
 
 model WorkspaceMember {
   id          String        @id @default(uuid())
