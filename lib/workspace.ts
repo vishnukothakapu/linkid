@@ -118,7 +118,7 @@ export async function getWorkspaceMembership(
     workspaceId: string
 ): Promise<WorkspaceRole | null> {
     const membership = await prisma.workspaceMember.findUnique({
-        where: { workspaceId_userId: { workspaceId, userId } },
+        where: { userId_workspaceId: { userId, workspaceId } },
     });
     return membership?.role ?? null;
 }

@@ -305,6 +305,11 @@ export async function DELETE(
   if (link.isGroup) {
     await prisma.$transaction(async (tx) => {
       if (deleteChildren) {
+        // Clear all abTestParentId relations for the group's children first to satisfy NoAction
+        await tx.link.updateMany({
+          where: { parentId: id, workspaceId: link.workspaceId },
+          data: { abTestParentId: null },
+        });
         // Delete all children first, then the group
         await tx.link.deleteMany({
           where: { parentId: id, workspaceId: link.workspaceId },
@@ -372,6 +377,9 @@ export async function DELETE(
         where: { id },
       });
     });
+
+    // Deleted links disappear from the public profile — purge the cache.
+    await invalidateProfileCache(link.workspaceId);
 
     return NextResponse.json({ success: true });
   }

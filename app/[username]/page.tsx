@@ -7,7 +7,7 @@ import { ProfileCard } from "./ProfileCard";
 import { ProfileFooter } from "./ProfileFooter";
 import { resolveUserByUsername } from "@/lib/userLookup";
 import { ShareProfileButton } from "./ShareProfileButton";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Link } from "./types/type";
 
 interface ABTestSlot {
@@ -21,7 +21,11 @@ function getDeterministicVariant(visitorId: string, parentId: string): "A" | "B"
     hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
   }
-  return Math.abs(hash) % 2 === 0 ? "A" : "B";
+  // Thomas Wang's 32-bit mix
+  hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+  hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+  hash = (hash >> 16) ^ hash;
+  return ((hash >> 16) & 1) === 0 ? "A" : "B";
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
@@ -106,7 +110,7 @@ export default async function PublicProfile({
   if (session?.user?.id) {
     const { getWorkspaceMembership } = await import("@/lib/workspace");
     const role = await getWorkspaceMembership(session.user.id, user.id);
-    isOwner = role !== null;
+    isOwner = role === "OWNER";
   }
 
   const bgStyle: React.CSSProperties = {};
@@ -131,6 +135,7 @@ export default async function PublicProfile({
   }
 
   const cookieStore = await cookies();
+  const headersList = await headers();
 
   const now = new Date();
   const isActive = (l: Link) => {
@@ -149,7 +154,7 @@ export default async function PublicProfile({
     return variants.find((v) => v.abTestVariant === chosenVariant) || variants[0];
   };
 
-  const visitorId = cookieStore.get("visitor_id")?.value || "default-visitor";
+  const visitorId = headersList.get("x-visitor-id")!;
 
   const rawLinks = (user.links || []) as Link[];
   const abTestGroups = new Map<string, Link[]>();
@@ -181,7 +186,7 @@ export default async function PublicProfile({
       
       for (const [parentId, variants] of childrenGroups.entries()) {
         const activeVariants = variants.filter(isActive);
-        const slot = newChildren.findIndex((l) => "__abTestSlot" in l && (l as any).__abTestSlot === parentId);
+        const slot = newChildren.findIndex((l) => "__abTestSlot" in l && l.__abTestSlot === parentId);
         if (activeVariants.length === 0) {
           if (slot !== -1) {
             newChildren.splice(slot, 1);
@@ -204,7 +209,7 @@ export default async function PublicProfile({
 
   for (const [parentId, variants] of abTestGroups.entries()) {
     const activeVariants = variants.filter(isActive);
-    const slot = preFilteredLinks.findIndex((l) => "__abTestSlot" in l && (l as any).__abTestSlot === parentId);
+    const slot = preFilteredLinks.findIndex((l) => "__abTestSlot" in l && l.__abTestSlot === parentId);
     if (activeVariants.length === 0) {
       if (slot !== -1) {
         preFilteredLinks.splice(slot, 1);
