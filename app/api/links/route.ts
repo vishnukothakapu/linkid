@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { triggerPusherEvent } from "@/lib/pusher";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
 import {
@@ -82,6 +83,8 @@ export async function POST(req: NextRequest) {
 
             // New link is public — purge the cached public profile.
             await invalidateProfileCache(workspace.id);
+
+            await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 
             return NextResponse.json({ link: { ...link, children: [] } });
         } catch (err: unknown) {
@@ -241,6 +244,8 @@ export async function POST(req: NextRequest) {
 
         // New link is public — purge the cached public profile.
         await invalidateProfileCache(workspace.id);
+
+        await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 
         return NextResponse.json({ link });
     } catch (err: unknown) {

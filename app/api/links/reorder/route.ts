@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { triggerPusherEvent } from "@/lib/pusher";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { invalidateProfileCache } from "@/lib/profileCache";
 
@@ -157,6 +158,8 @@ export async function POST(req: Request) {
 
     // Link order is part of the public profile payload — purge the cache.
     await invalidateProfileCache(workspace.id);
+
+    await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 
     return NextResponse.json({ ok: true, changed: updates.length });
   } catch (err) {
