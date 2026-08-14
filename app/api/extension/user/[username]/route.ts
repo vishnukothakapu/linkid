@@ -25,6 +25,7 @@ export async function GET(
                         platform: true,
                         url: true,
                         label: true,
+                        pinCode: true,
                     },
                     orderBy: {
                         position: 'asc'
@@ -46,7 +47,13 @@ export async function GET(
                 username: user.username,
                 image: user.image,
             },
-            links: user.links
+            // PIN-locked links must not expose their destination here (same as
+            // the public profile, which hides it behind PIN verification).
+            links: user.links.map(({ pinCode, url, ...link }) => ({
+                ...link,
+                url: pinCode ? null : url,
+                locked: Boolean(pinCode),
+            }))
         }, {
             // Allow CORS for the chrome extension
             headers: {
