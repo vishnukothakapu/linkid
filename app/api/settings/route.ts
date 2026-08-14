@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import crypto from "crypto";
+import { validateWebhookUrl, WebhookValidationError } from "@/lib/ssrf";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -20,7 +22,11 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
 
-    let updateData: any = {};
+    if (webhookUrl !== undefined && workspace.role !== "OWNER") {
+      return NextResponse.json({ error: "Only workspace owners can configure webhooks" }, { status: 403 });
+    }
+
+    const updateData: { enableEmailCapture?: boolean; webhookUrl?: string | null; webhookSecret?: string | null } = {};
     if (enableEmailCapture !== undefined) {
       if (typeof enableEmailCapture !== "boolean") {
         return NextResponse.json({ error: "enableEmailCapture must be a boolean" }, { status: 400 });
@@ -33,11 +39,12 @@ export async function PUT(req: NextRequest) {
         updateData.webhookUrl = null;
         updateData.webhookSecret = null;
       } else {
+        await validateWebhookUrl(webhookUrl);
         updateData.webhookUrl = webhookUrl;
         
         const existingWorkspace = await prisma.workspace.findUnique({ where: { id: workspace.id }, select: { webhookSecret: true }});
         if (!existingWorkspace?.webhookSecret) {
-          updateData.webhookSecret = require('crypto').randomBytes(32).toString('hex');
+          updateData.webhookSecret = crypto.randomBytes(32).toString('hex');
         }
       }
     }
@@ -61,6 +68,9 @@ export async function PUT(req: NextRequest) {
 
   } catch (error) {
     console.error("Settings update error:", error);
+    if (error instanceof WebhookValidationError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

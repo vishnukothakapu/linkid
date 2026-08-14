@@ -57,6 +57,8 @@ export default function DashboardClient({
     initialWebhookUrl?: string | null;
     initialWebhookSecret?: string | null;
 }) {
+    const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl ?? null);
+    const [webhookSecret, setWebhookSecret] = useState(initialWebhookSecret ?? null);
     const [links, setLinks] = useState(initialLinks);
     const [theme, setTheme] = useState(initialTheme || "default");
     const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>(initialLayout || "LIST");
@@ -462,8 +464,12 @@ export default function DashboardClient({
                 ) : (
                     <WebhookSection
                         workspaceId={workspaceId}
-                        initialWebhookUrl={initialWebhookUrl}
-                        initialWebhookSecret={initialWebhookSecret}
+                        initialWebhookUrl={webhookUrl}
+                        initialWebhookSecret={webhookSecret}
+                        onUpdate={(url, secret) => {
+                            setWebhookUrl(url);
+                            setWebhookSecret(secret);
+                        }}
                     />
                 )}
 

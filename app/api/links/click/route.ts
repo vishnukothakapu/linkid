@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import { resolveUserByUsername } from "@/lib/userLookup";
 
 import crypto from "crypto";
+import { enqueueJob } from "@/lib/jobs";
 
 // 30 requests per minute per IP on the click endpoint.
 const CLICK_RATE_LIMIT = 30;
@@ -71,15 +72,12 @@ export async function POST(req: Request) {
             .update(payload)
             .digest("hex");
             
-        // Fire and forget
-        fetch(link.workspace.webhookUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-linkid-signature": signature
-            },
-            body: payload
-        }).catch(err => console.error("Webhook dispatch failed:", err));
+        // Enqueue a durable delivery job instead of fire-and-forget fetch
+        await enqueueJob("webhook-dispatch", {
+            url: link.workspace.webhookUrl,
+            signature,
+            payload: JSON.parse(payload)
+        });
     }
 
     return NextResponse.json({ success: true });
