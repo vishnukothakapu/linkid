@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast from "react-hot-toast";
 import {
@@ -41,7 +40,6 @@ interface TwoFactorCardProps {
 }
 
 export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>("loading");
@@ -71,34 +69,19 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
     }
   }, []);
 
-  const resetSetupState = useCallback(() => {
-    setSetupStep("loading");
-    setQrCodeUrl("");
-    setSecret("");
-    setVerifyCode("");
-    setVerifyLoading(false);
-    setRecoveryCodes([]);
-    setCodesCopied(false);
-    setError("");
-    setPassword("");
-    setShowPassword(false);
+  const handleSetupOpenChange = useCallback((next: boolean) => {
+    setSetupOpen(next);
+    if (!next) {
+      setSetupStep("loading");
+      setQrCodeUrl("");
+      setSecret("");
+      setVerifyCode("");
+      setVerifyLoading(false);
+      setRecoveryCodes([]);
+      setCodesCopied(false);
+      setError("");
+    }
   }, []);
-
-  const handleSetupOpenChange = useCallback(
-    (next: boolean) => {
-      // The recovery-codes step is non-dismissable: closing the dialog before
-      // acknowledging the codes would leave 2FA enabled without saved codes.
-      // Only "I've saved these codes" (finishSetup) may close it.
-      if (!next && setupStep === "recovery") {
-        return;
-      }
-      setSetupOpen(next);
-      if (!next) {
-        resetSetupState();
-      }
-    },
-    [setupStep, resetSetupState]
-  );
 
   const startSetup = useCallback(async () => {
     setSetupOpen(true);
@@ -140,11 +123,6 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       return;
     }
 
-    if (hasPassword && !password) {
-      setError("Please enter your password.");
-      return;
-    }
-
     setVerifyLoading(true);
     setError("");
     try {
@@ -156,10 +134,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
           "Content-Type": "application/json",
           "x-csrf-token": csrfToken,
         },
-        body: JSON.stringify({
-          ...(hasPassword && { password }),
-          code: trimmedCode,
-        }),
+        body: JSON.stringify({ code: trimmedCode }),
       });
 
       if (!res.ok) {
@@ -169,10 +144,6 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       }
 
       const data = await res.json();
-      // 2FA is active server-side the moment enable succeeds — reflect that
-      // immediately instead of waiting for the recovery-codes step to finish.
-      setIsEnabled(true);
-      router.refresh();
       setRecoveryCodes(data.recoveryCodes || []);
       setSetupStep("recovery");
     } catch {
@@ -180,13 +151,13 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
     } finally {
       setVerifyLoading(false);
     }
-  }, [verifyCode, password, hasPassword, router]);
+  }, [verifyCode]);
 
   const finishSetup = useCallback(() => {
-    resetSetupState();
-    setSetupOpen(false);
+    setIsEnabled(true);
+    handleSetupOpenChange(false);
     toast.success("Two-factor authentication enabled");
-  }, [resetSetupState]);
+  }, [handleSetupOpenChange]);
 
   const copyRecoveryCodes = useCallback(async () => {
     try {
@@ -235,7 +206,6 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       }
 
       setIsEnabled(false);
-      router.refresh();
       handleDisableOpenChange(false);
       toast.success("Two-factor authentication disabled");
     } catch {
@@ -243,7 +213,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
     } finally {
       setDisableLoading(false);
     }
-  }, [hasPassword, password, disableCode, handleDisableOpenChange, router]);
+  }, [hasPassword, password, disableCode, handleDisableOpenChange]);
 
   return (
     <>
@@ -298,7 +268,7 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       <Dialog open={setupOpen} onOpenChange={handleSetupOpenChange}>
         <DialogContent
           className="sm:max-w-md"
-          showCloseButton={setupStep === "setup"}
+          showCloseButton={setupStep !== "loading"}
         >
           {setupStep === "loading" && (
             <div className="flex h-40 flex-col items-center justify-center gap-3 text-muted-foreground">
@@ -365,39 +335,6 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
                   className="text-center text-lg tracking-widest"
                 />
               </div>
-
-              {hasPassword && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="enable-2fa-password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="enable-2fa-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setError("");
-                      }}
-                      autoComplete="current-password"
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      aria-pressed={showPassword}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <DialogFooter>
                 <Button

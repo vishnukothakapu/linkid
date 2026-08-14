@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { sendSupportEmail } from "@/lib/email";
 import {
     consumeRecoveryCode,
     verifyTotpCode,
@@ -110,28 +109,6 @@ export async function POST(req: NextRequest) {
                 lastTotpStep: null,
             },
         });
-
-        // Send a security notification. Non-fatal: an SMTP hiccup must never
-        // fail a request whose 2FA was already disabled. (There is no audit-log
-        // store in the schema yet, so this email is the only durable signal
-        // emitted here.)
-        try {
-            await sendSupportEmail({
-                to: user.email,
-                subject: "Two-factor authentication disabled on your LinkID account",
-                text: "Two-factor authentication was just disabled on your LinkID account. If you did not do this, please review your account security immediately.",
-                html: `
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #fafafa; border-radius: 12px;">
-                        <h2 style="margin: 0 0 8px; color: #7c3aed; font-size: 20px;">Two-factor authentication disabled</h2>
-                        <p style="margin: 0 0 24px; color: #374151; font-size: 14px; line-height: 1.6;">
-                            Two-factor authentication was just disabled on your LinkID account. If you did not do this, please review your account security immediately.
-                        </p>
-                    </div>
-                `,
-            });
-        } catch (error) {
-            console.error("2FA disable notification email failed:", error);
-        }
 
         return NextResponse.json({ success: true }, { status: 200 });
     } catch (error) {

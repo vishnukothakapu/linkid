@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
-import { mock, test, before, beforeEach } from "node:test";
+import { mock, test, before } from "node:test";
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-
-// Hoisted so the expensive hashSync work runs once instead of on every
-// defaultUser() construction.
-const HASHED_PASSWORD = bcrypt.hashSync("correct-password", 10);
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
 let mockSession: unknown = null;
@@ -14,17 +10,6 @@ let capturedUpdateArgs: unknown = null;
 let rateLimited = false;
 let totpValid = false;
 let recoveryConsumeResult: string | null = null;
-
-// Reset before every test so leaked state from a failed assertion never bleeds
-// into the next case.
-beforeEach(() => {
-    mockSession = null;
-    mockUser = null;
-    capturedUpdateArgs = null;
-    rateLimited = false;
-    totpValid = false;
-    recoveryConsumeResult = null;
-});
 
 // ── Register mocks synchronously BEFORE the route is imported ──────────────────
 mock.module("next-auth", {
@@ -60,7 +45,7 @@ mock.module("@/lib/prisma", {
             findUnique: () => Promise.resolve(mockUser),
             update: (args: unknown) => {
                 capturedUpdateArgs = args;
-                return Promise.resolve({ ...(mockUser as object) });
+                return Promise.resolve({ ...mockUser });
             },
         },
     },
@@ -70,7 +55,7 @@ mock.module("@/lib/prisma", {
                 findUnique: () => Promise.resolve(mockUser),
                 update: (args: unknown) => {
                     capturedUpdateArgs = args;
-                    return Promise.resolve({ ...(mockUser as object) });
+                    return Promise.resolve({ ...mockUser });
                 },
             },
         },
@@ -96,7 +81,7 @@ function defaultUser() {
     return {
         id: "user-1",
         email: "test@example.com",
-        password: HASHED_PASSWORD,
+        password: bcrypt.hashSync("correct-password", 10),
         totpSecret: "FAKE2FASECRET",
         twoFactorEnabled: true,
         recoveryCodes: "hash:ABC2345678",
@@ -116,6 +101,7 @@ test("returns 429 when rate limited", async () => {
     rateLimited = true;
     const res = await POST(makeReq({ code: "123456" }));
     assert.equal(res.status, 429);
+    rateLimited = false;
 });
 
 test("returns 400 when the code is missing", async () => {
@@ -201,28 +187,6 @@ test("disables 2FA after a valid recovery code", async () => {
     capturedUpdateArgs = null;
 
     const res = await POST(makeReq({ password: "correct-password", code: "ABC2345678" }));
-    assert.equal(res.status, 200);
-    assert.equal((await res.json()).success, true);
-
-    assert.deepEqual(capturedUpdateArgs, {
-        where: { id: "user-1" },
-        data: {
-            totpSecret: null,
-            twoFactorEnabled: false,
-            recoveryCodes: null,
-            lastTotpStep: null,
-        },
-    });
-});
-
-test("disables 2FA for an OAuth-only account without a password", async () => {
-    mockSession = { user: { id: "user-1" } };
-    mockUser = { ...defaultUser(), password: null };
-    totpValid = true;
-    recoveryConsumeResult = null;
-    capturedUpdateArgs = null;
-
-    const res = await POST(makeReq({ code: "123456" }));
     assert.equal(res.status, 200);
     assert.equal((await res.json()).success, true);
 

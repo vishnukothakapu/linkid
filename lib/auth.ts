@@ -106,29 +106,24 @@ export const authOptions: NextAuthOptions = {
                     }
 
                     // Rate-limit 2FA attempts by account identity and source IP.
-                    // When no real source IP is available (no trusted headers),
-                    // the IP check is skipped entirely rather than routing every
-                    // such request through one shared "unknown" bucket.
                     const ip = req?.headers
                         ? getForwardedIp(
                               new Headers(
                                   req.headers as Record<string, string>
                               )
-                          )
-                        : null;
+                          ) ?? "unknown"
+                        : "unknown";
 
                     const accountAllowed = await checkRateLimit(
                         `2fa-login:${user.id}`,
                         TWO_FACTOR_LOGIN_LIMIT,
                         TWO_FACTOR_LOGIN_WINDOW_MS
                     );
-                    const ipAllowed = ip
-                        ? await checkRateLimit(
-                              `2fa-login-ip:${ip}`,
-                              TWO_FACTOR_LOGIN_IP_LIMIT,
-                              TWO_FACTOR_LOGIN_WINDOW_MS
-                          )
-                        : true;
+                    const ipAllowed = await checkRateLimit(
+                        `2fa-login-ip:${ip}`,
+                        TWO_FACTOR_LOGIN_IP_LIMIT,
+                        TWO_FACTOR_LOGIN_WINDOW_MS
+                    );
 
                     if (!accountAllowed || !ipAllowed) {
                         throw new Error(
@@ -145,14 +140,6 @@ export const authOptions: NextAuthOptions = {
                         : null;
 
                     if (totpResult?.valid) {
-                        // The time step must be present so lastTotpStep is
-                        // always persisted. Without it the same code could be
-                        // accepted again (updateMany would be a no-op) and
-                        // replayed.
-                        if (totpResult.timeStep == null) {
-                            throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
-                        }
-
                         // Persist the accepted time step atomically so the same
                         // code cannot be replayed by a concurrent request.
                         const updateResult = await prisma.user.updateMany({

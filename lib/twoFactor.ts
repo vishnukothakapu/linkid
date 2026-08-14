@@ -9,40 +9,6 @@ export const RECOVERY_CODE_LENGTH = 10;
 
 const RECOVERY_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-// Non-secret prefix stored alongside each bcrypt hash so consumeRecoveryCode
-// only runs the expensive bcrypt comparison against the (typically single)
-// entry whose prefix matches — a few characters leak nothing about the code.
-const RECOVERY_CODE_PREFIX_LENGTH = 4;
-
-function normalizeRecoveryCode(code: string): string {
-    return code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-}
-
-function recoveryCodePrefix(code: string): string {
-    return code.slice(0, RECOVERY_CODE_PREFIX_LENGTH);
-}
-
-// Storage representation for one recovery-code entry: `PREFIX:BCRYPT_HASH`.
-// A missing separator marks a legacy bare bcrypt hash (written before
-// prefixing) which is compared directly for backward compatibility.
-function formatRecoveryCodeEntry(code: string, hash: string): string {
-    return `${recoveryCodePrefix(code)}:${hash}`;
-}
-
-function splitRecoveryCodeEntry(entry: string): {
-    prefix: string | null;
-    hash: string;
-} {
-    const separator = entry.indexOf(":");
-    if (separator === -1) {
-        return { prefix: null, hash: entry };
-    }
-    return {
-        prefix: entry.slice(0, separator),
-        hash: entry.slice(separator + 1),
-    };
-}
-
 export function generateTotpSecret(): string {
     return generateSecret();
 }
@@ -102,9 +68,7 @@ export function generateRecoveryCodes(count: number = RECOVERY_CODES_COUNT): str
 }
 
 export async function hashRecoveryCode(code: string): Promise<string> {
-    const normalized = normalizeRecoveryCode(code);
-    const hash = await bcrypt.hash(normalized, 10);
-    return formatRecoveryCodeEntry(normalized, hash);
+    return bcrypt.hash(code, 10);
 }
 
 export async function hashRecoveryCodes(codes: string[]): Promise<string> {
@@ -119,11 +83,10 @@ export function formatRecoveryCodes(codes: string[]): string {
 /**
  * Attempts to consume a one-time recovery code.
  *
- * Recovery codes are stored as `PREFIX:BCRYPT_HASH` entries, one per line. The
- * non-secret prefix narrows the expensive bcrypt comparison to matching
- * entries. When a code matches, its entry is removed so it cannot be reused.
+ * Recovery codes are stored hashed (bcrypt), one per line. When a code
+ * matches, it is removed from the list so it cannot be reused.
  *
- * @returns the remaining stored entries joined by newlines, or `null` when the
+ * @returns the remaining hashed codes joined by newlines, or `null` when the
  *          supplied code is not a valid recovery code.
  */
 export async function consumeRecoveryCode(
@@ -134,26 +97,16 @@ export async function consumeRecoveryCode(
         return null;
     }
 
-    const normalized = normalizeRecoveryCode(code);
+    const normalized = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     if (!normalized) {
         return null;
     }
 
-    const entries = storedHashedCodes.split("\n");
-    const prefix = recoveryCodePrefix(normalized);
+    const codes = storedHashedCodes.split("\n");
 
-    // Only compare against entries whose prefix matches (or legacy bare-hash
-    // entries, which must be tried unconditionally). This keeps the cost of a
-    // wrong guess at one bcrypt compare instead of one per stored code.
-    const candidates = entries.filter((entry) => {
-        const { prefix: entryPrefix } = splitRecoveryCodeEntry(entry);
-        return entryPrefix === null || entryPrefix === prefix;
-    });
-
-    for (const entry of candidates) {
-        const { hash } = splitRecoveryCodeEntry(entry);
-        if (await bcrypt.compare(normalized, hash)) {
-            return entries.filter((candidate) => candidate !== entry).join("\n");
+    for (const entry of codes) {
+        if (await bcrypt.compare(normalized, entry)) {
+            return codes.filter((hash) => hash !== entry).join("\n");
         }
     }
 

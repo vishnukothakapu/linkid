@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mock, test, before, beforeEach } from "node:test";
+import { mock, test, before } from "node:test";
 import { NextRequest } from "next/server";
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
@@ -7,15 +7,6 @@ let mockSession: unknown = null;
 let mockUser: unknown = null;
 let capturedUpdateArgs: unknown = null;
 let rateLimited = false;
-
-// Reset before every test so leaked state from a failed assertion never bleeds
-// into the next case.
-beforeEach(() => {
-    mockSession = null;
-    mockUser = null;
-    capturedUpdateArgs = null;
-    rateLimited = false;
-});
 
 // ── Register mocks synchronously BEFORE the route is imported ──────────────────
 mock.module("next-auth", {
@@ -49,7 +40,7 @@ mock.module("@/lib/prisma", {
             findUnique: () => Promise.resolve(mockUser),
             update: (args: unknown) => {
                 capturedUpdateArgs = args;
-                return Promise.resolve({ ...(mockUser as object) });
+                return Promise.resolve({ ...mockUser });
             },
         },
     },
@@ -59,7 +50,7 @@ mock.module("@/lib/prisma", {
                 findUnique: () => Promise.resolve(mockUser),
                 update: (args: unknown) => {
                     capturedUpdateArgs = args;
-                    return Promise.resolve({ ...(mockUser as object) });
+                    return Promise.resolve({ ...mockUser });
                 },
             },
         },
@@ -92,6 +83,7 @@ test("returns 429 when rate limited", async () => {
     rateLimited = true;
     const res = await POST(makeReq());
     assert.equal(res.status, 429);
+    rateLimited = false;
 });
 
 test("returns 400 when 2FA is already enabled", async () => {
