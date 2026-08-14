@@ -3,12 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
-const getMembership = async (userId: string, workspaceId: string) => {
-  return await prisma.workspaceMember.findFirst({
-    where: { userId, workspaceId },
-  });
-};
-
 
 
 
@@ -65,25 +59,14 @@ export async function PUT(
     ? rawExplicitPlatform as Platform
     : null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const link = await prisma.link.findUnique({
-    where: { id },
-  });
-
+  const link = await prisma.link.findUnique({ where: { id } });
   if (!link) {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const membership = await getMembership(user.id, link.workspaceId);
-  if (!membership) {
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -316,27 +299,7 @@ export async function DELETE(
     // No body is fine for regular link deletion
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  });
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const link = await prisma.link.findUnique({
-    where: { id },
-  });
-
-  if (!link) {
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });
-  }
-
-  const membership = await getMembership(user.id, link.workspaceId);
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   // Group deletion with transaction
   if (link.isGroup) {
