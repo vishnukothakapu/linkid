@@ -10,6 +10,7 @@ import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { eventBus } from "@/lib/event-bus";
 
 const LINK_MUTATE_LIMIT = 20;
 const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 20 updates/deletes per minute per user
@@ -222,6 +223,15 @@ export async function PUT(
     // The updated link may be rendered on the public profile — purge the cache.
     await invalidateProfileCache(link.userId);
 
+    eventBus.publish({
+        actorId: link.userId,
+        actionType: link.isGroup ? "UPDATE_GROUP" : "UPDATE_LINK",
+        resourceId: updatedLink.id,
+        oldState: link,
+        newState: updatedLink,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+    });
+
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
     const error = err as { code?: string; proposedRoute?: string };
@@ -325,6 +335,14 @@ export async function DELETE(
     // Deleted links disappear from the public profile — purge the cache.
     await invalidateProfileCache(link.userId);
 
+    eventBus.publish({
+        actorId: link.userId,
+        actionType: "DELETE_GROUP",
+        resourceId: link.id,
+        oldState: link,
+        ipAddress: req.headers.get("x-forwarded-for") || undefined,
+    });
+
     return NextResponse.json({ success: true });
   }
 
@@ -335,6 +353,14 @@ export async function DELETE(
 
   // Deleted links disappear from the public profile — purge the cache.
   await invalidateProfileCache(link.userId);
+
+  eventBus.publish({
+      actorId: link.userId,
+      actionType: "DELETE_LINK",
+      resourceId: link.id,
+      oldState: link,
+      ipAddress: req.headers.get("x-forwarded-for") || undefined,
+  });
 
   return NextResponse.json({ success: true });
 }

@@ -53,6 +53,7 @@ model User {
   subscribers   Subscriber[]
   isVerified    Boolean  @default(false)
   role          Role     @default(USER)
+  auditLogs     AuditLog[]
   createdAt     DateTime @default(now())
 
   theme         String   @default("default")
@@ -325,4 +326,18 @@ model Subscriber {
 
   @@unique([email, userId])
   @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String
+  actor       User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actionType  String
+  resourceId  String?
+  oldState    Json?
+  newState    Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
 }

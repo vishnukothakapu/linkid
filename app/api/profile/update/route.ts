@@ -3,6 +3,7 @@ import { upsertProfileDraft } from "@/lib/profileWorkflow";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { invalidateProfileCache } from "@/lib/profileCache";
+import { eventBus } from "@/lib/event-bus";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -28,6 +29,22 @@ export async function PATCH(req: NextRequest) {
     // Drafted edits land on the public profile once published — purge the cache
     // so any published (live) version is never served stale.
     await invalidateProfileCache(userId);
+
+    eventBus.publish({
+      actorId: userId,
+      actionType: "UPDATE_PROFILE_DRAFT",
+      resourceId: draft.id,
+      newState: {
+        username,
+        name,
+        bio,
+        image,
+        themeType,
+        themeColor,
+        themeCustom,
+      },
+      ipAddress: req.headers.get("x-forwarded-for") || req.ip || undefined,
+    });
 
     return NextResponse.json({ success: true, draft }, { status: 200 });
 
