@@ -51,6 +51,8 @@
     "nodemailer": "^7.0.12",
     "otplib": "^13.4.1",
     "pg": "^8.16.3",
+    "pusher": "^5.3.4",
+    "pusher-js": "^8.6.0",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",

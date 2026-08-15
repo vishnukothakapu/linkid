@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { triggerPusherEvent } from "@/lib/pusher";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
 import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
@@ -225,6 +226,8 @@ export async function PUT(
     // The updated link may be rendered on the public profile — purge the cache.
     await invalidateProfileCache(link.workspaceId);
 
+    await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
+
     return NextResponse.json({ success: true, link: updatedLink });
   } catch (err: unknown) {
     const error = err as { code?: string; proposedRoute?: string };
@@ -330,6 +333,8 @@ export async function DELETE(
     // Deleted links disappear from the public profile — purge the cache.
     await invalidateProfileCache(link.workspaceId);
 
+    await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
+
     return NextResponse.json({ success: true });
   }
 
@@ -340,6 +345,8 @@ export async function DELETE(
 
   // Deleted links disappear from the public profile — purge the cache.
   await invalidateProfileCache(link.workspaceId);
+
+  await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
 
   return NextResponse.json({ success: true });
 }

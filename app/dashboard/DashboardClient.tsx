@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getPusherClient } from "@/lib/pusher";
 import { DashboardNavbar } from "@/app/components/DashboardNavbar";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,6 +17,7 @@ import { LivePreview } from "@/components/dashboard/LivePreview";
 import { WebhookSection } from "./WebhookSection";
 
 export default function DashboardClient({
+    userId,
     workspaceId,
     username,
     initialLinks,
@@ -36,6 +39,7 @@ export default function DashboardClient({
     initialWebhookUrl,
     initialWebhookSecret,
 }: {
+    userId?: string;
     workspaceId: string;
     username: string;
     initialLinks: ProfileLink[];
@@ -59,7 +63,32 @@ export default function DashboardClient({
 }) {
     const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl ?? null);
     const [webhookSecret, setWebhookSecret] = useState(initialWebhookSecret ?? null);
+    const router = useRouter();
     const [links, setLinks] = useState(initialLinks);
+
+    useEffect(() => {
+        setLinks(initialLinks);
+    }, [initialLinks]);
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const pusher = getPusherClient();
+        if (!pusher) return;
+
+        const channelName = `private-user-${userId}`;
+        const channel = pusher.subscribe(channelName);
+
+        channel.bind('links-updated', () => {
+            router.refresh();
+        });
+
+        return () => {
+            channel.unbind_all();
+            pusher.unsubscribe(channelName);
+        };
+    }, [userId, router]);
+
     const [theme, setTheme] = useState(initialTheme || "default");
     const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>(initialLayout || "LIST");
     const [backgroundImage, setBackgroundImage] = useState<string | null>(initialBackgroundImage || "");
