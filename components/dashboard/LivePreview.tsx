@@ -1,7 +1,7 @@
 import React from "react";
-import { ProfileCard } from "@/app/[username]/ProfileCard";
-import type { Link as ProfileLink } from "@/app/[username]/types/type";
-import { LayoutStyle } from "@/app/[username]/types/type";
+import { ProfileCard } from "@/app/[locale]/[username]/ProfileCard";
+import type { Link as ProfileLink } from "@/app/[locale]/[username]/types/type";
+import { LayoutStyle } from "@/app/[locale]/[username]/types/type";
 
 interface LivePreviewProps {
     username: string;

@@ -5,6 +5,10 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 import { applyCsrfProtection } from "@/lib/middleware/csrf";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from '@/i18n/routing';
+
+const intlMiddleware = createMiddleware(routing);
 
 const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
 const redis = hasRedis ? Redis.fromEnv() : null;
@@ -59,14 +63,26 @@ export async function middleware(req: NextRequest) {
 
     const token = await getToken({ req });
 
+    let pathnameWithoutLocale = pathname;
+    let matchedLocale = "";
+    for (const locale of routing.locales) {
+        if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+            pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
+            matchedLocale = locale;
+            break;
+        }
+    }
+
+    const localePrefix = matchedLocale ? `/${matchedLocale}` : "";
+
     // If logged in & trying to access /login or /register → redirect to dashboard
-    if (token && (pathname === "/login" || pathname === "/register")) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
+    if (token && (pathnameWithoutLocale === "/login" || pathnameWithoutLocale === "/register")) {
+        return NextResponse.redirect(new URL(`${localePrefix}/dashboard`, req.url));
     }
 
     // If NOT logged in & trying to access /dashboard → redirect to login (#398)
-    if (!token && pathname.startsWith("/dashboard")) {
-        return NextResponse.redirect(new URL("/login", req.url));
+    if (!token && pathnameWithoutLocale.startsWith("/dashboard")) {
+        return NextResponse.redirect(new URL(`${localePrefix}/login`, req.url));
     }
 
     const host = req.headers.get("host");
@@ -109,16 +125,21 @@ export async function middleware(req: NextRequest) {
       upgrade-insecure-requests;
     `.replace(/\s{2,}/g, " ").trim();
 
+    // Use next-intl middleware instead of NextResponse.next()
+    const response = intlMiddleware(req);
+
+    // Apply headers to the next-intl response
+    // For request headers (so server components see them):
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-nonce", nonce);
-    requestHeaders.set("Content-Security-Policy", cspHeader);
+    requestHeaders.set("content-security-policy", cspHeader);
 
-    const response = NextResponse.next({
-        request: {
-            headers: requestHeaders,
-        },
+    requestHeaders.forEach((value, key) => {
+        response.headers.set(`x-middleware-request-${key}`, value);
     });
-
+    response.headers.set("x-middleware-override-headers", Array.from(requestHeaders.keys()).join(','));
+    
+    // For response headers (so browser sees them):
     response.headers.set("Content-Security-Policy", cspHeader);
     return response;
 }

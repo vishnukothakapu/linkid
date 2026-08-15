@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
-import PublicProfile from "@/app/[username]/page";
+import PublicProfile from "@/app/[locale]/[username]/page";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getLocale } from "next-intl/server";
 
 // Custom-domain handler. middleware.ts rewrites requests on a pointed custom
 // domain to /domain/{host}{path}; resolve the owner workspace by customDomain
@@ -21,5 +23,12 @@ export default async function DomainProfile({
         notFound();
     }
 
-    return <PublicProfile params={Promise.resolve({ username: workspace.username })} />;
+    const locale = await getLocale();
+    const messages = await getMessages();
+
+    return (
+        <NextIntlClientProvider locale={locale} messages={messages}>
+            <PublicProfile params={Promise.resolve({ username: workspace.username })} />
+        </NextIntlClientProvider>
+    );
 }

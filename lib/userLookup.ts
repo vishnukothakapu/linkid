@@ -18,7 +18,7 @@ const workspaceInclude = {
         where: { role: "OWNER" as const },
         include: {
             user: {
-                select: { image: true, email: true },
+                select: { image: true },
             },
         },
     },

@@ -1,0 +1,120 @@
+{
+  "Dashboard": {
+    "title": "Dashboard",
+    "description": "Manage your profile",
+    "AppearanceSection": {
+      "title": "Appearance",
+      "description": "Customize your profile"
+    },
+    "SeoSection": {
+      "title": "SEO Settings",
+      "description": "Manage your search engine presence"
+    },
+    "AnalyticsOverview": {
+      "title": "Analytics",
+      "views": "Total Views",
+      "clicks": "Total Clicks"
+    },
+    "LinkIdCard": {
+      "title": "Your LinkID",
+      "share": "Share your LinkID"
+    }
+  },
+  "PublicProfile": {
+    "reportProfile": "Report Profile",
+    "EmptyProfileState": {
+      "title": "No links yet",
+      "description": "This profile has no public links."
+    },
+    "ProfileFooter": {
+      "createYourOwn": "Create your own LinkID"
+    },
+    "ShareProfileButton": {
+      "share": "Share Profile",
+      "copy": "Copy Link",
+      "copied": "Copied!"
+    },
+    "NewsletterSubscribeBlock": {
+      "subscribe": "Subscribe",
+      "placeholder": "Your email",
+      "success": "Subscribed!"
+    },
+    "ProfileCTA": {
+      "getStarted": "Get Started for Free"
+    },
+    "LockedLinkView": {
+      "title": "Locked Link",
+      "description": "Enter pin to view",
+      "submit": "Unlock"
+    },
+    "Preview": {
+      "warning": "This is a preview. Links are disabled."
+    }
+  },
+  "Landing": {
+    "title": "Welcome to LinkID",
+    "description": "Your single link for everything",
+    "cta": {
+      "title": "Your professional identity, simplified.",
+      "description": "Create your LinkID in under a minute and share one memorable URL everywhere.",
+      "button": "Get Started"
+    },
+    "footer": {
+      "description": "One identity. Infinite professional links. Built for developers who value clean, predictable URLs."
+    },
+    "features": {
+      "title": "Features",
+      "oneUsername": "One username across GitHub, LinkedIn, LeetCode, YouTube, and more",
+      "autoDetect": "Auto platform detection — paste any URL and the platform is identified instantly",
+      "realTime": "Real-time dashboard with instant add, edit, and delete",
+      "oauth": "OAuth login via Google & GitHub, plus email/password auth"
+    }
+  },
+  "Common": {
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish"
+  },
+  "ContactUs": {
+    "title": "Contact Us",
+    "description": "Get in touch with our team"
+  },
+  "About": {
+    "title": "About LinkID",
+    "description": "Your professional identity, simplified.",
+    "badge": "About",
+    "whatIsTitle": "What is LinkID?",
+    "whatIsP1": "LinkID is a free, open-source link management platform built for developers and professionals. Instead of pasting long, forgettable URLs across every platform, you get one clean username and predictable links for every profile you own.",
+    "whatIsP2": "Share {github} or {linkedin} — and anyone who clicks it lands exactly where you want them, every time.",
+    "featuresTitle": "Features",
+    "f1": "One username across GitHub, LinkedIn, LeetCode, YouTube, and more",
+    "f2": "Auto platform detection — paste any URL and the platform is identified instantly",
+    "f3": "Real-time dashboard with instant add, edit, and delete",
+    "f4": "OAuth login via Google & GitHub, plus email/password auth",
+    "f5": "Public profile page shareable anywhere",
+    "f6": "Dark, light, and system theme support",
+    "f7": "Fully responsive, mobile-first design",
+    "openSourceTitle": "Open Source",
+    "openSourceP1": "LinkID is built entirely in the open under the {license}. Contributions, bug reports, and feature requests are always welcome.",
+    "github": "GitHub:",
+    "contributingGuide": "Contributing Guide:",
+    "contactTitle": "Get in Touch",
+    "contactP1": "Have questions, ideas, or want to contribute? Reach out through any of the following:",
+    "githubIssues": "GitHub Issues:",
+    "email": "Email:",
+    "githubDiscussions": "GitHub Discussions:",
+    "back": "Back to Home"
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "description": "How we handle your data."
+  },
+  "Terms": {
+    "title": "Terms of Service",
+    "description": "Rules for using LinkID."
+  },
+  "NotFound": {
+    "title": "Page Not Found",
+    "description": "The page you are looking for does not exist."
+  }
+}
