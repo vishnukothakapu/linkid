@@ -66,6 +66,8 @@ export default async function DashboardPage() {
             initialThemeType={workspace.profileDraft?.themeType ?? workspace.themeType}
             initialThemeColor={workspace.profileDraft?.themeColor ?? workspace.themeColor}
             initialThemeCustom={workspace.profileDraft?.themeCustom ?? workspace.themeCustom}
+            initialWebhookUrl={activeWorkspace.role === 'OWNER' ? workspace.webhookUrl : undefined}
+            initialWebhookSecret={activeWorkspace.role === 'OWNER' ? workspace.webhookSecret : undefined}
         />
     );
 }

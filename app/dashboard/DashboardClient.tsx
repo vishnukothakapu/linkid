@@ -14,6 +14,7 @@ import { AppearanceSection } from "./AppearanceSection";
 import { SeoSection } from "./SeoSection";
 import { LayoutStyle } from "@/app/[username]/types/type";
 import { LivePreview } from "@/components/dashboard/LivePreview";
+import { WebhookSection } from "./WebhookSection";
 
 export default function DashboardClient({
     userId,
@@ -35,6 +36,8 @@ export default function DashboardClient({
     initialThemeType,
     initialThemeColor,
     initialThemeCustom,
+    initialWebhookUrl,
+    initialWebhookSecret,
 }: {
     userId?: string;
     workspaceId: string;
@@ -55,7 +58,11 @@ export default function DashboardClient({
     initialThemeType?: string;
     initialThemeColor?: string;
     initialThemeCustom?: string | null;
+    initialWebhookUrl?: string | null;
+    initialWebhookSecret?: string | null;
 }) {
+    const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl ?? null);
+    const [webhookSecret, setWebhookSecret] = useState(initialWebhookSecret ?? null);
     const router = useRouter();
     const [links, setLinks] = useState(initialLinks);
 
@@ -87,7 +94,7 @@ export default function DashboardClient({
     const [backgroundImage, setBackgroundImage] = useState<string | null>(initialBackgroundImage || "");
     const [seoTitle, setSeoTitle] = useState(initialSeoTitle || "");
     const [seoDescription, setSeoDescription] = useState(initialSeoDescription || "");
-    const [activeTab, setActiveTab] = useState<"links" | "appearance" | "seo">("links");
+    const [activeTab, setActiveTab] = useState<"links" | "appearance" | "seo" | "webhooks">("links");
     const [showAdd, setShowAdd] = useState(false);
     const [showGroupAdd, setShowGroupAdd] = useState(false);
     const [isEmailCaptureEnabled, setIsEmailCaptureEnabled] = useState(enableEmailCapture ?? false);
@@ -390,6 +397,12 @@ export default function DashboardClient({
                     >
                         SEO
                     </button>
+                    <button 
+                        className={`pb-2 px-1 text-sm font-medium ${activeTab === 'webhooks' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground'}`}
+                        onClick={() => setActiveTab('webhooks')}
+                    >
+                        Webhooks
+                    </button>
                 </div>
 
                 {activeTab === 'links' ? (
@@ -467,7 +480,7 @@ export default function DashboardClient({
                         onUpdateLayout={setLayoutStyle}
                         onUpdateBackgroundImage={setBackgroundImage}
                     />
-                ) : (
+                ) : activeTab === 'seo' ? (
                     <SeoSection 
                         workspaceId={workspaceId}
                         initialTitle={seoTitle}
@@ -475,6 +488,16 @@ export default function DashboardClient({
                         onUpdateSeo={(title, desc) => {
                             setSeoTitle(title);
                             setSeoDescription(desc);
+                        }}
+                    />
+                ) : (
+                    <WebhookSection
+                        workspaceId={workspaceId}
+                        initialWebhookUrl={webhookUrl}
+                        initialWebhookSecret={webhookSecret}
+                        onUpdate={(url, secret) => {
+                            setWebhookUrl(url);
+                            setWebhookSecret(secret);
                         }}
                     />
                 )}
