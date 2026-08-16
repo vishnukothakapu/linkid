@@ -4,14 +4,24 @@ import { Copy, Check, ExternalLink, Link2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: React.ReactNode }) {
+export function LinkIdCard({
+  username,
+  qrCode,
+}: {
+  username: string;
+  qrCode?: React.ReactNode;
+}) {
   const [copied, setCopied] = useState(false);
 
-  function copyProfile() {
-    navigator.clipboard.writeText(`linkid.qzz.io/${username}`);
-    setCopied(true);
-    toast.success("Profile link copied successfully!");
-    setTimeout(() => setCopied(false), 1200);
+  async function copyProfile() {
+    try {
+      await navigator.clipboard.writeText(`https://linkid.qzz.io/${username}`);
+      setCopied(true);
+      toast.success("Profile link copied successfully!");
+      setTimeout(() => setCopied(false), 1200);
+    } catch (error) {
+      toast.error("Unable to copy profile link. Please try again.");
+    }
   }
 
   return (
@@ -21,23 +31,21 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
           <Link2 className="h-4 w-4 sm:h-5 sm:w-5" />
           Your LinkID
         </CardTitle>
-        <div className="flex-shrink-0">
-          {qrCode}
-        </div>
+        <div className="flex-shrink-0">{qrCode}</div>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Link box */}
         <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm font-mono w-full sm:w-auto">
-          <code className="truncate">
-            linkid.qzz.io/{username}
-          </code>
+          <code className="truncate">linkid.qzz.io/{username}</code>
 
           <Button
             size="icon"
             variant="ghost"
             onClick={copyProfile}
             className="shrink-0"
+            aria-label="Copy profile link"
+            title="Copy profile link"
           >
             {copied ? (
               <Check className="h-4 w-4 text-green-600" />

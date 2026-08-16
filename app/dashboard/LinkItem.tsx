@@ -94,6 +94,7 @@ export function LinkItem({
         toast.success("Copied");
         setTimeout(() => setCopied(false), 1200);
     }
+  }
 
     async function save() {
         const validation = validateUrl(url);
@@ -120,13 +121,13 @@ export function LinkItem({
         }
     }
 
-    return (
-        <div className="rounded-md border p-4 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex gap-3 items-center min-w-0">
-                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center shrink-0">
-                        <Icon className="h-5 w-5" />
-                    </div>
+  return (
+    <div className="rounded-md border p-4 space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-3 items-center min-w-0">
+          <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center shrink-0">
+            <Icon className="h-5 w-5" />
+          </div>
 
                     <div className="min-w-0">
                         <p className="font-medium capitalize">
@@ -161,34 +162,52 @@ export function LinkItem({
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1 justify-end">
-                    <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onToggleVisibility(link.id, !link.isPublic)}
-                        aria-label={link.isPublic ? "Make link private" : "Make link public"}
-                        title={link.isPublic ? "Make link private" : "Make link public"}
-                    >
-                        {link.isPublic ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </Button>
+        <div className="flex flex-wrap gap-1 justify-end">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onToggleVisibility(link.id, !link.isPublic)}
+            aria-label={
+              link.isPublic ? "Make link private" : "Make link public"
+            }
+            title={link.isPublic ? "Make link private" : "Make link public"}
+          >
+            {link.isPublic ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </Button>
 
-                    <Button size="icon" variant="ghost" onClick={copy}>
-                        {copied ? (
-                            <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                            <Copy className="h-4 w-4" />
-                        )}
-                    </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={copy}
+            aria-label="Copy link"
+            title="Copy link"
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
 
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${link.label ?? link.platform} in new tab`}> 
-                        <Button size="icon" variant="ghost" title={`Open ${link.label ?? link.platform}`}>
-                            <ExternalLink className="h-4 w-4" />
-                        </Button>
-                    </a>
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            title={`Open ${link.label ?? link.platform}`}
+          >
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${link.label ?? link.platform} in new tab`}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
 
                     <Button
                         size="icon"
@@ -328,5 +347,7 @@ export function LinkItem({
                 </div>
             )}
         </div>
-    );
+      )}
+    </div>
+  );
 }
