@@ -39,12 +39,14 @@ export default function AddLinkBox({
     const [platform, setPlatform] = useState("");
     const [loading, setLoading] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [urlError, setUrlError] = useState("");
 
     function handleCancel() {
         setUrl("");
         setLabel("");
         setAlias("");
         setPlatform("");
+        setUrlError("");
         onCancel?.();
     }
 
@@ -137,8 +139,23 @@ export default function AddLinkBox({
             <Input
                 placeholder="Paste your link here..."
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (e.target.value.trim()) {
+                        const validation = validateUrl(e.target.value);
+                        setUrlError(validation.valid ? "" : validation.error);
+                    } else {
+                        setUrlError("");
+                    }
+                }}
+                aria-invalid={!!urlError}
+                aria-describedby={urlError ? "url-error" : undefined}
             />
+            {urlError && (
+                <p id="url-error" className="text-xs text-red-500 mt-1" role="alert">
+                    {urlError}
+                </p>
+            )}
 
             <div>
                 <button
@@ -166,8 +183,17 @@ export default function AddLinkBox({
                 <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1">
                     Cancel
                 </Button>
-                <Button onClick={submit} disabled={loading} className="flex-1">
-                    {loading ? "Adding…" : "Add link"}
+                <Button
+                    onClick={submit}
+                    disabled={loading || !url.trim() || !platform}
+                    className="flex-1"
+                    aria-busy={loading}
+                >
+                    {loading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="animate-spin">⟳</span> Adding…
+                        </span>
+                    ) : "Add link"}
                 </Button>
             </div>
         </div>
