@@ -46,6 +46,7 @@ export default function AddLinkBox({
         setLabel("");
         setAlias("");
         setPlatform("");
+        setUrlError("");
         onCancel?.();
     }
 
