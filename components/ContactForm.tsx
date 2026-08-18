@@ -31,6 +31,7 @@ export function ContactForm() {
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string;
     email?: string;
+    subject?: string;
     description?: string;
   }>({});
 
@@ -70,8 +71,8 @@ export function ContactForm() {
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setFormState({
-        status: "error",
-        error: "Please fill in all required fields.",
+        status: "idle",
+        error: null,
         success: false,
       });
       return;
@@ -149,11 +150,16 @@ export function ContactForm() {
             onChange={handleInputChange}
             placeholder="John Doe"
             required
-            aria-describedby="name-description"
+            aria-describedby={fieldErrors.name ? "name-description name-error" : "name-description"}
             aria-invalid={!!fieldErrors.name}
             disabled={isSubmitting}
             className="transition-colors"
           />
+          {fieldErrors.name && (
+            <p id="name-error" className="text-sm text-destructive" role="alert">
+              {fieldErrors.name}
+            </p>
+          )}
         </div>
 
         {/* Email Field */}
@@ -172,11 +178,16 @@ export function ContactForm() {
             onChange={handleInputChange}
             placeholder="john@example.com"
             required
-            aria-describedby="email-description"
+            aria-describedby={fieldErrors.email ? "email-description email-error" : "email-description"}
             aria-invalid={!!fieldErrors.email}
             disabled={isSubmitting}
             className="transition-colors"
           />
+          {fieldErrors.email && (
+            <p id="email-error" className="text-sm text-destructive" role="alert">
+              {fieldErrors.email}
+            </p>
+          )}
         </div>
       </div>
 
@@ -195,10 +206,16 @@ export function ContactForm() {
           value={formData.subject}
           onChange={handleInputChange}
           placeholder="Account access issue, Feature request, etc."
-          aria-describedby="subject-description"
+          aria-describedby={fieldErrors.subject ? "subject-description subject-error" : "subject-description"}
+          aria-invalid={!!fieldErrors.subject}
           disabled={isSubmitting}
           className="transition-colors"
         />
+        {fieldErrors.subject && (
+          <p id="subject-error" className="text-sm text-destructive" role="alert">
+            {fieldErrors.subject}
+          </p>
+        )}
       </div>
 
       {/* Description Field */}
@@ -216,11 +233,16 @@ export function ContactForm() {
           onChange={handleInputChange}
           placeholder="Describe your issue or inquiry in detail..."
           required
-          aria-describedby="description-description"
+          aria-describedby={fieldErrors.description ? "description-description description-error" : "description-description"}
           aria-invalid={!!fieldErrors.description}
           disabled={isSubmitting}
           className="transition-colors min-h-32"
         />
+        {fieldErrors.description && (
+          <p id="description-error" className="text-sm text-destructive" role="alert">
+            {fieldErrors.description}
+          </p>
+        )}
       </div>
 
       {/* Error Message */}

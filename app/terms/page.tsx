@@ -13,9 +13,6 @@ export const metadata: Metadata = {
 const sectionClass =
   "space-y-4 border-b border-zinc-200/70 pb-10 last:border-none last:pb-0 dark:border-white/10";
 
-const cardClass =
-  "rounded-2xl border border-violet-200/60 bg-violet-50/70 p-5 shadow-sm backdrop-blur-sm dark:border-violet-400/20 dark:bg-violet-400/5";
-
 function InfoCard({
   title,
   children,

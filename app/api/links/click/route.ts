@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { trackLinkClick } from "@/lib/analytics";
 import { getForwardedIp } from "@/lib/analyticsUtils";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { resolveUserByUsername } from "@/lib/userLookup";
+
+import crypto from "crypto";
+import { enqueueJob } from "@/lib/jobs";
 
 // 30 requests per minute per IP on the click endpoint.
 const CLICK_RATE_LIMIT = 30;
@@ -10,7 +14,7 @@ const CLICK_RATE_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
     const ip = getForwardedIp(req.headers) ?? "unknown";
-    const allowed = checkRateLimit(`click:${ip}`, CLICK_RATE_LIMIT, CLICK_RATE_WINDOW_MS);
+    const allowed = await checkRateLimit(`click:${ip}`, CLICK_RATE_LIMIT, CLICK_RATE_WINDOW_MS);
     if (!allowed) {
         return NextResponse.json(
             { error: "Too many requests. Please slow down." },
@@ -27,9 +31,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
+    const resolved = await resolveUserByUsername(username);
+    if (!resolved) {
+        return NextResponse.json({ error: "Link not found" }, { status: 404 });
+    }
+
     const link = await prisma.link.findFirst({
-        where: { platform, user: { username } },
-        select: { id: true, userId: true },
+        where: { platform, workspaceId: resolved.user.id, isPublic: true },
+        select: { 
+            id: true, 
+            workspaceId: true,
+            workspace: {
+                select: {
+                    webhookUrl: true,
+                    webhookSecret: true
+                }
+            }
+        },
     });
 
     if (!link) {
@@ -38,9 +56,29 @@ export async function POST(req: Request) {
 
     await trackLinkClick({
         linkId: link.id,
-        userId: link.userId,
+        workspaceId: link.workspaceId,
         headers: req.headers,
     });
+
+    if (link.workspace.webhookUrl && link.workspace.webhookSecret) {
+        const payload = JSON.stringify({
+            linkId: link.id,
+            platform,
+            timestamp: new Date().toISOString()
+        });
+        
+        const signature = crypto
+            .createHmac("sha256", link.workspace.webhookSecret)
+            .update(payload)
+            .digest("hex");
+            
+        // Enqueue a durable delivery job instead of fire-and-forget fetch
+        await enqueueJob("webhook-dispatch", {
+            url: link.workspace.webhookUrl,
+            signature,
+            payload: JSON.parse(payload)
+        });
+    }
 
     return NextResponse.json({ success: true });
 }

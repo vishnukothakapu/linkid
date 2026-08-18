@@ -4,6 +4,11 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { completeAccountMerge, MergeError } from "@/lib/accountMerge";
 import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
+import {
+    invalidateProfileCache,
+    invalidateProfileUsername,
+} from "@/lib/profileCache";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -14,6 +19,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const code = typeof body.code === "string" ? body.code : "";
     const password = typeof body.password === "string" ? body.password : undefined;
+    const confirmEmail = typeof body.confirmEmail === "string" ? body.confirmEmail : undefined;
 
     if (!code) {
         return NextResponse.json({ error: "Merge code is required" }, { status: 400 });
@@ -33,7 +39,21 @@ export async function POST(req: Request) {
             sourceUserId: sourceUser.id,
             code,
             password,
+            confirmEmail,
         });
+
+        // The merge moves links/usernames into the target profile and deletes
+        // the source — purge both users' cached public profiles, clear the
+        // source username's index (its ownership changed), and refresh the
+        // sitemap-backed Next data cache. The payload invalidation also bumps
+        // both users' cache generations, so an in-flight read of pre-merge data
+        // can never write a stale payload back afterwards.
+        await invalidateProfileCache(result.sourceUserId);
+        await invalidateProfileCache(result.targetUserId);
+        if (result.sourceUsername) {
+            await invalidateProfileUsername(result.sourceUsername);
+        }
+        revalidateTag("public-profile", "default");
 
         return NextResponse.json({
             success: true,

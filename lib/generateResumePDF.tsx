@@ -6,7 +6,8 @@ import {
   Link as PdfLink,
   StyleSheet,
 } from "@react-pdf/renderer";
-import type { User as PrismaUser, Link as PrismaLink } from "@prisma/client";
+import type { Link as PrismaLink } from "@prisma/client";
+import type { PublicProfileUser } from "@/lib/buildVCard";
 
 const styles = StyleSheet.create({
   page: {
@@ -111,24 +112,19 @@ const styles = StyleSheet.create({
 
 function getInitials(name: string): string {
   return name
-    .split(" ")
-    .map((part) => part.charAt(0).toUpperCase())
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase())
     .join("")
     .toLocaleUpperCase()
     .slice(0, 2);
 }
 
-type UserLink = {
-  id: string;
-  platform: string;
-  url: string;
-};
-
 export function generateResumePDF({
   user,
   links,
 }: {
-  user: PrismaUser;
+  user: PublicProfileUser;
   links: PrismaLink[];
 }) {
   const displayName = user.name ?? user.username ?? "";

@@ -22,6 +22,7 @@ import { presetAvatars } from "../../lib/presetAvatars";
 export function ProfileHeaderCard({
     user,
     sessionImage,
+    workspaceId,
 }: {
     user: {
         name?: string | null;
@@ -31,6 +32,7 @@ export function ProfileHeaderCard({
         image?: string | null;
     };
     sessionImage?: string | null;
+    workspaceId?: string;
 }) {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(
         user.image ?? sessionImage ?? null
@@ -268,6 +270,7 @@ export function ProfileHeaderCard({
                     </div>
 
                     <EditProfileModal
+                        workspaceId={workspaceId}
                         initialName={user.name ?? ""}
                         initialUsername={user.username ?? ""}
                         initialBio={user.bio ?? ""}

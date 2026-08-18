@@ -1,10 +1,14 @@
 import "server-only";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
-const adapter = new PrismaPg({
+const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
 });
+
+const adapter = new PrismaPg(pool);
 
 const prismaClientSingleton = () => {
     return new PrismaClient({ adapter });

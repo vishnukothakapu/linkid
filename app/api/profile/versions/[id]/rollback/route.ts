@@ -1,8 +1,11 @@
 import { rollbackProfileVersion } from "@/lib/profileWorkflow";
-import { prisma } from "@/lib/prisma";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
+import { invalidateProfileCache } from "@/lib/profileCache";
 
 export async function POST(
   request: NextRequest,
@@ -10,27 +13,42 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
+    const { id: versionId } = await params;
+
+    const version = await prisma.profileVersion.findUnique({
+      where: { id: versionId },
+      select: { workspaceId: true },
     });
 
-    if (!user) {
+    if (!version) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Version not found" },
         { status: 404 }
       );
     }
 
-    const { id: versionId } = await params;
-    const { snapshot, diff } = await rollbackProfileVersion(user.id, versionId);
+    const preferredWorkspaceId = request.headers.get("x-workspace-id") || version.workspaceId;
+    const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+    if (!workspace || workspace.id !== version.workspaceId) {
+      return NextResponse.json(
+        { error: "Access denied" },
+        { status: 403 }
+      );
+    }
+
+    const { snapshot, diff } = await rollbackProfileVersion(workspace.id, versionId);
+
+    // Rollback changes the live profile (and possibly the username) — purge the
+    // Redis payload and the Next data cache feeding the sitemap.
+    await invalidateProfileCache(workspace.id);
+    revalidateTag("public-profile", "default");
 
     return NextResponse.json(
       {
@@ -42,13 +60,20 @@ export async function POST(
     );
   } catch (error) {
     console.error("Profile rollback error:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to rollback profile";
-    const isNotFound =
-      error instanceof Error && error.message === "Version not found or access denied";
+    if (error instanceof Error) {
+      if (error.message.includes("empty snapshot")) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      if (error.message.includes("no longer available") || error.message.includes("taken")) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+      if (error.message.includes("not found")) {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+    }
     return NextResponse.json(
-      { error: message },
-      { status: isNotFound ? 404 : 500 }
+      { error: "Failed to rollback profile" },
+      { status: 500 }
     );
   }
 }

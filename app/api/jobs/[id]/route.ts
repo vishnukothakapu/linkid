@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import { getJob } from "../../../../lib/jobs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(_req: Request, ctx: any) {
-  try {
-    const params = ctx?.params ? ctx.params : (await ctx?.params);
-    const id = params?.id;
-    const job = await getJob(id);
-    if (!job) return NextResponse.json({ error: "not found" }, { status: 404 });
-    return NextResponse.json(job);
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
-  }
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const { id } = await ctx.params;
+        const job = await prisma.job.findUnique({
+            where: { id, userId: session.user.id },
+        });
+        if (!job) return NextResponse.json({ error: "not found" }, { status: 404 });
+        return NextResponse.json(job);
+    } catch {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
 }

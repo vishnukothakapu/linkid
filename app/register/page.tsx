@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useCsrf } from "@/lib/useCsrf";
+import { PLATFORMS } from "@/lib/constants";
 
 import { Navbar } from "../components/Navbar";
 
@@ -52,6 +53,13 @@ export default function RegisterPage() {
             name: (form.elements.namedItem("name") as HTMLInputElement).value,
             password: (form.elements.namedItem("password") as HTMLInputElement).value,
         };
+
+        const passErr = getPasswordError(data.password);
+        if (passErr) {
+            setSubmitError(passErr);
+            setLoading(false);
+            return;
+        }
 
         const res = await fetch("/api/auth/register", {
             method: "POST",
@@ -94,12 +102,12 @@ export default function RegisterPage() {
 
                         <Button
                             variant="outline"
-                            className="flex w-full items-center justify-center gap-2"
+                            className="flex w-full items-center justify-center gap-2 cursor-pointer"
                             disabled={googleLoading || githubLoading}
                             onClick={async () => {
                                 setGoogleLoading(true);
                                 try {
-                                    await signIn("google", { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
                                 } finally {
                                     setGoogleLoading(false);
                                 }
@@ -111,12 +119,12 @@ export default function RegisterPage() {
 
                         <Button
                             variant="outline"
-                            className="flex w-full items-center justify-center gap-2"
+                            className="flex w-full items-center justify-center gap-2 cursor-pointer"
                             disabled={googleLoading || githubLoading}
                             onClick={async () => {
                                 setGithubLoading(true);
                                 try {
-                                    await signIn("github", { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
                                 } finally {
                                     setGithubLoading(false);
                                 }

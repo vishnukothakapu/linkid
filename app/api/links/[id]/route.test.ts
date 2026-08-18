@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { mock, test, before } from "node:test";
+import { PLATFORMS } from "@/lib/constants";
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
 let mockSession: unknown = null;
 let mockLink: unknown = null;
 let capturedUpdateArgs: unknown = null;
+const invalidatedUserIds: string[] = [];
 
 // ── Register mocks synchronously BEFORE any module import ─────────────────────
 
@@ -18,8 +20,26 @@ mock.module("@/lib/auth", {
     namedExports: { authOptions: {} },
 });
 
+mock.module("@/lib/profileCache", {
+    namedExports: {
+        invalidateProfileCache: (userId: string) => {
+            invalidatedUserIds.push(userId);
+            return Promise.resolve();
+        },
+    },
+});
+
 mock.module("@/lib/prisma", {
     defaultExport: {
+        $transaction: (cb: any) => cb({
+            link: {
+                findFirst: () => Promise.resolve(null),
+                update: (args: unknown) => {
+                    capturedUpdateArgs = args;
+                    return Promise.resolve({});
+                },
+            }
+        }),
         link: {
             findUnique: () => Promise.resolve(mockLink),
             update: (args: unknown) => {
@@ -30,6 +50,15 @@ mock.module("@/lib/prisma", {
     },
     namedExports: {
         prisma: {
+            $transaction: (cb: any) => cb({
+                link: {
+                    findFirst: () => Promise.resolve(null),
+                    update: (args: unknown) => {
+                        capturedUpdateArgs = args;
+                        return Promise.resolve({});
+                    },
+                }
+            }),
             link: {
                 findUnique: () => Promise.resolve(mockLink),
                 update: (args: unknown) => {
@@ -64,8 +93,8 @@ function ctx(id = "test-id") {
     return { params: Promise.resolve({ id }) };
 }
 
-function ownerLink(platform = "github") {
-    return { id: "test-id", platform, user: { email: "owner@example.com" } };
+function ownerLink(platform = PLATFORMS.GITHUB) {
+    return { id: "test-id", userId: "owner-user-id", platform, user: { email: "owner@example.com" } };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -103,7 +132,7 @@ test("PUT 400 — URL fails basic validation (malformed)", async () => {
 
 test("PUT 400 — URL does not match stored platform (different-platform URL)", async () => {
     mockSession = { user: { email: "owner@example.com" } };
-    mockLink = ownerLink("github");
+    mockLink = ownerLink(PLATFORMS.GITHUB);
     // Valid LinkedIn URL for a GitHub link → platform mismatch
     const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
     assert.equal(res.status, 400);
@@ -120,12 +149,33 @@ test("PUT 400 — nothing to update (empty body)", async () => {
 
 test("PUT 200 — valid URL matching stored platform updates the link", async () => {
     mockSession = { user: { email: "owner@example.com" } };
-    mockLink = ownerLink("github");
+    mockLink = ownerLink(PLATFORMS.GITHUB);
     capturedUpdateArgs = null;
+    invalidatedUserIds.length = 0;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { success: true });
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(data.link, "expected link object in response");
     assert.ok(capturedUpdateArgs, "prisma.link.update should have been called");
+});
+
+test("PUT 200 — successful update invalidates the owner's cached public profile", async () => {
+    mockSession = { user: { email: "owner@example.com" } };
+    mockLink = ownerLink(PLATFORMS.GITHUB);
+    invalidatedUserIds.length = 0;
+    const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
+    assert.equal(res.status, 200);
+    assert.deepEqual(invalidatedUserIds, ["owner-user-id"]);
+});
+
+test("PUT 400 — failed update does not invalidate the cache", async () => {
+    mockSession = { user: { email: "owner@example.com" } };
+    mockLink = ownerLink(PLATFORMS.GITHUB);
+    invalidatedUserIds.length = 0;
+    const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
+    assert.equal(res.status, 400);
+    assert.deepEqual(invalidatedUserIds, []);
 });
 
 test("PUT 200 — isPublic boolean update without URL", async () => {
@@ -134,7 +184,9 @@ test("PUT 200 — isPublic boolean update without URL", async () => {
     capturedUpdateArgs = null;
     const res = await PUT(putRequest({ isPublic: false }), ctx());
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { success: true });
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(data.link, "expected link object in response");
     assert.ok(capturedUpdateArgs, "prisma.link.update should have been called");
 });
 

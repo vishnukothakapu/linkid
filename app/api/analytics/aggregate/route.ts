@@ -13,6 +13,7 @@ function toUtcDateFromInput(raw: string): Date | null {
     if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
     const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (parsed.getUTCMonth() !== month - 1) return null;
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
@@ -35,9 +36,18 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json().catch(() => ({} as Record<string, unknown>));
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
-    const daysBackInput = typeof body.daysBack === "number" ? body.daysBack : 1;
+    const rawDaysBack = body.daysBack;
+    const daysBackInput =
+        typeof rawDaysBack === "number" && Number.isFinite(rawDaysBack)
+            ? rawDaysBack
+            : 1;
     const daysBack = Math.max(1, Math.min(30, Math.floor(daysBackInput)));
 
     let dateBase = utcDayShift(new Date(), -1);

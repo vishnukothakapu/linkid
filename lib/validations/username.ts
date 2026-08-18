@@ -1,7 +1,7 @@
 export const usernameRegex = /^[a-zA-Z0-9-]+$/;
 
 export function validateUsername(username: string): { valid: boolean; error?: string } {
-  if (!username || username.trim() === "") {
+  if (!username || username.trim().length === 0) {
     return { valid: false, error: "Username is required" };
   }
   if (!usernameRegex.test(username)) {

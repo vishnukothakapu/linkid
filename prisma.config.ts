@@ -1,8 +1,8 @@
 // prisma.config.ts
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
 
-const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+import 'dotenv/config';
+// prisma.config.ts
+const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 if (!url) {
   throw new Error(
@@ -10,7 +10,7 @@ if (!url) {
   );
 }
 
-export default defineConfig({
+const config = {
   schema: "prisma/schema.prisma",
 
   migrations: {
@@ -20,4 +20,6 @@ export default defineConfig({
   datasource: {
     url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
   },
-});
+};
+
+export default config;

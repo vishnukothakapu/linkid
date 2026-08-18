@@ -7,9 +7,21 @@ import type { NextAuthOptions } from "next-auth";
 
 import prisma from "@/lib/prisma";
 import { isUserSessionInvalidated } from "@/lib/sessionInvalidation";
+import { PLATFORMS } from "@/lib/constants";
+import { consumeRecoveryCode, verifyTotpCode } from "@/lib/twoFactor";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
+import {
+    TWO_FACTOR_INVALID_CODE_ERROR,
+    TWO_FACTOR_REQUIRED_ERROR,
+} from "@/lib/authErrors";
+
+const TWO_FACTOR_LOGIN_LIMIT = 5;
+const TWO_FACTOR_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const TWO_FACTOR_LOGIN_IP_LIMIT = 20;
 
 
-const oauthProviders = new Set(["google", "github"]);
+const oauthProviders = new Set<string>([PLATFORMS.GITHUB, PLATFORMS.GOOGLE]);
 
 function getOAuthProfileImage(profile: unknown): string | null {
     if (!profile || typeof profile !== "object") return null;
@@ -58,37 +70,187 @@ export const authOptions: NextAuthOptions = {
             credentials: {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
+                totpCode: { label: "Two-factor code", type: "text" },
             },
 
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 if (!credentials?.email || !credentials.password) return null;
 
+                // Registration stores email lowercased/trimmed, so look it up
+                // the same way — otherwise a differently-cased login is rejected.
+                const email = credentials.email.trim().toLowerCase();
+
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { email },
                 });
 
                 if (!user || !user.password) return null;
+
+                if (!user.emailVerified) {
+                    throw new Error("Please verify your email address to log in.");
+                }
 
                 const isValid = await bcrypt.compare(
                     credentials.password,
                     user.password
                 );
 
-                return isValid ? user : null;
+                if (!isValid) return null;
+
+                if (user.twoFactorEnabled) {
+                    const code = credentials.totpCode ?? "";
+
+                    if (!code) {
+                        // Password is correct — now prompt for the 2FA code.
+                        throw new Error(TWO_FACTOR_REQUIRED_ERROR);
+                    }
+
+                    // Rate-limit 2FA attempts by account identity and source IP.
+                    const ip = req?.headers
+                        ? getForwardedIp(
+                              new Headers(
+                                  req.headers as Record<string, string>
+                              )
+                          ) ?? "unknown"
+                        : "unknown";
+
+                    const accountAllowed = await checkRateLimit(
+                        `2fa-login:${user.id}`,
+                        TWO_FACTOR_LOGIN_LIMIT,
+                        TWO_FACTOR_LOGIN_WINDOW_MS
+                    );
+                    const ipAllowed = await checkRateLimit(
+                        `2fa-login-ip:${ip}`,
+                        TWO_FACTOR_LOGIN_IP_LIMIT,
+                        TWO_FACTOR_LOGIN_WINDOW_MS
+                    );
+
+                    if (!accountAllowed || !ipAllowed) {
+                        throw new Error(
+                            "Too many attempts. Please try again later."
+                        );
+                    }
+
+                    const totpResult = user.totpSecret
+                        ? await verifyTotpCode(
+                              user.totpSecret,
+                              code,
+                              user.lastTotpStep
+                          )
+                        : null;
+
+                    if (totpResult?.valid) {
+                        // Persist the accepted time step atomically so the same
+                        // code cannot be replayed by a concurrent request.
+                        const updateResult = await prisma.user.updateMany({
+                            where: { id: user.id, lastTotpStep: user.lastTotpStep },
+                            data: { lastTotpStep: totpResult.timeStep },
+                        });
+
+                        if (updateResult.count === 0) {
+                            throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                        }
+
+                        return user;
+                    }
+
+                    // Fall back to a one-time recovery code.
+                    const remainingRecoveryCodes = await consumeRecoveryCode(
+                        user.recoveryCodes,
+                        code
+                    );
+
+                    if (remainingRecoveryCodes === null) {
+                        throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                    }
+
+                    // Persist consumption conditionally so a raced consume
+                    // cannot silently reuse the same code.
+                    const updateResult = await prisma.user.updateMany({
+                        where: { id: user.id, recoveryCodes: user.recoveryCodes },
+                        data: { recoveryCodes: remainingRecoveryCodes },
+                    });
+
+                    if (updateResult.count === 0) {
+                        throw new Error(TWO_FACTOR_INVALID_CODE_ERROR);
+                    }
+
+                    return user;
+                }
+
+                return user;
             },
         }),
     ],
+events: {
+    async createUser({ user }) {
+        const account = await prisma.account.findFirst({
+            where: { userId: user.id },
+        });
 
-    events: {
-        async createUser({ user }) {
+        if (account && oauthProviders.has(account.provider)) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: { emailVerified: new Date() },
             });
-        },
+        }
     },
-
+},
     callbacks: {
+        async signIn({ user, account, profile }) {
+            if (account && oauthProviders.has(account.provider)) {
+                if (!user.email) return true;
+
+                let isVerified = false;
+                if (account.provider === "google") {
+                    isVerified =
+                        (profile as { email_verified?: boolean } | null | undefined)
+                            ?.email_verified === true;
+                } else if (account.provider === "github") {
+                    // NextAuth's GitHub provider only populates user.email with verified emails
+                    isVerified = true;
+                }
+
+                if (!isVerified) return true;
+
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: user.email },
+                    include: { accounts: true },
+                });
+
+                if (existingUser) {
+                    const isAlreadyLinked = existingUser.accounts.some(
+                        (acc) => acc.provider === account.provider
+                    );
+
+                    if (!isAlreadyLinked) {
+                        await prisma.account.create({
+                            data: {
+                                userId: existingUser.id,
+                                type: account.type,
+                                provider: account.provider,
+                                providerAccountId: account.providerAccountId,
+                                access_token: account.access_token,
+                                token_type: account.token_type,
+                                scope: account.scope,
+                                id_token: account.id_token,
+                                expires_at: account.expires_at,
+                                refresh_token: account.refresh_token,
+                                session_state: account.session_state as string | undefined,
+                            },
+                        });
+
+                        if (!existingUser.emailVerified) {
+                            await prisma.user.update({
+                                where: { id: existingUser.id },
+                                data: { emailVerified: new Date() },
+                            });
+                        }
+                    }
+                }
+            }
+            return true;
+        },
         async jwt({ token, trigger, session, user, account, profile }) {
             // Immediately invalidate token if user account was deleted
             if (token.sub && (await isUserSessionInvalidated(token.sub))) {
@@ -128,18 +290,23 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
             }
+
             if (!token.image && user && "image" in user && user.image) {
                 token.image = user.image;
                 return token;
             }
 
-            if (!token.image && token.email) {
-                const user = await prisma.user.findUnique({
+            // Only query DB for image on the very first sign-in (token.image === undefined).
+            // On subsequent requests token.image is explicitly set to null for users without
+            // an image, preventing a redundant DB hit on every authenticated request.
+            if (token.image === undefined && token.email) {
+                const dbUser = await prisma.user.findUnique({
                     where: { email: token.email },
                     select: { image: true },
                 });
-                token.image = user?.image ?? null;
+                token.image = dbUser?.image ?? null;
             }
+
             return token;
         },
         async session({ session, token }) {

@@ -87,3 +87,14 @@ dev.db
 
 # Prisma generated client (auto-generated at build time)
 app/generated/
+
+# Open .gitignore and add these lines at the end:
+echo "" >> .gitignore
+echo "# Editor configuration (personal, not project-wide)" >> .gitignore
+echo ".vscode/" >> .gitignore
+echo ".idea/" >> .gitignore
+echo "*.suo" >> .gitignore
+echo "*.ntvs*" >> .gitignore
+echo "*.njsproj" >> .gitignore
+echo "*.sln" >> .gitignore
+echo "*.sw?" >> .gitignore

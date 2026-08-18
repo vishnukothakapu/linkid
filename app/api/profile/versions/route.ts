@@ -1,31 +1,28 @@
 import { getProfileVersions } from "@/lib/profileWorkflow";
-import { prisma } from "@/lib/prisma";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.email) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    });
-
-    if (!user) {
+    const workspace = await resolveActiveWorkspace(session.user.id);
+    if (!workspace) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Workspace not found" },
         { status: 404 }
       );
     }
 
-    const versions = await getProfileVersions(user.id);
+    const versions = await getProfileVersions(workspace.id);
 
     return NextResponse.json(
       {

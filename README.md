@@ -7,6 +7,9 @@
 
 **One username. Clean, predictable links for every platform.**
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/Ng4q6quFcq)
+
+
 
 [![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://typescriptlang.org/)
@@ -42,6 +45,11 @@ This project is part of **GirlScript Summer of Code
 -  **Auto Platform Detection** — Paste any URL and the platform is detected automatically
 - **Public Profile Page** — Shareable profile at `linkid.qzz.io/username`
 - **Real-time Dashboard** — Add, edit, and delete links instantly without a page reload
+
+### 🧩 Chrome Extension
+- **Auto-Fill Applications** — Bypass strict Applicant Tracking Systems (ATS) by automatically injecting your original, raw platform URLs into job application fields.
+- **OAuth Integration** — Securely connects with your LinkID profile in one click.
+- **Source Code** — Available in its own repository: [vishnukothakapu/linkid-extension](https://github.com/vishnukothakapu/linkid-extension).
 
 ### Auth & Security
 - **OAuth Login** — Google & GitHub sign-in via NextAuth.js
@@ -135,6 +143,9 @@ GITHUB_CLIENT_SECRET="your-github-client-secret"
 # Run migrations
 npx prisma migrate dev
 
+# If migrations aren't working as expected, check /prisma/migrations find the latest init migration. Mark migrations before that as applied using :
+npx prisma migrate resolve --applied <migration_name>
+
 # (Optional) Open Prisma Studio to inspect data
 npx prisma studio
 ```
@@ -205,6 +216,17 @@ linkid/
 ---
 
 ## Usage Guide
+
+### Using the Chrome Extension (Manual Install)
+
+Since the extension is not yet published on the Chrome Web Store, you can easily install it in Developer Mode:
+
+1. Download the [linkid-extension](https://github.com/vishnukothakapu/linkid-extension) repository (either via git clone or downloading the ZIP and extracting it).
+2. Open Google Chrome and navigate to `chrome://extensions/`
+3. Toggle **Developer mode** to ON (in the top right corner).
+4. Click the **Load unpacked** button (top left corner).
+5. Select the `linkid-extension` folder you downloaded.
+6. Open the extension from your toolbar, click **Connect LinkID**, and you're ready to auto-fill!
 
 ### Creating Your LinkID
 

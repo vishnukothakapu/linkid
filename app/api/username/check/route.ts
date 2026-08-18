@@ -1,13 +1,14 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { validateUsername } from "@/lib/validations/username";
 
 async function isAvailable(username: string): Promise<boolean> {
-    const [user, alias] = await Promise.all([
-        prisma.user.findUnique({ where: { username } }),
-        prisma.userAlias.findUnique({ where: { username } }),
+    const [workspace, alias] = await Promise.all([
+        prisma.workspace.findUnique({ where: { username } }),
+        prisma.workspaceAlias.findUnique({ where: { username } }),
     ]);
 
-    return !user && !alias;
+    return !workspace && !alias;
 }
 
 export async function GET(req: Request) {
@@ -15,7 +16,12 @@ export async function GET(req: Request) {
     const username = searchParams.get("username")?.toLowerCase();
 
     if (!username) {
-        return NextResponse.json({ available: false });
+        return NextResponse.json({ available: false, error: "Username is required" });
+    }
+
+    const validation = validateUsername(username);
+    if (!validation.valid) {
+        return NextResponse.json({ available: false, error: validation.error });
     }
 
     const available = await isAvailable(username);
@@ -31,14 +37,14 @@ export async function GET(req: Request) {
 
     const candidates = [...new Set([
         abbr !== username ? abbr : null,
-        `${username}.dev`,
+        `${username}dev`,
         `the${username}`,
         `${username}hq`,
         `i${username}`,
         `${short}${year}`,
-        `${username}.${year}`,
+        `${username}${year}`,
         `${username}${rand}`,
-    ].filter(Boolean) as string[])];
+    ].filter(Boolean) as string[])].filter((candidate) => validateUsername(candidate).valid);
 
     const suggestions: string[] = [];
     for (const candidate of candidates) {

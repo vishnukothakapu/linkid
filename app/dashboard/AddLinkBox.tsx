@@ -12,29 +12,11 @@ import {
 } from "@/components/ui/select";
 import { getCsrfToken } from "@/lib/csrfClient";
 import toast from "react-hot-toast";
+import { PLATFORMS } from "@/lib/constants";
 
 import { validateUrl } from "@/lib/urlValidation";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
-import { PLATFORM_ICONS } from "@/lib/platformIcons";
-
-const formatLabel = (key: string) => {
-    const exceptions: Record<string, string> = {
-        github: "GitHub",
-        linkedin: "LinkedIn",
-        x: "X (Twitter)",
-        youtube: "YouTube",
-        leetcode: "LeetCode",
-        devto: "Dev.to",
-    };
-    return exceptions[key] || key.charAt(0).toUpperCase() + key.slice(1);
-};
-
-const POPULAR_PLATFORMS = [
-    ...Object.keys(PLATFORM_ICONS)
-        .filter((key) => key !== "website" && key !== "portfolio")
-        .map((key) => ({ value: key, label: formatLabel(key) })),
-    { value: "website", label: "Personal Website / Other" },
-];
+import { POPULAR_PLATFORMS } from "@/lib/platformHelpers";
 
 /**
  * AddLinkBox Component
@@ -46,13 +28,27 @@ const POPULAR_PLATFORMS = [
  */
 export default function AddLinkBox({
     onAdded,
+    onCancel,
 }: {
     onAdded: (link: ProfileLink) => void;
+    onCancel?: () => void;
 }) {
     const [url, setUrl] = useState("");
     const [label, setLabel] = useState("");
+    const [alias, setAlias] = useState("");
     const [platform, setPlatform] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [urlError, setUrlError] = useState("");
+
+    function handleCancel() {
+        setUrl("");
+        setLabel("");
+        setAlias("");
+        setPlatform("");
+        setUrlError("");
+        onCancel?.();
+    }
 
     /**
      * Handles the form submission to add a link.
@@ -69,7 +65,7 @@ export default function AddLinkBox({
         }
 
         const finalLabel = label.trim();
-        if (platform === "website" && !finalLabel) {
+        if (platform === PLATFORMS.WEBSITE && !finalLabel) {
             return toast.error("Please enter a name for this link");
         }
 
@@ -86,6 +82,7 @@ export default function AddLinkBox({
                 body: JSON.stringify({
                     url,
                     label: finalLabel,
+                    alias,
                     platform,
                 }),
             });
@@ -101,7 +98,9 @@ export default function AddLinkBox({
 
             setUrl("");
             setLabel("");
+            setAlias("");
             setPlatform("");
+            setShowAdvanced(false);
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : "Failed to add link";
             toast.error(errorMessage);
@@ -129,7 +128,7 @@ export default function AddLinkBox({
                 placeholder={
                     !platform
                         ? "Link Display Name"
-                        : platform === "website"
+                        : platform === PLATFORMS.WEBSITE
                         ? "Link Display Name (Required)"
                         : "Link Display Name (Optional)"
                 }
@@ -140,12 +139,63 @@ export default function AddLinkBox({
             <Input
                 placeholder="Paste your link here..."
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (e.target.value.trim()) {
+                        const validation = validateUrl(e.target.value);
+                        setUrlError(validation.valid ? "" : validation.error);
+                    } else {
+                        setUrlError("");
+                    }
+                }}
+                aria-invalid={!!urlError}
+                aria-describedby={urlError ? "url-error" : undefined}
             />
+            {urlError && (
+                <p id="url-error" className="text-xs text-red-500 mt-1" role="alert">
+                    {urlError}
+                </p>
+            )}
 
-            <Button onClick={submit} disabled={loading} className="w-full">
-                {loading ? "Adding…" : "Add link"}
-            </Button>
+            <div>
+                <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+                >
+                    {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options (Custom URL Alias)"}
+                </button>
+                {showAdvanced && (
+                    <div className="mt-3">
+                        <Input
+                            placeholder="Custom Alias (e.g. github-work)"
+                            value={alias}
+                            onChange={(e) => setAlias(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Overrides the default route. Your link will be accessible at: /username/{alias || platform || "[alias]"}
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className="flex gap-2">
+                <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1">
+                    Cancel
+                </Button>
+                <Button
+                    onClick={submit}
+                    disabled={loading || !url.trim() || !platform}
+                    className="flex-1"
+                    aria-busy={loading}
+                >
+                    {loading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="animate-spin">⟳</span> Adding…
+                        </span>
+                    ) : "Add link"}
+                </Button>
+            </div>
         </div>
     );
 }

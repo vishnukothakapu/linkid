@@ -1,3 +1,22 @@
+/**
+ * Defense-in-depth check applied at redirect time, in addition to the
+ * scheme validation already performed in `validateUrlBackend` when a link
+ * is created or updated. Redirect targets are read straight from the
+ * database and passed to `redirect()`, a `<meta http-equiv="refresh">` tag,
+ * and an inline deep-link script, so any `javascript:`, `data:`, `file:`,
+ * or scheme-less value reaching that point (whether from a future write
+ * path that forgets to validate, or from data written before validation
+ * existed) must be rejected before it's ever rendered or navigated to.
+ */
+export function isSafeRedirectUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
+
 export function validateUrl(url: string): { valid: true } | { valid: false; error: string } {
     const trimmed = url.trim();
     if (!trimmed) {

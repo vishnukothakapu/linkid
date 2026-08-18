@@ -1,4 +1,4 @@
-import { resolvePreviewToken, ProfileSnapshot } from "@/lib/profileWorkflow";
+import { resolvePreviewToken } from "@/lib/profileWorkflow";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -40,6 +40,7 @@ export default async function PreviewPage({ params }: PageProps) {
     },
     username: snapshot.username || "unknown",
     showCTA: false,
+    isOwner: false,
   };
 
   return (
