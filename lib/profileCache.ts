@@ -204,14 +204,14 @@ export async function cacheResolvedProfile<T>(
 }
 
 /**
- * Delete a user's cached public profile so the next page load is served fresh.
+ * Delete a workspace's cached public profile so the next page load is served fresh.
  * Called by every dashboard mutation that changes public profile data.
  *
- * Also bumps the user's cache generation atomically (increment-then-delete) so
+ * Also bumps the workspace's cache generation atomically (increment-then-delete) so
  * any in-flight cache write that read the payload before this invalidation sees
  * a mismatch and skips writing stale data back.
  */
-export async function invalidateProfileCache(userId: string): Promise<void> {
+export async function invalidateProfileCache(workspaceId: string): Promise<void> {
     const redis = await getRedis();
     if (!redis) {
         return;
@@ -219,9 +219,9 @@ export async function invalidateProfileCache(userId: string): Promise<void> {
 
     try {
         const pipeline = redis.pipeline();
-        pipeline.incr(profileGenerationKey(userId));
-        pipeline.expire(profileGenerationKey(userId), PROFILE_GENERATION_TTL_SECONDS);
-        pipeline.del(profilePayloadKey(userId));
+        pipeline.incr(profileGenerationKey(workspaceId));
+        pipeline.expire(profileGenerationKey(workspaceId), PROFILE_GENERATION_TTL_SECONDS);
+        pipeline.del(profilePayloadKey(workspaceId));
         await pipeline.exec();
     } catch (error) {
         // Invalidation failures are bounded by the payload TTL.

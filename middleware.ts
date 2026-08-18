@@ -23,15 +23,35 @@ const linksRateLimit = redis
 
 const localFallbackMap = new Map<string, number>();
 function checkLocalRateLimit(ip: string, limit: number): boolean {
-    const key = `${ip}-${Math.floor(Date.now() / 60000)}`;
+    const currentMinute = Math.floor(Date.now() / 60000);
+    const key = `${ip}-${currentMinute}`;
+    // Remove stale minute-bucket entries from localFallbackMap
+    for (const k of localFallbackMap.keys()) {
+        const parts = k.split("-");
+        const minute = parseInt(parts[parts.length - 1], 10);
+        if (minute < currentMinute) {
+            localFallbackMap.delete(k);
+        }
+    }
     const current = localFallbackMap.get(key) || 0;
     if (current >= limit) return false;
     localFallbackMap.set(key, current + 1);
     return true;
 }
 
+function setVisitorCookie(response: NextResponse, visitorId: string, secure: boolean) {
+    response.cookies.set("visitor_id", visitorId, {
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+        sameSite: "lax",
+        secure,
+    });
+}
+
 export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
+    const cookieVisitorId = req.cookies.get("visitor_id")?.value;
+    const visitorId = cookieVisitorId || crypto.randomUUID();
 
     // API routes: apply CSRF protection only. The rest of this middleware
     // (auth redirects, custom-domain rewrite, CSP nonce) is for page
@@ -83,7 +103,15 @@ export async function middleware(req: NextRequest) {
 
     if (isCustomDomain) {
         // Rewrite to a special domain handler route that will fetch the user by domain
-        return NextResponse.rewrite(new URL(`/domain/${host}${pathname}`, req.url));
+        const headers = new Headers(req.headers);
+        headers.set("x-visitor-id", visitorId);
+        const response = NextResponse.rewrite(new URL(`/domain/${host}${pathname}`, req.url), {
+            request: { headers }
+        });
+        if (!cookieVisitorId) {
+            setVisitorCookie(response, visitorId, req.nextUrl.protocol === "https:");
+        }
+        return response;
     }
 
     const csrfResponse = await applyCsrfProtection(req);
@@ -112,6 +140,7 @@ export async function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", cspHeader);
+    requestHeaders.set("x-visitor-id", visitorId);
 
     const response = NextResponse.next({
         request: {
@@ -120,6 +149,11 @@ export async function middleware(req: NextRequest) {
     });
 
     response.headers.set("Content-Security-Policy", cspHeader);
+
+    if (!cookieVisitorId) {
+        setVisitorCookie(response, visitorId, req.nextUrl.protocol === "https:");
+    }
+
     return response;
 }
 

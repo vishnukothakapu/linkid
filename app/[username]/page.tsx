@@ -7,6 +7,26 @@ import { ProfileCard } from "./ProfileCard";
 import { ProfileFooter } from "./ProfileFooter";
 import { resolveUserByUsername } from "@/lib/userLookup";
 import { ShareProfileButton } from "./ShareProfileButton";
+import { cookies, headers } from "next/headers";
+import type { Link } from "./types/type";
+
+interface ABTestSlot {
+  __abTestSlot: string;
+}
+
+function getDeterministicVariant(visitorId: string, parentId: string): "A" | "B" {
+  let hash = 0;
+  const str = visitorId + parentId;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  // Thomas Wang's 32-bit mix
+  hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+  hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+  hash = (hash >> 16) ^ hash;
+  return ((hash >> 16) & 1) === 0 ? "A" : "B";
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
     try {
@@ -90,7 +110,7 @@ export default async function PublicProfile({
   if (session?.user?.id) {
     const { getWorkspaceMembership } = await import("@/lib/workspace");
     const role = await getWorkspaceMembership(session.user.id, user.id);
-    isOwner = role !== null;
+    isOwner = role === "OWNER";
   }
 
   const bgStyle: React.CSSProperties = {};
@@ -114,12 +134,97 @@ export default async function PublicProfile({
     bgStyle.backgroundImage = "linear-gradient(180deg, #09090b 0%, #1e1b4b 100%)";
   }
 
+  const cookieStore = await cookies();
+  const headersList = await headers();
+
   const now = new Date();
-  const activeLinks = (user.links || []).filter((link: { startDate?: Date | null; endDate?: Date | null }) => {
-    if (link.startDate && new Date(link.startDate) > now) return false;
-    if (link.endDate && new Date(link.endDate) < now) return false;
+  const isActive = (l: Link) => {
+    if (l.startDate && new Date(l.startDate) > now) return false;
+    if (l.endDate && new Date(l.endDate) < now) return false;
     return true;
-  });
+  };
+
+  const selectVariant = (parentId: string, variants: Link[], visitorId: string): Link => {
+    const cookieVal = cookieStore.get(`abTest_${parentId}`)?.value;
+    if (cookieVal === "A" || cookieVal === "B") {
+      const picked = variants.find((v) => v.abTestVariant === cookieVal);
+      if (picked) return picked;
+    }
+    const chosenVariant = getDeterministicVariant(visitorId, parentId);
+    return variants.find((v) => v.abTestVariant === chosenVariant) || variants[0];
+  };
+
+  const visitorId = headersList.get("x-visitor-id")!;
+
+  const rawLinks = (user.links || []) as Link[];
+  const abTestGroups = new Map<string, Link[]>();
+  const preFilteredLinks: (Link | ABTestSlot)[] = [];
+
+  for (const link of rawLinks) {
+    if (link.abTestParentId) {
+      if (!abTestGroups.has(link.abTestParentId)) {
+        abTestGroups.set(link.abTestParentId, []);
+        preFilteredLinks.push({ __abTestSlot: link.abTestParentId });
+      }
+      abTestGroups.get(link.abTestParentId)!.push(link);
+    } else if (link.isGroup) {
+      const children = (link.children || []) as Link[];
+      const newChildren: (Link | ABTestSlot)[] = [];
+      const childrenGroups = new Map<string, Link[]>();
+      
+      for (const child of children) {
+        if (child.abTestParentId) {
+          if (!childrenGroups.has(child.abTestParentId)) {
+            childrenGroups.set(child.abTestParentId, []);
+            newChildren.push({ __abTestSlot: child.abTestParentId });
+          }
+          childrenGroups.get(child.abTestParentId)!.push(child);
+        } else {
+          newChildren.push(child);
+        }
+      }
+      
+      for (const [parentId, variants] of childrenGroups.entries()) {
+        const activeVariants = variants.filter(isActive);
+        const slot = newChildren.findIndex((l) => "__abTestSlot" in l && l.__abTestSlot === parentId);
+        if (activeVariants.length === 0) {
+          if (slot !== -1) {
+            newChildren.splice(slot, 1);
+          }
+        } else {
+          const picked = selectVariant(parentId, activeVariants, visitorId);
+          if (slot !== -1) {
+            newChildren.splice(slot, 1, picked);
+          } else {
+            newChildren.push(picked);
+          }
+        }
+      }
+      
+      preFilteredLinks.push({ ...link, children: newChildren as Link[] });
+    } else {
+      preFilteredLinks.push(link);
+    }
+  }
+
+  for (const [parentId, variants] of abTestGroups.entries()) {
+    const activeVariants = variants.filter(isActive);
+    const slot = preFilteredLinks.findIndex((l) => "__abTestSlot" in l && l.__abTestSlot === parentId);
+    if (activeVariants.length === 0) {
+      if (slot !== -1) {
+        preFilteredLinks.splice(slot, 1);
+      }
+    } else {
+      const picked = selectVariant(parentId, activeVariants, visitorId);
+      if (slot !== -1) {
+        preFilteredLinks.splice(slot, 1, picked);
+      } else {
+        preFilteredLinks.push(picked);
+      }
+    }
+  }
+
+  const activeLinks = (preFilteredLinks as Link[]).filter(isActive);
 
   return (
     <main className={`min-h-screen relative px-4 py-16 theme-${user.theme || "default"}`}>

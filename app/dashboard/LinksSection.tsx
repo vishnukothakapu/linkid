@@ -6,6 +6,7 @@ import { Plus, FolderPlus } from "lucide-react";
 import { EmptyLinksState } from "./EmptyLinksState";
 import { LinkItem } from "./LinkItem";
 import { GroupItem } from "./GroupItem";
+import { ABTestItem } from "./ABTestItem";
 import AddLinkBox from "./AddLinkBox";
 import CreateGroupDialog from "./CreateGroupDialog";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
@@ -39,6 +40,7 @@ type LinksSectionProps = {
     onDeleteGroup: (groupId: string, deleteChildren: boolean) => Promise<void>;
     onRenameGroup: (groupId: string, newName: string) => Promise<void>;
     onReorder: (links: ProfileLink[]) => void;
+    onCreateABTest?: (id: string) => Promise<void>;
 };
 
 function SortableLinkWrapper({ link, children }: { link: ProfileLink; children: React.ReactNode }) {
@@ -139,6 +141,7 @@ export function LinksSection({
     onDeleteGroup,
     onRenameGroup,
     onReorder,
+    onCreateABTest,
 }: LinksSectionProps) {
     const [localLinks, setLocalLinks] = React.useState<ProfileLink[]>(links);
     const localLinksRef = React.useRef(localLinks);
@@ -354,7 +357,19 @@ export function LinksSection({
     );
 
     // Get all sortable IDs (top-level + all children for nested contexts)
-    const topLevelIds = localLinks.map(l => l.id);
+    const abTestSecondaryIds = new Set<string>();
+    const seenAbTestParents = new Set<string>();
+    for (const l of localLinks) {
+        if (!l.abTestParentId || l.isGroup) continue;
+        if (seenAbTestParents.has(l.abTestParentId)) {
+            abTestSecondaryIds.add(l.id);
+        } else {
+            seenAbTestParents.add(l.abTestParentId);
+        }
+    }
+    const topLevelIds = localLinks
+        .filter(l => !abTestSecondaryIds.has(l.id))
+        .map(l => l.id);
 
     return (
         <Card>
@@ -391,34 +406,72 @@ export function LinksSection({
                 >
                     <SortableContext items={topLevelIds} strategy={verticalListSortingStrategy}>
                         <div className="space-y-4">
-                            {localLinks.map((item) => {
-                                if (item.isGroup) {
-                                    return (
-                                        <SortableGroupWrapper key={item.id} group={item}>
-                                            <GroupItem
-                                                group={item}
+                            {(() => {
+                                const groupedRender: React.ReactNode[] = [];
+                                const skipIds = new Set<string>();
+
+                                for (let i = 0; i < localLinks.length; i++) {
+                                    const item = localLinks[i];
+                                    if (skipIds.has(item.id)) continue;
+
+                                    if (item.isGroup) {
+                                        groupedRender.push(
+                                            <SortableGroupWrapper key={item.id} group={item}>
+                                                <GroupItem
+                                                    group={item}
+                                                    username={username}
+                                                    onUpdate={onUpdate}
+                                                    onToggleVisibility={onToggleVisibility}
+                                                    onDeleteLink={onDelete}
+                                                    onDeleteGroup={onDeleteGroup}
+                                                    onRenameGroup={onRenameGroup}
+                                                />
+                                            </SortableGroupWrapper>
+                                        );
+                                        continue;
+                                    }
+
+                                    if (item.abTestParentId) {
+                                        const sibling = localLinks.find(l => l.abTestParentId === item.abTestParentId && l.id !== item.id);
+                                        if (sibling) {
+                                            skipIds.add(sibling.id);
+                                            const pair = item.abTestVariant === "B" || sibling.abTestVariant === "A"
+                                                ? { a: sibling, b: item }
+                                                : { a: item, b: sibling };
+                                            const variantA = pair.a;
+                                            const variantB = pair.b;
+                                            
+                                            groupedRender.push(
+                                                <SortableLinkWrapper key={item.id} link={item}>
+                                                    <ABTestItem
+                                                        variantA={variantA}
+                                                        variantB={variantB}
+                                                        username={username}
+                                                        onUpdate={onUpdate}
+                                                        onToggleVisibility={onToggleVisibility}
+                                                        onDelete={onDelete}
+                                                    />
+                                                </SortableLinkWrapper>
+                                            );
+                                            continue;
+                                        }
+                                    }
+
+                                    groupedRender.push(
+                                        <SortableLinkWrapper key={item.id} link={item}>
+                                            <LinkItem
+                                                link={item}
                                                 username={username}
                                                 onUpdate={onUpdate}
                                                 onToggleVisibility={onToggleVisibility}
-                                                onDeleteLink={onDelete}
-                                                onDeleteGroup={onDeleteGroup}
-                                                onRenameGroup={onRenameGroup}
+                                                onDelete={onDelete}
+                                                onCreateABTest={onCreateABTest}
                                             />
-                                        </SortableGroupWrapper>
+                                        </SortableLinkWrapper>
                                     );
                                 }
-                                return (
-                                    <SortableLinkWrapper key={item.id} link={item}>
-                                        <LinkItem
-                                            link={item}
-                                            username={username}
-                                            onUpdate={onUpdate}
-                                            onToggleVisibility={onToggleVisibility}
-                                            onDelete={onDelete}
-                                        />
-                                    </SortableLinkWrapper>
-                                );
-                            })}
+                                return groupedRender;
+                            })()}
                         </div>
                     </SortableContext>
 

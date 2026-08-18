@@ -39,6 +39,7 @@ export function LinkItem({
     onUpdate,
     onToggleVisibility,
     onDelete,
+    onCreateABTest,
 }: {
     dragListeners?: SyntheticListenerMap;
     dragAttributes?: DraggableAttributes;
@@ -47,6 +48,7 @@ export function LinkItem({
     onUpdate: (id: string, url: string, label?: string, platform?: string, startDate?: Date | null, endDate?: Date | null, pinCode?: string | null, isSocialIcon?: boolean) => Promise<boolean>;
     onToggleVisibility: (id: string, isPublic: boolean) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    onCreateABTest?: (id: string) => Promise<void>;
 }) {
     const [editing, setEditing] = useState(false);
     const [url, setUrl] = useState(link.url);

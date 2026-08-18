@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+
+
+
+
 import { Prisma } from "@prisma/client";
 import { triggerPusherEvent } from "@/lib/pusher";
 import { resolveActiveWorkspace } from "@/lib/workspace";
@@ -298,10 +302,17 @@ export async function DELETE(
     // No body is fine for regular link deletion
   }
 
+
+
   // Group deletion with transaction
   if (link.isGroup) {
     await prisma.$transaction(async (tx) => {
       if (deleteChildren) {
+        // Clear all abTestParentId relations for the group's children first to satisfy NoAction
+        await tx.link.updateMany({
+          where: { parentId: id, workspaceId: link.workspaceId },
+          data: { abTestParentId: null },
+        });
         // Delete all children first, then the group
         await tx.link.deleteMany({
           where: { parentId: id, workspaceId: link.workspaceId },
@@ -338,6 +349,46 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   }
 
+  // A/B test variant reversion logic
+  if (link.abTestParentId) {
+    const parentId = link.abTestParentId;
+    await prisma.$transaction(async (tx) => {
+      // Find the sibling variant
+      const sibling = await tx.link.findFirst({
+        where: {
+          abTestParentId: parentId,
+          id: { not: id },
+        },
+      });
+
+      if (sibling) {
+        // Revert sibling to a standard link
+        let cleanPlatform = sibling.platform;
+        if (cleanPlatform.endsWith("__ab_b")) {
+          cleanPlatform = cleanPlatform.replace(/__ab_b$/, "");
+        }
+        await tx.link.update({
+          where: { id: sibling.id },
+          data: {
+            abTestVariant: null,
+            abTestParentId: null,
+            platform: cleanPlatform,
+          },
+        });
+      }
+
+      // Delete the requested link
+      await tx.link.delete({
+        where: { id },
+      });
+    });
+
+    // Deleted links disappear from the public profile — purge the cache.
+    await invalidateProfileCache(link.workspaceId);
+
+    return NextResponse.json({ success: true });
+  }
+
   // Regular link deletion
   await prisma.link.delete({
     where: { id },
@@ -350,6 +401,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-
-
-
