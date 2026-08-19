@@ -42,41 +42,12 @@ const PROFILE_GENERATION_PREFIX = "profile:gen:";
 // TTL so a captured generation can never outlive the payload it guards.
 const PROFILE_GENERATION_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
-let redisClient: Redis | null = null;
+import { getRedisClient, isRedisConfigured } from './redis';
 
-export function isRedisConfigured(): boolean {
-    return (
-        Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
-        Boolean(process.env.UPSTASH_REDIS_REST_TOKEN)
-    );
-}
+export { isRedisConfigured };
 
-/**
- * Lazily constructs (and then reuses) the Upstash Redis client. Lazy-importing
- * `@upstash/redis` keeps cold-start overhead zero in in-memory/no-Redis mode.
- * Any failure to construct the client is logged and swallowed so callers fall
- * through to the database instead of receiving the exception.
- */
 async function getRedis(): Promise<Redis | null> {
-    if (!isRedisConfigured()) {
-        return null;
-    }
-
-    if (redisClient) {
-        return redisClient;
-    }
-
-    try {
-        const { Redis } = await import("@upstash/redis");
-        redisClient = new Redis({
-            url: process.env.UPSTASH_REDIS_REST_URL!,
-            token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-        });
-    } catch (error) {
-        console.error("[profileCache] Redis client init failed:", error);
-        redisClient = null;
-    }
-    return redisClient;
+    return getRedisClient();
 }
 
 function profilePayloadKey(userId: string): string {

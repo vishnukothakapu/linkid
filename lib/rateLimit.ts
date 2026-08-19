@@ -116,14 +116,12 @@ async function checkRateLimitRedis(
     limit: number,
     windowMs: number,
 ): Promise<boolean> {
-    // Lazy-import so the module is only loaded when Redis is actually needed.
-    // This keeps cold-start overhead zero in in-memory mode.
-    const { Redis } = await import("@upstash/redis");
-
-    const redis = new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL!,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
+    const { getRedisClient } = await import("./redis");
+    const redis = await getRedisClient();
+    
+    if (!redis) {
+        throw new Error("Redis is not configured");
+    }
 
     const now = Date.now();
     const windowStart = now - windowMs;
