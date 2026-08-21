@@ -121,10 +121,11 @@ export function Navbar() {
             <div ref={menuRef} className="pointer-events-auto w-full max-w-4xl">
                 {/* Pill navbar */}
                 <div
-                    className={`flex h-12 overflow-hidden items-center justify-between gap-4 rounded-full border px-3 transition-all duration-300 sm:h-13 sm:px-4 ${scrolled
-                        ? "border-white/20 bg-white/10 shadow-xl shadow-violet-500/10 ring-1 ring-white/15 backdrop-blur-3xl dark:border-violet-500/15 dark:bg-transparent dark:shadow-violet-950/30 dark:ring-0 dark:backdrop-blur-2xl"
-                        : "border-white/15 bg-white/8 shadow-lg shadow-violet-500/[0.07] ring-1 ring-white/10 backdrop-blur-2xl dark:border-violet-500/10 dark:bg-transparent dark:shadow-none dark:ring-0 dark:backdrop-blur-xl"
-                        }`}
+                    className={`flex h-14 items-center justify-between gap-4 rounded-full border px-4 transition-all duration-300 sm:px-6 ${
+                        scrolled
+                            ? "bg-background/80 backdrop-blur-md shadow-sm border-border"
+                            : "bg-background/50 backdrop-blur-sm border-transparent"
+                    }`}
                 >
                     {/* Logo */}
                     <Link
@@ -145,15 +146,11 @@ export function Navbar() {
                                 href={href}
                                 onClick={() => selectSection(id)}
                                 className={`relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-300
-                                after:absolute after:left-1/2 after:bottom-0 after:h-[2px] after:w-2/5
-                                after:-translate-x-1/2 after:scale-x-0 after:rounded-full
-                                after:bg-gradient-to-r after:from-violet-500 after:via-fuchsia-500 after:to-indigo-500
-                                after:transition-transform after:duration-300 after:ease-out
-                                after:origin-center hover:after:scale-x-100
-                                ${activeSection === id
-                                        ? "text-violet-700 dark:text-violet-300 after:scale-x-100"
-                                        : "text-zinc-600 hover:text-violet-700 dark:text-zinc-400 dark:hover:text-violet-300"
-                                    }`}
+                                ${
+                                    activeSection === id
+                                        ? "bg-muted text-foreground"
+                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                }`}
                             >
                                 {label}
                             </Link>
@@ -161,28 +158,11 @@ export function Navbar() {
                     </nav>
 
                     {/* Desktop right actions */}
-                    <div className="hidden items-center gap-2 md:flex">
+                    <div className="hidden items-center gap-3 md:flex">
                         <ThemeToggle />
-                        <Button
-                            asChild
-                            className="h-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow-sm shadow-violet-500/25 transition-all hover:-translate-y-0.5 hover:from-violet-500 hover:to-indigo-500 hover:shadow-md hover:shadow-violet-500/30"
-                        >
+                        <Button asChild className="h-9 rounded-full px-5 text-sm font-medium">
                             <Link href="/login">Get Started</Link>
                         </Button>
-                        <motion.div
-                            style={{
-                                scaleX,
-                                transformOrigin: "left center",
-                                position: "absolute",
-                                insetInline: "0",
-                                bottom: 0,
-                                height: "2px",
-                                background: "linear-gradient(90deg, #7C3AED 0%, #A855F7 35%, #EC4899 70%, #6366F1 100%)",
-                                boxShadow: "0 0 10px rgba(168,85,247,.45), 0 0 20px rgba(99,102,241,.25)",
-                                borderRadius: "9999px",
-                                zIndex: 20,
-                            }}
-                        />
                     </div>
 
                     {/* Mobile: theme toggle + hamburger */}
@@ -191,33 +171,20 @@ export function Navbar() {
                         <button
                             onClick={() => setMobileOpen((o) => !o)}
                             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-violet-200/50 bg-white/30 text-zinc-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/50 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-violet-300"
+                            className="flex h-9 w-9 items-center justify-center rounded-full border bg-background/50 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted"
                         >
                             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                         </button>
                     </div>
-                    <motion.div
-                        style={{
-                            scaleX,
-                            transformOrigin: "left center",
-                            position: "absolute",
-                            insetInline: "0",
-                            bottom: 0,
-                            height: "2px",
-                            background: "linear-gradient(90deg, #7C3AED 0%, #A855F7 35%, #EC4899 70%, #6366F1 100%)",
-                            boxShadow: "0 0 10px rgba(168,85,247,.45), 0 0 20px rgba(99,102,241,.25)",
-                            borderRadius: "9999px",
-                            zIndex: 20,
-                        }}
-                    />
                 </div>
 
                 {/* Mobile dropdown — floats below the pill */}
                 <div
-                    className={`mt-2 overflow-hidden rounded-3xl border transition-all duration-300 ease-in-out md:hidden ${mobileOpen
-                        ? "max-h-80 border-violet-300/20 opacity-100 shadow-lg shadow-violet-950/20 dark:border-violet-500/20 dark:shadow-violet-950/40"
-                        : "max-h-0 border-transparent opacity-0"
-                        } bg-white/95 backdrop-blur-3xl dark:bg-violet-950/95`}
+                    className={`mt-2 overflow-hidden rounded-2xl border transition-all duration-300 ease-in-out md:hidden ${
+                        mobileOpen
+                            ? "max-h-80 border-border opacity-100 shadow-lg"
+                            : "max-h-0 border-transparent opacity-0"
+                    } bg-background/95 backdrop-blur-3xl`}
                 >
                     <div className="px-3 pb-4 pt-3">
                         <nav className="mb-3 flex flex-col gap-1">
@@ -229,10 +196,11 @@ export function Navbar() {
                                         selectSection(id);
                                         setMobileOpen(false);
                                     }}
-                                    className={`rounded-2xl px-4 py-2.5 text-sm font-medium transition-colors ${activeSection === id
-                                        ? "bg-violet-600 text-white shadow-sm shadow-violet-500/25"
-                                        : "text-zinc-600 hover:bg-violet-50 hover:text-violet-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-violet-300"
-                                        }`}
+                                    className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                                        activeSection === id
+                                            ? "bg-primary text-primary-foreground shadow-sm"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    }`}
                                 >
                                     {label}
                                 </Link>
@@ -240,7 +208,7 @@ export function Navbar() {
                         </nav>
                         <Button
                             asChild
-                            className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 font-semibold text-white shadow-sm shadow-violet-500/25 hover:from-violet-500 hover:to-indigo-500"
+                            className="w-full rounded-xl font-semibold"
                         >
                             <Link href="/login" onClick={() => setMobileOpen(false)}>
                                 Get Started

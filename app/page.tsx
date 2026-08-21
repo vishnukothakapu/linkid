@@ -16,7 +16,7 @@ import {
   Wand2,
   User,
   UserPlus,
-Share2,
+  Share2,
   BarChart3,
   Globe,
   Moon,
@@ -126,8 +126,9 @@ export default async function Home() {
                 Professional link management
               </div>
 
-              <h1 className="text-4xl font-black leading-[1.04] tracking-tight text-zinc-950 dark:text-white sm:text-5xl md:text-6xl lg:text-7xl">
-                One identity for every professional link.
+              <h1 className="text-5xl font-black leading-[1.15] tracking-tighter text-zinc-950 dark:text-white sm:text-6xl lg:text-[4rem] xl:text-[4.2rem]">
+                One identity for every <br className="hidden sm:block" />
+                professional link.
               </h1>
 
               <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300 sm:text-lg lg:mx-0">
@@ -153,7 +154,7 @@ export default async function Home() {
                   <a href="#demo">View Demo</a>
                 </Button>
               </div>
-            
+
               <div className="mt-8 flex flex-col items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 sm:flex-row sm:justify-center lg:justify-start">
                 <ProofItem>OAuth-ready</ProofItem>
                 <ProofItem>Dark mode</ProofItem>
@@ -295,44 +296,44 @@ export default async function Home() {
             </div>
           </div>
         </section>
-{/* How It Works Section */}
-<section
-  id="how-it-works"
-  className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8"
->
-  <SectionWash />
+        {/* How It Works Section */}
+        <section
+          id="how-it-works"
+          className="relative scroll-mt-28 px-4 py-16 sm:px-6 md:py-24 lg:px-8"
+        >
+          <SectionWash />
 
-  <div className="mx-auto max-w-7xl">
-    <SectionHeader
-      eyebrow="How It Works"
-      title="Create your professional identity in 3 simple steps"
-      desc="LinkID helps you claim one clean identity, connect your professional profiles, and share everything through one memorable link."
-    />
+          <div className="mx-auto max-w-7xl">
+            <SectionHeader
+              eyebrow="How It Works"
+              title="Create your professional identity in 3 simple steps"
+              desc="LinkID helps you claim one clean identity, connect your professional profiles, and share everything through one memorable link."
+            />
 
-    <div className="relative mt-14 grid gap-6 md:grid-cols-3">
-      <HowItWorksCard
-        step="Step 1"
-        icon={<UserPlus className="h-6 w-6" />}
-        title="Claim Your Username"
-        desc="Choose a unique and memorable LinkID username that represents your professional identity."
-      />
+            <div className="relative mt-14 grid gap-6 md:grid-cols-3">
+              <HowItWorksCard
+                step="Step 1"
+                icon={<UserPlus className="h-6 w-6" />}
+                title="Claim Your Username"
+                desc="Choose a unique and memorable LinkID username that represents your professional identity."
+              />
 
-      <HowItWorksCard
-        step="Step 2"
-        icon={<Link2 className="h-6 w-6" />}
-        title="Connect Your Profiles"
-        desc="Add GitHub, LinkedIn, LeetCode, portfolio websites, resumes, and other important professional links."
-      />
+              <HowItWorksCard
+                step="Step 2"
+                icon={<Link2 className="h-6 w-6" />}
+                title="Connect Your Profiles"
+                desc="Add GitHub, LinkedIn, LeetCode, portfolio websites, resumes, and other important professional links."
+              />
 
-      <HowItWorksCard
-        step="Step 3"
-        icon={<Share2 className="h-6 w-6" />}
-        title="Share One Clean Link"
-        desc="Use your LinkID URL everywhere — resumes, portfolios, applications, social profiles, and networking platforms."
-      />
-    </div>
-  </div>
-</section>
+              <HowItWorksCard
+                step="Step 3"
+                icon={<Share2 className="h-6 w-6" />}
+                title="Share One Clean Link"
+                desc="Use your LinkID URL everywhere — resumes, portfolios, applications, social profiles, and networking platforms."
+              />
+            </div>
+          </div>
+        </section>
         {/* Demo Section */}
         <section className="relative px-4 py-16 sm:px-6 md:py-24 lg:px-8" id="demo">
           <ScrollReveal>
@@ -375,7 +376,7 @@ export default async function Home() {
           <SectionWash />
           <ScrollReveal>
             <div className="mx-auto max-w-7xl">
-              <div className="overflow-hidden rounded-3xl border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-50/50 shadow-xl shadow-violet-900/5 dark:border-white/10 dark:from-zinc-950 dark:to-violet-950/20">
+              <div className="overflow-hidden rounded-3xl border border-violet-200/60 bg-white/40 shadow-xl shadow-violet-500/10 backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.02] dark:shadow-black/20">
                 <div className="grid lg:grid-cols-2">
                   <div className="p-10 sm:p-14 lg:p-16">
                     <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/70 bg-white/70 px-4 py-2 text-sm font-medium text-violet-700 shadow-sm backdrop-blur-xl dark:border-violet-400/20 dark:bg-white/5 dark:text-violet-200">
@@ -391,48 +392,47 @@ export default async function Home() {
                     <div className="mt-8 space-y-4">
                       <div className="rounded-2xl border border-violet-100/80 bg-white/50 p-5 dark:border-white/10 dark:bg-white/[0.02]">
                         <h3 className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-white">
-                           <Download className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                           How to install manually
+                          <Download className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                          How to install manually
                         </h3>
                         <ol className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                           <li className="flex gap-3">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">1</span>
-                              <span>Download the <a href="https://github.com/vishnukothakapu/linkid-extension" target="_blank" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">Extension folder</a> from our GitHub.</span>
-                           </li>
-                           <li className="flex gap-3">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">2</span>
-                              <span>Open Chrome and navigate to <code className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-[11px] text-zinc-800 dark:bg-white/10 dark:text-zinc-200">chrome://extensions</code></span>
-                           </li>
-                           <li className="flex gap-3">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">3</span>
-                              <span>Enable <strong>Developer mode</strong> (top right), click <strong>Load unpacked</strong>, and select the downloaded folder.</span>
-                           </li>
+                          <li className="flex gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">1</span>
+                            <span>Download the <a href="https://github.com/vishnukothakapu/linkid-extension" target="_blank" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">Extension folder</a> from our GitHub.</span>
+                          </li>
+                          <li className="flex gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">2</span>
+                            <span>Open Chrome and navigate to <code className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-[11px] text-zinc-800 dark:bg-white/10 dark:text-zinc-200">chrome://extensions</code></span>
+                          </li>
+                          <li className="flex gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">3</span>
+                            <span>Enable <strong>Developer mode</strong> (top right), click <strong>Load unpacked</strong>, and select the downloaded folder.</span>
+                          </li>
                         </ol>
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Decorative right side */}
-                  <div className="relative min-h-[300px] lg:min-h-full">
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-600 to-indigo-600 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
-                    <div className="absolute inset-0 flex items-center justify-center p-8">
-                       <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-black/40 p-8 backdrop-blur-xl shadow-2xl">
-                          <div className="mb-8 flex items-center justify-center gap-4">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 p-1 shadow-lg">
-                               <img src={demoImage} alt="Vishnu" className="h-full w-full rounded-full border-2 border-zinc-900 object-cover bg-zinc-800" />
-                            </div>
-                            <div className="text-left">
-                               <div className="text-lg font-bold text-white">@vishnu</div>
-                               <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-emerald-400">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span> Connected
-                               </div>
-                            </div>
+                  <div className="relative flex min-h-[300px] items-center justify-center border-t border-violet-200/60 bg-violet-50/30 p-8 dark:border-white/10 dark:bg-white/[0.02] lg:min-h-full lg:border-l lg:border-t-0">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(124,58,237,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(124,58,237,0.05)_1px,transparent_1px)] bg-[size:24px_24px] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)]" />
+
+                    <div className="relative w-full max-w-sm rounded-2xl border border-violet-200/60 bg-white/80 p-8 shadow-xl shadow-violet-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-black/30">
+                      <div className="mb-8 flex items-center justify-center gap-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 p-1 shadow-inner dark:from-violet-900/40 dark:to-indigo-900/40">
+                          <img src={demoImage} alt="Vishnu" className="h-full w-full rounded-full border-2 border-white object-cover dark:border-zinc-800" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-lg font-bold text-zinc-900 dark:text-white">@vishnu</div>
+                          <div className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] dark:bg-emerald-400 dark:shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span> Connected
                           </div>
-                          <button className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-4 font-semibold text-white shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-transform hover:scale-[1.02]">
-                             <Wand2 className="inline-block mr-2 h-5 w-5 mb-1" />
-                             Auto-Fill Application
-                          </button>
-                       </div>
+                        </div>
+                      </div>
+                      <button className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-4 font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/30">
+                        <Wand2 className="mb-1 mr-2 inline-block h-5 w-5" />
+                        Auto-Fill Application
+                      </button>
                     </div>
                   </div>
                 </div>

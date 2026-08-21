@@ -71,13 +71,13 @@ export function ProfileLinkItem({ link, username, layoutStyle }: ProfileLinks) {
     }
 
     return (
-        <div className="group flex items-center rounded-lg border bg-background transition hover:bg-muted">
+        <div className="group flex items-center rounded-lg border bg-background transition hover:bg-muted pr-3">
             <a
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={ariaLabel}
-                className="flex min-w-0 flex-1 items-center justify-between px-4 py-3"
+                className="flex min-w-0 flex-1 items-center justify-between py-3 pl-4 pr-2"
             >
                 <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">

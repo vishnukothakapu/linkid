@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Sora } from "next/font/google";
 import "./globals.css";
+import "react-image-crop/dist/ReactCrop.css";
 import Providers from "./providers";
 import BackToTop from "@/components/ui/BackToTop";
-
 import PwaRegister from "@/components/PwaRegister";
-
 import { headers } from "next/headers";
 
-const inter = Inter({
+const soraFont = Sora({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-family",
 });
 
 export const viewport = {
@@ -42,7 +41,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${soraFont.variable} antialiased font-sans`}
       >
         <PwaRegister />
         <Providers nonce={nonce}>{children}</Providers>

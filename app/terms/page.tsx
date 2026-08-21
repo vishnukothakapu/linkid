@@ -1,17 +1,13 @@
-// app/terms/page.tsx
 import Link from "next/link";
 import { Metadata } from "next";
 import { Navbar } from "@/app/components/Navbar";
-import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Terms of Service | LinkID",
   description:
     "Terms of Service for LinkID platform - Usage guidelines, user responsibilities, and legal terms for our professional link management service",
 };
-
-const sectionClass =
-  "space-y-4 border-b border-zinc-200/70 pb-10 last:border-none last:pb-0 dark:border-white/10";
 
 function InfoCard({
   title,
@@ -35,10 +31,7 @@ function InfoCard({
 
   return (
     <div
-      className={cn(
-        "rounded-2xl border p-5 shadow-sm backdrop-blur-sm",
-        variants[variant],
-      )}
+      className={`rounded-2xl border p-5 shadow-sm backdrop-blur-sm ${variants[variant]}`}
     >
       <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-white">
         {title}
@@ -57,7 +50,6 @@ export default function TermsOfServicePage() {
       <Navbar />
 
       <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-        {/* Hero Section */}
         <section
           className="relative overflow-hidden border-b border-violet-200/60 px-4 pb-14 pt-28 dark:border-white/10 sm:px-6 sm:pb-16 sm:pt-32 lg:px-8"
           aria-labelledby="terms-heading"
@@ -90,295 +82,245 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
-        {/* Content */}
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
-            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12">
-              <div
-                className={cn(
-                  "prose prose-zinc max-w-none dark:prose-invert",
-                  "prose-headings:scroll-mt-24",
-                  "prose-h2:mb-4 prose-h2:mt-0 prose-h2:text-2xl prose-h2:font-bold",
-                  "prose-p:text-zinc-600 dark:prose-p:text-zinc-300",
-                  "prose-p:leading-8",
-                  "prose-li:text-zinc-600 dark:prose-li:text-zinc-300",
-                  "prose-li:leading-7",
-                  "prose-strong:text-zinc-900 dark:prose-strong:text-white",
-                  "prose-a:text-violet-600 dark:prose-a:text-violet-400",
-                  "prose-a:no-underline hover:prose-a:underline",
-                )}
-              >
-                <section
-                  className={sectionClass}
-                  aria-labelledby="introduction"
-                >
-                  <h2 id="introduction">1. Introduction</h2>
+            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12 space-y-10">
 
-                  <p>
-                    Welcome to <strong>LinkID</strong> (&quot;we,&quot;
-                    &quot;our,&quot; or &quot;us&quot;). By accessing or using
-                    our platform at <Link href="/">linkid.qzz.io</Link>, you
-                    agree to comply with and be bound by these Terms of Service.
-                  </p>
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">1. Introduction</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  Welcome to <strong className="text-zinc-900 dark:text-white">LinkID</strong> (&quot;we,&quot;
+                  &quot;our,&quot; or &quot;us&quot;). By accessing or using
+                  our platform at <Link href="/" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">linkid.qzz.io</Link>, you
+                  agree to comply with and be bound by these Terms of Service.
+                </p>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  These terms apply to all users of the platform, including
+                  visitors, registered users, and contributors. If you do not
+                  agree with any part of these terms, you may not access or
+                  use the platform.
+                </p>
+              </section>
 
-                  <p>
-                    These terms apply to all users of the platform, including
-                    visitors, registered users, and contributors. If you do not
-                    agree with any part of these terms, you may not access or
-                    use the platform.
-                  </p>
-                </section>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                <section
-                  className={sectionClass}
-                  aria-labelledby="account-terms"
-                >
-                  <h2 id="account-terms">2. Account Terms</h2>
-
-                  <p>To use LinkID, you agree that:</p>
-
-                  <ul className="space-y-2">
-                    <li>
-                      You must be at least 13 years old to create an account
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">2. Account Terms</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">To use LinkID, you agree that:</p>
+                <ul className="space-y-3">
+                  {[
+                    "You must be at least 13 years old to create an account",
+                    "You are responsible for maintaining the security of your account and password",
+                    "You must provide accurate, current, and complete registration information",
+                    "You may not share your account credentials with any third party",
+                    "You are solely responsible for all activities under your account",
+                    "You must notify us immediately of unauthorized account use",
+                    "You may not use the service for illegal or unauthorized purposes"
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-zinc-600 dark:text-zinc-300">{item}</span>
                     </li>
-                    <li>
-                      You are responsible for maintaining the security of your
-                      account and password
-                    </li>
-                    <li>
-                      You must provide accurate, current, and complete
-                      registration information
-                    </li>
-                    <li>
-                      You may not share your account credentials with any third
-                      party
-                    </li>
-                    <li>
-                      You are solely responsible for all activities under your
-                      account
-                    </li>
-                    <li>
-                      You must notify us immediately of unauthorized account use
-                    </li>
-                    <li>
-                      You may not use the service for illegal or unauthorized
-                      purposes
-                    </li>
-                  </ul>
-                </section>
+                  ))}
+                </ul>
+              </section>
 
-                <section
-                  className={sectionClass}
-                  aria-labelledby="acceptable-use"
-                >
-                  <h2 id="acceptable-use">3. Acceptable Use Policy</h2>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                  <p>You agree not to use LinkID to:</p>
-
-                  <ul className="space-y-2">
-                    <li>
-                      Post, share, or promote illegal content or activities
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">3. Acceptable Use Policy</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">You agree not to use LinkID to:</p>
+                <ul className="space-y-3">
+                  {[
+                    "Post, share, or promote illegal content or activities",
+                    "Harass, abuse, intimidate, threaten, or defame others",
+                    "Impersonate any person or entity or misrepresent your affiliation",
+                    "Distribute malware, viruses, or harmful software",
+                    "Circumvent security measures or access restrictions",
+                    "Interfere with or disrupt platform functionality",
+                    "Use bots or automated scripts to collect user data without consent",
+                    "Share phishing links, malicious content, or adult material",
+                    "Violate applicable laws or regulations"
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-zinc-600 dark:text-zinc-300">{item}</span>
                     </li>
-                    <li>
-                      Harass, abuse, intimidate, threaten, or defame others
-                    </li>
-                    <li>
-                      Impersonate any person or entity or misrepresent your
-                      affiliation
-                    </li>
-                    <li>Distribute malware, viruses, or harmful software</li>
-                    <li>Circumvent security measures or access restrictions</li>
-                    <li>Interfere with or disrupt platform functionality</li>
-                    <li>
-                      Use bots or automated scripts to collect user data without
-                      consent
-                    </li>
-                    <li>
-                      Share phishing links, malicious content, or adult material
-                    </li>
-                    <li>Violate applicable laws or regulations</li>
-                  </ul>
-                </section>
+                  ))}
+                </ul>
+              </section>
 
-                <section
-                  className={sectionClass}
-                  aria-labelledby="user-content"
-                >
-                  <h2 id="user-content">
-                    4. User Content &amp; Responsibilities
-                  </h2>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <InfoCard title="Ownership">
-                      <p className="m-0">
-                        You retain ownership rights to the content you submit,
-                        including profile information, links, and associated
-                        data.
-                      </p>
-                    </InfoCard>
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">4. User Content & Responsibilities</h2>
 
-                    <InfoCard title="License to Use">
-                      <p className="m-0">
-                        By submitting content, you grant LinkID a worldwide,
-                        non-exclusive, royalty-free license to host, store,
-                        display, and distribute your content as necessary to
-                        operate the platform.
-                      </p>
-                    </InfoCard>
-                  </div>
-
-                  <p>You are solely responsible for:</p>
-
-                  <ul className="space-y-2">
-                    <li>
-                      The accuracy, legality, and appropriateness of shared
-                      links
-                    </li>
-                    <li>
-                      Ensuring your content does not violate third-party rights
-                    </li>
-                    <li>Complying with all applicable laws and regulations</li>
-                  </ul>
-                </section>
-
-                <section className={sectionClass} aria-labelledby="redirects">
-                  <h2 id="redirects">5. Platform Links &amp; Redirects</h2>
-
-                  <p>
-                    LinkID may provide redirects to third-party platforms and
-                    websites. We do not control or assume responsibility for the
-                    content, policies, or practices of external services.
-                  </p>
-
-                  <InfoCard title="⚠️ Disclaimer" variant="warning">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InfoCard title="Ownership">
                     <p className="m-0">
-                      By using our redirect service, you acknowledge that
-                      external websites are accessed at your own risk and may be
-                      modified or removed without notice.
-                    </p>
-                  </InfoCard>
-                </section>
-
-                <section
-                  className={sectionClass}
-                  aria-labelledby="intellectual-property"
-                >
-                  <h2 id="intellectual-property">6. Intellectual Property</h2>
-
-                  <p>
-                    The LinkID platform, including its design, branding, source
-                    code, graphics, and interface elements, is protected by
-                    intellectual property laws.
-                  </p>
-
-                  <p>
-                    You may not copy, modify, reverse engineer, distribute, or
-                    reproduce any part of the platform without written
-                    permission.
-                  </p>
-
-                  <p>
-                    LinkID and related branding assets are trademarks of the
-                    LinkID project. Unauthorized use is prohibited.
-                  </p>
-                </section>
-
-                <section className={sectionClass} aria-labelledby="termination">
-                  <h2 id="termination">7. Termination</h2>
-
-                  <p>
-                    We reserve the right to suspend or terminate accounts that
-                    violate these terms, harm users, or disrupt the platform.
-                  </p>
-
-                  <InfoCard title="Upon termination" variant="danger">
-                    <ul className="mb-0 mt-0 space-y-2">
-                      <li>Your access to the platform may immediately cease</li>
-                      <li>
-                        We may delete or deactivate associated account data
-                      </li>
-                      <li>
-                        You may request permanent account deletion through
-                        account settings
-                      </li>
-                    </ul>
-                  </InfoCard>
-                </section>
-
-                <section className={sectionClass} aria-labelledby="liability">
-                  <h2 id="liability">8. Limitation of Liability</h2>
-
-                  <InfoCard title="Limitation of Liability" variant="neutral">
-                    <p className="m-0">
-                      To the maximum extent permitted by law, LinkID and its
-                      contributors shall not be liable for indirect, incidental,
-                      special, consequential, or punitive damages resulting from
-                      platform use.
+                      You retain ownership rights to the content you submit,
+                      including profile information, links, and associated data.
                     </p>
                   </InfoCard>
 
-                  <p className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 px-4 py-4 text-sm leading-7 italic dark:border-zinc-700 dark:bg-zinc-900/40">
-                    <strong>Disclaimer of Warranties:</strong> LinkID is
-                    provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;
-                    without warranties of any kind, express or implied.
-                  </p>
-                </section>
+                  <InfoCard title="License to Use">
+                    <p className="m-0">
+                      By submitting content, you grant LinkID a worldwide,
+                      non-exclusive, royalty-free license to host, store,
+                      display, and distribute your content as necessary to
+                      operate the platform.
+                    </p>
+                  </InfoCard>
+                </div>
 
-                <section className={sectionClass} aria-labelledby="changes">
-                  <h2 id="changes">9. Changes to Terms</h2>
-
-                  <p>
-                    We may update these terms periodically. Significant updates
-                    may be communicated through platform notices or email
-                    notifications.
-                  </p>
-
-                  <p>
-                    Continued use of LinkID after updates constitutes acceptance
-                    of the revised terms.
-                  </p>
-                </section>
-
-                <section className="space-y-4" aria-labelledby="contact">
-                  <h2 id="contact">10. Contact Us</h2>
-
-                  <p>
-                    If you have questions about these Terms of Service, contact
-                    us through any of the following channels:
-                  </p>
-
-                  <ul className="space-y-3">
-                    <li>
-                      GitHub Issues:{" "}
-                      <Link
-                        href="https://github.com/vishnukothakapu/linkid/issues"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        github.com/vishnukothakapu/linkid/issues
-                      </Link>
+                <p className="pt-2 text-zinc-600 dark:text-zinc-300 leading-relaxed">You are solely responsible for:</p>
+                <ul className="space-y-3">
+                  {[
+                    "The accuracy, legality, and appropriateness of shared links",
+                    "Ensuring your content does not violate third-party rights",
+                    "Complying with all applicable laws and regulations"
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-zinc-600 dark:text-zinc-300">{item}</span>
                     </li>
+                  ))}
+                </ul>
+              </section>
 
-                    <li>
-                      Email:{" "}
-                      <a href="mailto:support@linkid.qzz.io">
-                        support@linkid.qzz.io
-                      </a>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">5. Platform Links & Redirects</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  LinkID may provide redirects to third-party platforms and
+                  websites. We do not control or assume responsibility for the
+                  content, policies, or practices of external services.
+                </p>
+                <InfoCard title="Disclaimer" variant="warning">
+                  <p className="m-0">
+                    By using our redirect service, you acknowledge that
+                    external websites are accessed at your own risk and may be
+                    modified or removed without notice.
+                  </p>
+                </InfoCard>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">6. Intellectual Property</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  The LinkID platform, including its design, branding, source
+                  code, graphics, and interface elements, is protected by
+                  intellectual property laws.
+                </p>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  You may not copy, modify, reverse engineer, distribute, or
+                  reproduce any part of the platform without written permission.
+                </p>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  LinkID and related branding assets are trademarks of the
+                  LinkID project. Unauthorized use is prohibited.
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">7. Termination</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  We reserve the right to suspend or terminate accounts that
+                  violate these terms, harm users, or disrupt the platform.
+                </p>
+                <InfoCard title="Upon termination" variant="danger">
+                  <ul className="mb-0 mt-0 space-y-2">
+                    <li className="flex gap-2 items-start">
+                      <span className="text-red-500">•</span>
+                      <span>Your access to the platform may immediately cease</span>
                     </li>
-
-                    <li>
-                      GitHub Discussions:{" "}
-                      <Link
-                        href="https://github.com/vishnukothakapu/linkid/discussions"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        GitHub Discussions
-                      </Link>
+                    <li className="flex gap-2 items-start">
+                      <span className="text-red-500">•</span>
+                      <span>We may delete or deactivate associated account data</span>
+                    </li>
+                    <li className="flex gap-2 items-start">
+                      <span className="text-red-500">•</span>
+                      <span>You may request permanent account deletion through account settings</span>
                     </li>
                   </ul>
-                </section>
-              </div>
+                </InfoCard>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">8. Limitation of Liability</h2>
+                <InfoCard title="Limitation of Liability" variant="neutral">
+                  <p className="m-0">
+                    To the maximum extent permitted by law, LinkID and its
+                    contributors shall not be liable for indirect, incidental,
+                    special, consequential, or punitive damages resulting from
+                    platform use.
+                  </p>
+                </InfoCard>
+                <p className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 px-4 py-4 text-sm leading-7 italic dark:border-zinc-700 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-300">
+                  <strong className="text-zinc-900 dark:text-white not-italic">Disclaimer of Warranties:</strong> LinkID is
+                  provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;
+                  without warranties of any kind, express or implied.
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">9. Changes to Terms</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  We may update these terms periodically. Significant updates
+                  may be communicated through platform notices or email
+                  notifications.
+                </p>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  Continued use of LinkID after updates constitutes acceptance
+                  of the revised terms.
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">10. Contact Us</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  If you have questions about these Terms of Service, contact
+                  us through any of the following channels:
+                </p>
+
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <a href="https://github.com/vishnukothakapu/linkid/issues" target="_blank" rel="noopener noreferrer" className="font-semibold text-zinc-900 hover:underline dark:text-white">
+                      GitHub Issues
+                    </a>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Report a bug or request a feature.</p>
+                  </li>
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <a href="mailto:support@linkid.qzz.io" className="font-semibold text-zinc-900 hover:underline dark:text-white">
+                      support@linkid.qzz.io
+                    </a>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Email us for general inquiries.</p>
+                  </li>
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <a href="https://github.com/vishnukothakapu/linkid/discussions" target="_blank" rel="noopener noreferrer" className="font-semibold text-zinc-900 hover:underline dark:text-white">
+                      GitHub Discussions
+                    </a>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Join the community conversation.</p>
+                  </li>
+                </ul>
+              </section>
 
               {/* Footer Navigation */}
               <div className="mt-14 border-t border-violet-200/60 pt-8 dark:border-white/10">

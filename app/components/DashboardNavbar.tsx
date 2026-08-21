@@ -121,6 +121,7 @@ export function DashboardNavbar() {
                      >
                         <DropdownMenuTrigger asChild>
                             <Button
+                                suppressHydrationWarning
                                 variant="ghost"
                                 className="flex h-9 items-center gap-2 rounded-xl border border-violet-200/60 bg-white/65 px-2 shadow-sm transition-all hover:bg-violet-50 hover:border-violet-300 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 sm:px-3"
                             >

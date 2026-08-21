@@ -93,18 +93,20 @@ export function GroupItem({
     }
 
     return (
-        <div className={`rounded-lg border-2 transition-colors ${isOver ? "border-primary bg-primary/5" : "border-muted"}`}>
+        <div className={`rounded-xl border transition-colors bg-card text-card-foreground shadow-sm overflow-hidden mb-3 ${isOver ? "border-primary ring-1 ring-primary/50" : "hover:border-primary/50"}`}>
             {/* Group header */}
-            <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-t-lg">
+            <div className="flex items-center gap-3 p-3 bg-muted/30 border-b">
                 <div
                     {...dragListeners}
                     {...dragAttributes}
                     role="button"
                     aria-label="Drag to reorder group"
                     tabIndex={0}
-                    className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded p-1"
+                    className="cursor-grab active:cursor-grabbing p-1.5 text-muted-foreground/50 hover:text-foreground hover:bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
                 >
-                    <GripVertical className="h-4 w-4" />
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+                        <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM5.5 9.5C4.67157 9.5 4 10.1716 4 11C4 11.8284 4.67157 12.5 5.5 12.5C6.32843 12.5 7 11.8284 7 11C7 10.1716 6.32843 9.5 5.5 9.5ZM9.5 3C8.67157 3 8 3.67157 8 4.5C8 5.32843 8.67157 6 9.5 6C10.3284 6 11 5.32843 11 4.5C11 3.67157 10.3284 3 9.5 3ZM9.5 9.5C8.67157 9.5 8 10.1716 8 11C8 11.8284 8.67157 12.5 9.5 12.5C10.3284 12.5 11 11.8284 11 11C11 10.1716 10.3284 9.5 9.5 9.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                    </svg>
                 </div>
 
                 <div className="flex items-center gap-2 flex-1">

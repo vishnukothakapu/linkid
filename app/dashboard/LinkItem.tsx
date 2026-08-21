@@ -121,53 +121,66 @@ export function LinkItem({
     }
 
     return (
-        <div className="rounded-md border p-4 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex gap-3 items-center min-w-0">
-                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center shrink-0">
-                        <Icon className="h-5 w-5" />
+        <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden transition-all hover:border-primary/50 group mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center p-3 gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Drag Handle */}
+                    <div
+                        {...dragListeners}
+                        {...dragAttributes}
+                        role="button"
+                        aria-label="Drag to reorder"
+                        tabIndex={0}
+                        className="cursor-grab active:cursor-grabbing p-1.5 text-muted-foreground/50 hover:text-foreground hover:bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-ring shrink-0"
+                    >
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+                            <path d="M5.5 3C4.67157 3 4 3.67157 4 4.5C4 5.32843 4.67157 6 5.5 6C6.32843 6 7 5.32843 7 4.5C7 3.67157 6.32843 3 5.5 3ZM5.5 9.5C4.67157 9.5 4 10.1716 4 11C4 11.8284 4.67157 12.5 5.5 12.5C6.32843 12.5 7 11.8284 7 11C7 10.1716 6.32843 9.5 5.5 9.5ZM9.5 3C8.67157 3 8 3.67157 8 4.5C8 5.32843 8.67157 6 9.5 6C10.3284 6 11 5.32843 11 4.5C11 3.67157 10.3284 3 9.5 3ZM9.5 9.5C8.67157 9.5 8 10.1716 8 11C8 11.8284 8.67157 12.5 9.5 12.5C10.3284 12.5 11 11.8284 11 11C11 10.1716 10.3284 9.5 9.5 9.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                        </svg>
                     </div>
 
-                    <div className="min-w-0">
-                        <p className="font-medium capitalize">
-                            {editing ? (label || platform) : (link.label || link.platform)}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
+                    {/* Icon */}
+                    <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 border border-primary/20">
+                        <Icon className="h-5 w-5 text-primary" />
+                    </div>
+
+                    {/* Text content */}
+                    <div className="min-w-0 flex flex-col justify-center">
+                        <div className="flex items-center gap-2">
+                            <p className="font-semibold text-sm capitalize truncate">
+                                {editing ? (label || platform) : (link.label || link.platform)}
+                            </p>
+                            {!link.isPublic && (
+                                <span className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium border">Private</span>
+                            )}
+                            {(link.startDate || link.endDate) && (
+                                <span className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium border">Scheduled</span>
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate transition-colors cursor-default mt-0.5">
                             {editing ? url : link.url}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            {link.clicks} {link.clicks === 1 ? "click" : "clicks"}
-                        </p>
-                        {link.updatedAt && (
-                        <p className="text-xs text-muted-foreground">
-                                Updated{" "}
-                                {formatDistanceToNow(new Date(link.updatedAt), {
-                                    addSuffix: true,
-                                })}
-                        </p>
-                    )}
-                        <div className="mt-1 flex items-center gap-2">
-                            <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-                                {link.isPublic ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                                {link.isPublic ? "Public" : "Private"}
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] font-medium text-muted-foreground/80 flex items-center gap-1">
+                                <svg width="10" height="10" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.14926 7.42435C3.25056 7.37521 3.37682 7.40118 3.44754 7.4912L5.42277 10.0051L9.58988 4.41727C9.65839 4.32537 9.78457 4.29828 9.88636 4.35368L11.8864 5.43987C11.9682 5.48429 12.008 5.58005 11.979 5.6631C11.6429 6.62678 11.236 8.35823 10.7495 10.2393C10.5901 10.8553 10.4286 11.4589 10.2764 11.9691C10.2452 12.0735 10.1493 12.1465 10.0406 12.1465H6.46736C6.35339 12.1465 6.25368 12.0664 6.22353 11.9546C6.11306 11.5451 5.97541 11.0028 5.82657 10.3703L4.99986 6.85802L3.62662 6.94052C3.51862 6.94689 3.41872 6.87763 3.38531 6.77317L3.13531 5.99027C3.11181 5.91662 3.14926 5.83637 3.22067 5.80807L3.92131 5.53051L3.08051 7.27961C3.04259 7.3586 3.07223 7.46169 3.14926 7.42435ZM4.9818 7.37952L5.87768 8.52044C5.97813 8.94827 6.07593 9.38799 6.16104 9.76189L9.46797 5.3243C9.39077 5.23467 9.25595 5.21279 9.15545 5.27581L7.2023 6.49504L8.76185 8.16912L8.02677 8.85521L6.17726 6.86873L4.9818 7.37952Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+                                {link.clicks} {link.clicks === 1 ? "click" : "clicks"}
                             </p>
-                            {(link.startDate || link.endDate) && (
-                                <p className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-                                    <Clock className="h-3 w-3" />
-                                    Scheduled
+                            {link.updatedAt && (
+                                <p className="text-[10px] text-muted-foreground/60 font-medium">
+                                    · Updated {formatDistanceToNow(new Date(link.updatedAt), { addSuffix: true })}
                                 </p>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1 justify-end">
+                <div className="flex items-center gap-1 shrink-0 ml-10 sm:ml-0">
                     <Button
                         size="icon"
                         variant="ghost"
                         onClick={() => onToggleVisibility(link.id, !link.isPublic)}
                         aria-label={link.isPublic ? "Make link private" : "Make link public"}
                         title={link.isPublic ? "Make link private" : "Make link public"}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     >
                         {link.isPublic ? (
                             <EyeOff className="h-4 w-4" />
@@ -176,7 +189,7 @@ export function LinkItem({
                         )}
                     </Button>
 
-                    <Button size="icon" variant="ghost" onClick={copy}>
+                    <Button size="icon" variant="ghost" onClick={copy} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                         {copied ? (
                             <Check className="h-4 w-4 text-green-600" />
                         ) : (
@@ -184,15 +197,15 @@ export function LinkItem({
                         )}
                     </Button>
 
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${link.label ?? link.platform} in new tab`}> 
-                        <Button size="icon" variant="ghost" title={`Open ${link.label ?? link.platform}`}>
+                    <Button size="icon" variant="ghost" asChild className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${link.label ?? link.platform} in new tab`}> 
                             <ExternalLink className="h-4 w-4" />
-                        </Button>
-                    </a>
+                        </a>
+                    </Button>
 
                     <Button
                         size="icon"
-                        variant="ghost"
+                        variant="secondary"
                         onClick={() => {
                             if (editing) {
                                 setUrl(link.url);
@@ -206,6 +219,7 @@ export function LinkItem({
                             setEditing((v) => !v);
                         }}
                         aria-label={editing ? "Cancel editing" : "Edit link"}
+                        className="h-8 w-8 ml-1"
                     >
                         {editing ? (
                             <X className="h-4 w-4" />
@@ -216,23 +230,10 @@ export function LinkItem({
                 </div>
             </div>
 
-            <div
-                {...dragListeners}
-                {...dragAttributes}
-                role="button"
-                aria-label="Drag to reorder"
-                tabIndex={0}
-                className="cursor-grab active:cursor-grabbing p-2 w-fit mx-auto text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-            >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 5h6M9 12h6M9 19h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-            </div>
-
             {editing && (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4 px-3 pb-3 pt-1 border-t mt-1">
                     <Select value={platform} onValueChange={handlePlatformChange}>
-                        <SelectTrigger>
+                        <SelectTrigger suppressHydrationWarning>
                             <SelectValue placeholder="Select a platform" />
                         </SelectTrigger>
                         <SelectContent>
@@ -244,18 +245,18 @@ export function LinkItem({
                         </SelectContent>
                     </Select>
 
-                    <div className="flex flex-col gap-2 sm:flex-row flex-1">
+                    <div className="flex flex-col gap-3 sm:flex-row flex-1">
                         <Input
                             placeholder="Link Display Name"
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
-                            className="flex-1 px-2 py-4 text-sm"
+                            className="flex-1 text-sm h-10"
                         />
                         <Input
                             placeholder="Paste your link here..."
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
-                            className="flex-1 px-2 py-4 text-sm"
+                            className="flex-1 text-sm h-10"
                         />
                     </div>
 

@@ -369,13 +369,8 @@ export default function DashboardClient({
 
                 <LinkIdCard username={username} qrCode={qrCode} />
 
-                <div className="grid gap-6 md:grid-cols-3">
-                    <div className="md:col-span-2">
-                        <AnalyticsOverview />
-                    </div>
-                    <div>
-                        <VersionHistory />
-                    </div>
+                <div className="w-full">
+                    <AnalyticsOverview />
                 </div>
 
                 <div className="flex gap-4 border-b">
@@ -471,15 +466,18 @@ export default function DashboardClient({
                         />
                     </div>
                 ) : activeTab === 'appearance' ? (
-                    <AppearanceSection 
-                        workspaceId={workspaceId}
-                        initialTheme={theme} 
-                        initialLayout={layoutStyle}
-                        initialBackgroundImage={backgroundImage ?? undefined}
-                        onUpdateTheme={setTheme} 
-                        onUpdateLayout={setLayoutStyle}
-                        onUpdateBackgroundImage={setBackgroundImage}
-                    />
+                    <div className="space-y-6">
+                        <AppearanceSection 
+                            workspaceId={workspaceId}
+                            initialTheme={theme} 
+                            initialLayout={layoutStyle}
+                            initialBackgroundImage={backgroundImage ?? undefined}
+                            onUpdateTheme={setTheme} 
+                            onUpdateLayout={setLayoutStyle}
+                            onUpdateBackgroundImage={setBackgroundImage}
+                        />
+                        <VersionHistory />
+                    </div>
                 ) : activeTab === 'seo' ? (
                     <SeoSection 
                         workspaceId={workspaceId}

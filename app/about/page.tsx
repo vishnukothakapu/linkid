@@ -1,17 +1,26 @@
-// app/about/page.tsx
 import Link from "next/link";
 import { Metadata } from "next";
 import { Navbar } from "@/app/components/Navbar";
 import { cn } from "@/lib/utils";
+import {
+  Globe,
+  Wand2,
+  BarChart3,
+  Shield,
+  User,
+  Moon,
+  Github,
+  Code2,
+  MessageSquare,
+  Mail,
+  Users
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About | LinkID",
   description:
     "Learn about LinkID - the open-source professional link management platform that gives you one username and clean, predictable links for every platform.",
 };
-
-const sectionClass =
-  "space-y-4 border-b border-zinc-200/70 pb-10 last:border-none last:pb-0 dark:border-white/10";
 
 export default function AboutPage() {
   return (
@@ -43,91 +52,112 @@ export default function AboutPage() {
 
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
-            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12">
-              <div
-                className={cn(
-                  "prose prose-zinc max-w-none dark:prose-invert",
-                  "prose-headings:scroll-mt-24",
-                  "prose-h2:mb-4 prose-h2:mt-0 prose-h2:text-2xl prose-h2:font-bold",
-                  "prose-p:text-zinc-600 dark:prose-p:text-zinc-300",
-                  "prose-p:leading-8",
-                  "prose-li:text-zinc-600 dark:prose-li:text-zinc-300",
-                  "prose-li:leading-7",
-                  "prose-strong:text-zinc-900 dark:prose-strong:text-white",
-                  "prose-a:text-violet-600 dark:prose-a:text-violet-400",
-                  "prose-a:no-underline hover:prose-a:underline",
-                )}
-              >
-                <section className={sectionClass} aria-labelledby="what-is">
-                  <h2 id="what-is">What is LinkID?</h2>
+            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12 space-y-12">
+
+              {/* What is LinkID? */}
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-zinc-950 dark:text-white">What is LinkID?</h2>
+                <div className="text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
                   <p>
-                    <strong>LinkID</strong> is a free, open-source link management platform built
+                    <strong className="text-zinc-900 dark:text-white">LinkID</strong> is a free, open-source link management platform built
                     for developers and professionals. Instead of pasting long, forgettable URLs
                     across every platform, you get one clean username and predictable links for
                     every profile you own.
                   </p>
-                  <p>
-                    Share <code>linkid.qzz.io/username/github</code> or{" "}
-                    <code>linkid.qzz.io/username/linkedin</code> — and anyone who clicks it lands
+                </div>
+                <div className="rounded-2xl border border-violet-200/60 bg-violet-50/50 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.02]">
+                  <p className="text-base text-zinc-700 dark:text-zinc-300">
+                    Share <code className="rounded-md border border-violet-100 bg-white/80 px-1.5 py-0.5 font-mono text-sm font-semibold text-violet-700 shadow-sm dark:border-white/10 dark:bg-black/40 dark:text-violet-300">linkid.qzz.io/username/github</code> or{" "}
+                    <code className="rounded-md border border-violet-100 bg-white/80 px-1.5 py-0.5 font-mono text-sm font-semibold text-violet-700 shadow-sm dark:border-white/10 dark:bg-black/40 dark:text-violet-300">linkid.qzz.io/username/linkedin</code> and anyone who clicks it lands
                     exactly where you want them, every time.
                   </p>
-                </section>
+                </div>
+              </section>
 
-                <section className={sectionClass} aria-labelledby="features">
-                  <h2 id="features">Features</h2>
-                  <ul className="space-y-2">
-                    <li>One username across GitHub, LinkedIn, LeetCode, YouTube, and more</li>
-                    <li>Auto platform detection — paste any URL and the platform is identified instantly</li>
-                    <li>Real-time dashboard with instant add, edit, and delete</li>
-                    <li>OAuth login via Google &amp; GitHub, plus email/password auth</li>
-                    <li>Public profile page shareable anywhere</li>
-                    <li>Dark, light, and system theme support</li>
-                    <li>Fully responsive, mobile-first design</li>
-                  </ul>
-                </section>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                <section className={sectionClass} aria-labelledby="open-source">
-                  <h2 id="open-source">Open Source</h2>
-                  <p>
-                    LinkID is built entirely in the open under the <strong>MIT License</strong>.
-                    Contributions, bug reports, and feature requests are always welcome.
-                  </p>
-                  <ul className="space-y-3">
-                    <li>
-                      GitHub:{" "}
-                      <Link href="https://github.com/vishnukothakapu/linkid" target="_blank" rel="noopener noreferrer">
-                        github.com/vishnukothakapu/linkid
-                      </Link>
-                    </li>
-                    <li>
-                      Contributing Guide:{" "}
-                      <Link href="https://github.com/vishnukothakapu/linkid/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
-                        CONTRIBUTING.md
-                      </Link>
-                    </li>
-                  </ul>
-                </section>
+              {/* Features */}
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-zinc-950 dark:text-white">Features</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FeatureItem icon={<Globe className="h-5 w-5" />} title="One username across platforms" desc="GitHub, LinkedIn, LeetCode, YouTube, and more." />
+                  <FeatureItem icon={<Wand2 className="h-5 w-5" />} title="Auto platform detection" desc="Paste any URL and the platform is identified instantly." />
+                  <FeatureItem icon={<BarChart3 className="h-5 w-5" />} title="Real-time dashboard" desc="Instant add, edit, and delete management." />
+                  <FeatureItem icon={<Shield className="h-5 w-5" />} title="Secure authentication" desc="OAuth login via Google & GitHub, plus email/password auth." />
+                  <FeatureItem icon={<User className="h-5 w-5" />} title="Public profile page" desc="Shareable anywhere with a beautiful UI." />
+                  <FeatureItem icon={<Moon className="h-5 w-5" />} title="Dark & Light mode" desc="Full system theme support for comfortable viewing." />
+                </div>
+              </section>
 
-                <section className="space-y-4" aria-labelledby="contact">
-                  <h2 id="contact">Get in Touch</h2>
-                  <p>Have questions, ideas, or want to contribute? Reach out through any of the following:</p>
-                  <ul className="space-y-3">
-                    <li>
-                      GitHub Issues:{" "}
-                      <Link href="https://github.com/vishnukothakapu/linkid/issues" target="_blank" rel="noopener noreferrer">
-                        github.com/vishnukothakapu/linkid/issues
-                      </Link>
-                    </li>
-                    <li>Email: <a href="mailto:support@linkid.qzz.io">support@linkid.qzz.io</a></li>
-                    <li>
-                      GitHub Discussions:{" "}
-                      <Link href="https://github.com/vishnukothakapu/linkid/discussions" target="_blank" rel="noopener noreferrer">
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              {/* Open Source */}
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-zinc-950 dark:text-white">Open Source</h2>
+                <p className="text-zinc-600 dark:text-zinc-300">
+                  LinkID is built entirely in the open under the <strong className="text-zinc-900 dark:text-white">MIT License</strong>.
+                  Contributions, bug reports, and feature requests are always welcome.
+                </p>
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <a href="https://github.com/vishnukothakapu/linkid" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white/60 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md dark:border-zinc-800 dark:bg-white/[0.02] dark:hover:border-violet-500/50">
+                    <Github className="h-7 w-7 text-zinc-700 dark:text-zinc-300" />
+                    <div>
+                      <div className="font-semibold text-zinc-900 dark:text-white">GitHub Repository</div>
+                      <div className="text-sm text-zinc-500 dark:text-zinc-400">View source code</div>
+                    </div>
+                  </a>
+                  <a href="https://github.com/vishnukothakapu/linkid/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white/60 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md dark:border-zinc-800 dark:bg-white/[0.02] dark:hover:border-violet-500/50">
+                    <Code2 className="h-7 w-7 text-zinc-700 dark:text-zinc-300" />
+                    <div>
+                      <div className="font-semibold text-zinc-900 dark:text-white">Contributing Guide</div>
+                      <div className="text-sm text-zinc-500 dark:text-zinc-400">How to contribute</div>
+                    </div>
+                  </a>
+                </div>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              {/* Get in Touch */}
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold text-zinc-950 dark:text-white">Get in Touch</h2>
+                <p className="text-zinc-600 dark:text-zinc-300">Have questions, ideas, or want to contribute? Reach out through any of the following:</p>
+                <ul className="grid gap-4 sm:grid-cols-3">
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <a href="https://github.com/vishnukothakapu/linkid/issues" target="_blank" rel="noopener noreferrer" className="font-semibold text-zinc-900 hover:underline dark:text-white">
+                        GitHub Issues
+                      </a>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Report a bug or request a feature.</p>
+                    </div>
+                  </li>
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <a href="mailto:support@linkid.qzz.io" className="font-semibold text-zinc-900 hover:underline dark:text-white">
+                        support@linkid.qzz.io
+                      </a>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Email us for general inquiries.</p>
+                    </div>
+                  </li>
+                  <li className="flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-white/50 p-5 dark:border-white/5 dark:bg-white/[0.01]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <a href="https://github.com/vishnukothakapu/linkid/discussions" target="_blank" rel="noopener noreferrer" className="font-semibold text-zinc-900 hover:underline dark:text-white">
                         GitHub Discussions
-                      </Link>
-                    </li>
-                  </ul>
-                </section>
-              </div>
+                      </a>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Join the community conversation.</p>
+                    </div>
+                  </li>
+                </ul>
+              </section>
 
               <div className="mt-14 border-t border-violet-200/60 pt-8 dark:border-white/10">
                 <Link
@@ -143,5 +173,19 @@ export default function AboutPage() {
         </div>
       </main>
     </>
+  );
+}
+
+function FeatureItem({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-4 rounded-2xl border border-violet-100/50 bg-white/40 p-4 transition-colors hover:bg-white/60 dark:border-white/5 dark:bg-white/[0.01] dark:hover:bg-white/[0.03]">
+      <div className="mt-1 flex shrink-0 h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 shadow-sm dark:bg-violet-900/30 dark:text-violet-400">
+        {icon}
+      </div>
+      <div>
+        <h3 className="font-semibold text-zinc-900 dark:text-white">{title}</h3>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{desc}</p>
+      </div>
+    </div>
   );
 }

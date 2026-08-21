@@ -131,13 +131,13 @@ export default function LoginPage() {
   return (
     <>
       <Navbar />
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-3 rounded-xl border bg-background p-6 shadow-sm">
+      <div className="flex min-h-screen items-center justify-center px-4 py-24 bg-muted/20">
+        <div className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-8 shadow-sm">
           {/* HEADER */}       
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
             <p className="text-sm text-muted-foreground">
-              Login to your LinkID
+              Sign in to your LinkID account
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Button
                 variant="outline"
-                className="w-full flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 cursor-pointer h-11"
                 disabled={googleLoading || githubLoading}
                 onClick={async () => {
                   setGoogleLoading(true);
@@ -163,7 +163,7 @@ export default function LoginPage() {
 
               <Button
                 variant="outline"
-                className="w-full flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 cursor-pointer h-11"
                 disabled={googleLoading || githubLoading}
                 onClick={async () => {
                   setGithubLoading(true);
@@ -253,7 +253,7 @@ export default function LoginPage() {
             <>
               {/* FORM */}
               <form
-                className="space-y-3"
+                className="space-y-4"
                 onSubmit={(e) => {
                   e.preventDefault();
                   handleLogin();
@@ -276,6 +276,7 @@ export default function LoginPage() {
                     setEmail(e.target.value);
                     setError(null);
                   }}
+                  className="h-11"
                 />
 
                 {/* PASSWORD WITH TOGGLE */}
@@ -291,7 +292,7 @@ export default function LoginPage() {
                       setPassword(e.target.value);
                       setError(null);
                     }}
-                    className="pr-10"
+                    className="pr-10 h-11"
                   />
 
                   <button
@@ -318,7 +319,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button
-                  className="w-full"
+                  className="w-full h-11 font-medium"
                   type="submit"
                   disabled={loading || isEmailAndPasswordEmpty()}
                 >

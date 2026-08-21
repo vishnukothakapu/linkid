@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Link2Icon } from "lucide-react";
 
 type EmptyProfileStateProps = {
   isOwner: boolean;
@@ -13,7 +14,7 @@ export function EmptyProfileState({
         className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-purple-500/10 text-6xl shadow-inner"
         aria-hidden="true"
       >
-        🔗
+        <Link2Icon className="h-12 w-12" />
       </div>
 
       <h2 className="mt-6 text-2xl font-bold tracking-tight text-foreground">

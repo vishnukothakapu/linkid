@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, ExternalLink, Link2 } from "lucide-react";
 import { useState } from "react";
@@ -15,50 +14,50 @@ export function LinkIdCard({ username, qrCode }: { username: string; qrCode?: Re
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex flex-row items-center gap-2 text-base sm:text-lg">
-          <Link2 className="h-4 w-4 sm:h-5 sm:w-5" />
-          Your LinkID
-        </CardTitle>
-        <div className="flex-shrink-0">
-          {qrCode}
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border bg-card p-2 shadow-sm">
+      <div className="flex items-center w-full sm:w-auto px-2">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mr-3 shrink-0">
+            <Link2 className="h-5 w-5 text-primary" />
         </div>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Link box */}
-        <div className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm font-mono w-full sm:w-auto">
-          <code className="truncate">
+        <div className="text-sm font-mono truncate hover:bg-muted/50 rounded px-2 py-1 transition-colors cursor-default">
             linkid.qzz.io/{username}
-          </code>
-
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={copyProfile}
-            className="shrink-0"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-green-600" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
         </div>
-
-        {/* Open button */}
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0 justify-end sm:pr-2">
         <Button
-          variant="outline"
+          size="sm"
+          variant="ghost"
+          onClick={copyProfile}
+          className="gap-2 shrink-0"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-600" />
+          ) : (
+            <Copy className="h-4 w-4 text-muted-foreground" />
+          )}
+          Copy
+        </Button>
+        
+        <div className="h-5 w-px bg-border hidden sm:block mx-1"></div>
+        
+        {qrCode && (
+            <div className="shrink-0">
+                {qrCode}
+            </div>
+        )}
+        
+        <Button
+          variant="default"
+          size="sm"
           asChild
-          className="w-full sm:w-auto justify-center gap-2"
+          className="gap-2 shrink-0"
         >
           <a href={`/${username}`} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="h-4 w-4" />
-            Open
+            Open <ExternalLink className="h-4 w-4" />
           </a>
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

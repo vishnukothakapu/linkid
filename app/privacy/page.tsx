@@ -1,16 +1,12 @@
-// app/privacy/page.tsx
 import Link from "next/link";
 import { Metadata } from "next";
 import { Navbar } from "@/app/components/Navbar";
-import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | LinkID",
   description: "Privacy Policy for LinkID - How we collect, use, and protect your personal data.",
 };
-
-const sectionClass =
-  "space-y-4 border-b border-zinc-200/70 pb-10 last:border-none last:pb-0 dark:border-white/10";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -40,90 +36,108 @@ export default function PrivacyPolicyPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
-            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12">
-              <div
-                className={cn(
-                  "prose prose-zinc max-w-none dark:prose-invert",
-                  "prose-headings:scroll-mt-24",
-                  "prose-h2:mb-4 prose-h2:mt-0 prose-h2:text-2xl prose-h2:font-bold",
-                  "prose-p:text-zinc-600 dark:prose-p:text-zinc-300",
-                  "prose-p:leading-8",
-                  "prose-li:text-zinc-600 dark:prose-li:text-zinc-300",
-                  "prose-li:leading-7",
-                  "prose-strong:text-zinc-900 dark:prose-strong:text-white",
-                  "prose-a:text-violet-600 dark:prose-a:text-violet-400",
-                  "prose-a:no-underline hover:prose-a:underline",
-                )}
-              >
-                <section className={sectionClass} aria-labelledby="information-we-collect">
-                  <h2 id="information-we-collect">1. Information We Collect</h2>
-                  <p>
-                    When you create a LinkID account, we collect your name, email address, and —
-                    if you sign in via OAuth — a profile picture provided by the OAuth provider
-                    (Google or GitHub). We also store the platform links you voluntarily add to
-                    your profile.
-                  </p>
-                </section>
+            <div className="px-5 py-8 sm:px-8 sm:py-10 md:px-12 md:py-12 space-y-10">
+              
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">1. Information We Collect</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  When you create a LinkID account, we collect your name, email address, and —
+                  if you sign in via OAuth — a profile picture provided by the OAuth provider
+                  (Google or GitHub). We also store the platform links you voluntarily add to
+                  your profile.
+                </p>
+              </section>
 
-                <section className={sectionClass} aria-labelledby="how-we-use">
-                  <h2 id="how-we-use">2. How We Use Your Information</h2>
-                  <ul className="space-y-2">
-                    <li>To create and display your public profile page</li>
-                    <li>To authenticate you securely via NextAuth.js</li>
-                    <li>To send transactional emails if you reset your password</li>
-                    <li>To improve the platform based on aggregate, anonymised usage patterns</li>
-                  </ul>
-                </section>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                <section className={sectionClass} aria-labelledby="data-storage">
-                  <h2 id="data-storage">3. Data Storage</h2>
-                  <p>
-                    All data is stored in a PostgreSQL database. Passwords are hashed with{" "}
-                    <strong>bcrypt</strong> and are never stored in plain text. OAuth tokens are
-                    managed by NextAuth.js and are not persisted beyond your session.
-                  </p>
-                </section>
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">2. How We Use Your Information</h2>
+                <ul className="space-y-3">
+                  <li className="flex gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-zinc-600 dark:text-zinc-300">To create and display your public profile page</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-zinc-600 dark:text-zinc-300">To authenticate you securely via NextAuth.js</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-zinc-600 dark:text-zinc-300">To send transactional emails if you reset your password</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-zinc-600 dark:text-zinc-300">To improve the platform based on aggregate, anonymised usage patterns</span>
+                  </li>
+                </ul>
+              </section>
 
-                <section className={sectionClass} aria-labelledby="data-sharing">
-                  <h2 id="data-sharing">4. Data Sharing</h2>
-                  <p>
-                    We do not sell, rent, or share your personal data with third parties for
-                    marketing purposes. Your public profile data (username and links) is visible
-                    to anyone who visits your LinkID URL — this is the core function of the service.
-                  </p>
-                </section>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                <section className={sectionClass} aria-labelledby="cookies">
-                  <h2 id="cookies">5. Cookies</h2>
-                  <p>
-                    LinkID uses a single session cookie managed by NextAuth.js to keep you logged
-                    in. No advertising or tracking cookies are used.
-                  </p>
-                </section>
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">3. Data Storage</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  All data is stored in a PostgreSQL database. Passwords are hashed with{" "}
+                  <strong className="text-zinc-900 dark:text-white">bcrypt</strong> and are never stored in plain text. OAuth tokens are
+                  managed by NextAuth.js and are not persisted beyond your session.
+                </p>
+              </section>
 
-                <section className={sectionClass} aria-labelledby="your-rights">
-                  <h2 id="your-rights">6. Your Rights</h2>
-                  <p>
-                    You may delete your account and all associated data at any time from your
-                    dashboard settings. For any other data requests, please open an issue on our{" "}
-                    <Link href="https://github.com/vishnukothakapu/linkid/issues" target="_blank" rel="noopener noreferrer">
-                      GitHub repository
-                    </Link>
-                    .
-                  </p>
-                </section>
+              <hr className="border-zinc-200/70 dark:border-white/10" />
 
-                <section className="space-y-4" aria-labelledby="changes">
-                  <h2 id="changes">7. Changes to This Policy</h2>
-                  <p>
-                    We may update this policy occasionally. Significant changes will be announced
-                    via the repository&apos;s changelog or platform notices. Continued use of
-                    LinkID after updates constitutes acceptance of the revised policy.
-                  </p>
-                </section>
-              </div>
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">4. Data Sharing</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  We do not sell, rent, or share your personal data with third parties for
+                  marketing purposes. Your public profile data (username and links) is visible
+                  to anyone who visits your LinkID URL — this is the core function of the service.
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">5. Cookies</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  LinkID uses a single session cookie managed by NextAuth.js to keep you logged
+                  in. No advertising or tracking cookies are used.
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">6. Your Rights</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  You may delete your account and all associated data at any time from your
+                  dashboard settings. For any other data requests, please open an issue on our{" "}
+                  <a href="https://github.com/vishnukothakapu/linkid/issues" target="_blank" rel="noopener noreferrer" className="font-semibold text-violet-600 hover:underline dark:text-violet-400">
+                    GitHub repository
+                  </a>
+                  .
+                </p>
+              </section>
+
+              <hr className="border-zinc-200/70 dark:border-white/10" />
+
+              <section className="space-y-4">
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-white">7. Changes to This Policy</h2>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                  We may update this policy occasionally. Significant changes will be announced
+                  via the repository&apos;s changelog or platform notices. Continued use of
+                  LinkID after updates constitutes acceptance of the revised policy.
+                </p>
+              </section>
 
               <div className="mt-14 border-t border-violet-200/60 pt-8 dark:border-white/10">
                 <Link

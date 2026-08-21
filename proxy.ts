@@ -30,7 +30,7 @@ function checkLocalRateLimit(ip: string, limit: number): boolean {
     return true;
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // API routes: apply CSRF protection only. The rest of this middleware
