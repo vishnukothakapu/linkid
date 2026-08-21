@@ -61,6 +61,9 @@ export const authOptions: NextAuthOptions = {
                   GitHub({
                       clientId: process.env.GITHUB_CLIENT_ID,
                       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                      // GitHub recently started returning an 'iss' parameter in OAuth callbacks.
+                      // This requires configuring the issuer explicitly to prevent validation errors.
+                      issuer: "https://github.com/login/oauth",
                   }),
               ]
             : []),
