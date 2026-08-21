@@ -126,9 +126,8 @@ export default async function Home() {
                 Professional link management
               </div>
 
-              <h1 className="text-5xl font-black leading-[1.15] tracking-tighter text-zinc-950 dark:text-white sm:text-6xl lg:text-[4rem] xl:text-[4.2rem]">
-                One identity for every <br className="hidden sm:block" />
-                professional link.
+              <h1 className="text-4xl font-black leading-[1.15] tracking-tighter text-zinc-950 dark:text-white sm:text-5xl lg:text-[4rem] xl:text-[4.2rem]">
+                One identity for every<br />professional link.
               </h1>
 
               <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300 sm:text-lg lg:mx-0">
