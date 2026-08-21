@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import { presetAvatars } from "@/lib/presetAvatars";
 import { hasSupportedImageMagicBytes } from "@/lib/imageValidation";
 import { invalidateProfileCache } from "@/lib/profileCache";
 
@@ -43,9 +44,8 @@ export async function POST(req: Request) {
     // Validate actual file content via magic bytes.
     // file.type is the MIME type declared by the client in the multipart
     // Content-Type field, which is entirely attacker-controlled.
-    // This check reads the first 12 bytes of the buffer to verify that the
-    // payload is genuinely a JPEG, PNG, or WebP image regardless of what
-    // the client declared.
+    // This check reads the first 12 bytes of the buffer to verify that
+    // the payload is genuinely a JPEG, PNG, or WebP image.
     if (!hasSupportedImageMagicBytes(buffer)) {
         return NextResponse.json(
             { error: "File content does not match a supported image format (JPG, PNG or WebP)" },
@@ -56,10 +56,16 @@ export async function POST(req: Request) {
     // Upload to Cloudinary
     const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
         cloudinary.uploader.upload_stream(
-            { folder: "linkid/avatars", transformation: [{ width: 200, height: 200, crop: "fill" }] },
+            {
+                folder: "linkid/avatars",
+                transformation: [{ width: 200, height: 200, crop: "fill" }],
+            },
             (error, result) => {
-                if (error || !result) reject(error ?? new Error("Upload failed with no result"));
-                else resolve(result);
+                if (error || !result) {
+                    reject(error ?? new Error("Upload failed with no result"));
+                } else {
+                    resolve(result);
+                }
             }
         ).end(buffer);
     });
@@ -75,6 +81,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, imageUrl: result.secure_url });
 }
+
 export async function DELETE() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -88,6 +95,40 @@ export async function DELETE() {
 
     // Avatar removal is reflected on the public profile — purge the cache.
     await invalidateProfileCache(session.user.id);
+
+    return NextResponse.json({ success: true });
+}
+
+export async function PATCH(req: Request) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { avatar } = await req.json();
+
+    if (!avatar || typeof avatar !== "string") {
+        return NextResponse.json(
+            { error: "Avatar is required" },
+            { status: 400 }
+        );
+    }
+
+    const isPresetAvatar = presetAvatars.some(
+        (preset) => preset.src === avatar
+    );
+
+    if (!isPresetAvatar) {
+        return NextResponse.json(
+            { error: "Invalid avatar preset" },
+            { status: 400 }
+        );
+    }
+
+    await prisma.user.update({
+        where: { email: session.user.email },
+        data: { image: avatar },
+    });
 
     return NextResponse.json({ success: true });
 }
