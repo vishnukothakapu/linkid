@@ -36,7 +36,8 @@ export default async function PlatformRedirect({
 }: {
     params: Promise<PlatformParams>;
 }) {
-    const { username, platform } = await params;
+    let { username, platform } = await params;
+    username = username?.toLowerCase();
     const requestHeaders = await headers();
 
     // ✨ Fixed: Case sensitivity loophole handled using explicit lowercasing bounds

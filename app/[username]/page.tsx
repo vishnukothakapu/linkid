@@ -10,7 +10,8 @@ import { ShareProfileButton } from "./ShareProfileButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
     try {
-        const { username } = await params;
+        let { username } = await params;
+        username = username?.toLowerCase();
         const resolved = await resolveUserByUsername(username);
 
         if (!resolved) {
@@ -63,7 +64,8 @@ export default async function PublicProfile({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const { username } = await params;
+  let { username } = await params;
+  username = username?.toLowerCase();
 
   const session = await getServerSession(authOptions);
 

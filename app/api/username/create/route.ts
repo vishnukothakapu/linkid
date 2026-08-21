@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { username } = body;
+    let { username } = body;
+    username = username?.toLowerCase();
 
     const validation = validateUsername(username);
     if (!validation.valid) {

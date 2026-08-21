@@ -33,7 +33,7 @@ export default function EditProfileCard({
     const latestRequestId = useRef(0);
 
     function checkUsername(value: string) {
-        setUsername(value);
+        setUsername(value.toLowerCase());
         setAvailable(null);
         setErrorMsg(null);
     }

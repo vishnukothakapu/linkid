@@ -22,6 +22,7 @@ export default function CreateLinkId() {
     const abortRef = useRef<AbortController | null>(null);
 
     const checkUsername = useCallback(async (value: string) => {
+        value = value.toLowerCase();
         setUsername(value);
         setError(null);
 

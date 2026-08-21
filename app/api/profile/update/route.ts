@@ -13,7 +13,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { username, name, bio, image, themeType, themeColor, themeCustom, workspaceId: bodyWorkspaceId } = body;
+    let { username, name, bio, image, themeType, themeColor, themeCustom, workspaceId: bodyWorkspaceId } = body;
+    username = username?.toLowerCase();
 
     const preferredWorkspaceId = req.headers.get("x-workspace-id") || req.nextUrl?.searchParams?.get("workspaceId") || bodyWorkspaceId;
     const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
