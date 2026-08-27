@@ -124,7 +124,10 @@ export default async function PublicProfile({
   });
 
   return (
-    <main className={`min-h-screen relative px-4 py-16 theme-${user.theme || "default"}`}>
+    <main 
+      className={`min-h-screen relative px-4 py-16 theme-${user.theme || "default"}`}
+      style={bgStyle}
+    >
       <Toaster position="bottom-center" />
       {user.backgroundImage && (
         <>
