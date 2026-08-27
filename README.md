@@ -22,8 +22,7 @@
 
 <br />
 
-This project is part of **GirlScript Summer of Code
-2026 (GSSoC'26)** and **Nexus Spring of Code 2026 (NSoC'26)**
+
 
 
 [Live Demo](https://linkid.qzz.io) · [Docs](https://github.com/vishnukothakapu/linkid/wiki) · [Report Bug](https://github.com/vishnukothakapu/linkid/issues) · [Request Feature](https://github.com/vishnukothakapu/linkid/issues)
