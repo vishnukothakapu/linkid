@@ -38,15 +38,22 @@ export async function proxy(req: NextRequest) {
     // navigations, not API calls. The matcher previously excluded /api
     // entirely, so applyCsrfProtection never ran on the mutating API routes.
     if (pathname.startsWith("/api")) {
-        const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "127.0.0.1";
+        const rawForwarded = req.headers.get("x-forwarded-for");
+        const ip = rawForwarded ? rawForwarded.split(",")[0].trim() : req.headers.get("x-real-ip") ?? "127.0.0.1";
         let isAllowed = true;
 
-        if (pathname.startsWith("/api/auth")) {
-            isAllowed = authRateLimit ? (await authRateLimit.limit(ip)).success : checkLocalRateLimit(`auth-${ip}`, 5);
-        } else if (pathname.startsWith("/api/username")) {
-            isAllowed = usernameRateLimit ? (await usernameRateLimit.limit(ip)).success : checkLocalRateLimit(`username-${ip}`, 15);
-        } else if (pathname.startsWith("/api/links")) {
-            isAllowed = linksRateLimit ? (await linksRateLimit.limit(ip)).success : checkLocalRateLimit(`links-${ip}`, 30);
+        try {
+            if (pathname.startsWith("/api/auth")) {
+                isAllowed = authRateLimit ? (await authRateLimit.limit(ip)).success : checkLocalRateLimit(`auth-${ip}`, 5);
+            } else if (pathname.startsWith("/api/username")) {
+                isAllowed = usernameRateLimit ? (await usernameRateLimit.limit(ip)).success : checkLocalRateLimit(`username-${ip}`, 15);
+            } else if (pathname.startsWith("/api/links")) {
+                isAllowed = linksRateLimit ? (await linksRateLimit.limit(ip)).success : checkLocalRateLimit(`links-${ip}`, 30);
+            }
+        } catch (error) {
+            console.error("Rate limit check failed (bypassing):", error);
+            // If Redis is unreachable, fail open to avoid bringing down the entire application.
+            isAllowed = true;
         }
 
         if (!isAllowed) {
