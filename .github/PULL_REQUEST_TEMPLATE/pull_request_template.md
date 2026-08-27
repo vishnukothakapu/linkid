@@ -1,37 +1,32 @@
 # Pull Request
 
-⚠️ **Important:** This project is part of **GSSoC'26** and **NSoC'26**.
-All contributors must select their organization below and include it in their PR title.
-PRs without an organization tag may not be reviewed.
+## Organization
 
-## 🏢 Organization
-- [ ] GirlScript Summer of Code 2026 (GSSoC'26)
-- [ ] Nexus Spring of Code 2026 (NSoC'26)
-- [ ] None (General contribution)
+**Organization / Program:** <!-- Mention the organization or program you are contributing under (if applicable) -->
 
-## 📋 Summary
+## Summary
 
 <!-- A short, clear description of what this PR does -->
 
-## 🔗 Related Issue
+## Related Issue
 
 <!-- Link the issue this PR resolves. Use "Closes #" to auto-close it on merge -->
 
 Closes #
 
-## 🔄 Type of Change
+## Type of Change
 
 <!-- Check all that apply -->
 
-- [ ] 🐛 Bug fix
-- [ ] ✨ New feature
-- [ ] 🔗 New platform support
-- [ ] ♻️ Refactor (no feature or bug change)
-- [ ] 📝 Documentation update
-- [ ] 🎨 UI / Styling change
-- [ ] 🔧 Config / chore (deps, tooling, etc.)
+- [ ] Bug fix
+- [ ] New feature
+- [ ] New platform support
+- [ ] Refactor (no feature or bug change)
+- [ ] Documentation update
+- [ ] UI / Styling change
+- [ ] Config / chore (deps, tooling, etc.)
 
-## 🧪 How to Test
+## How to Test
 
 <!-- Step-by-step instructions so reviewers can verify your changes -->
 
@@ -39,7 +34,7 @@ Closes #
 2. 
 3. 
 
-## 📸 Screenshots
+## Screenshots
 
 <!-- For UI changes, include Before / After screenshots. Skip if not applicable -->
 
@@ -47,7 +42,7 @@ Closes #
 |--------|-------|
 |        |       |
 
-## ✅ Checklist
+## Checklist
 
 <!-- Complete all items before requesting review -->
 
@@ -74,12 +69,12 @@ Closes #
 - [ ] I have updated the README if needed
 - [ ] I have added comments to complex logic
 
-## 💬 Additional Notes
+## Additional Notes
 
 <!-- Anything else reviewers should know? Breaking changes? Tradeoffs? -->
 
 ---
 
-> **GSSoC'26 / NSoC'26 Contributors:** Thank you for your contribution to LinkID!
-> A maintainer will review your PR within 3–5 business days.
+> Thank you for your contribution to LinkID!
+> A maintainer will review your PR within 1-2 business days.
 > Please be patient and address any requested changes promptly.

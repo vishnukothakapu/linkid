@@ -1,34 +1,34 @@
 ---
-name: 🐛 Bug Report
+name: Bug Report
 about: Report a bug or broken behavior in LinkID
 title: "[BUG] "
 labels: bug
 assignees: ""
 ---
 
-## 🐛 Bug Description
+## Bug Description
 
 <!-- A clear and concise description of what the bug is -->
 
-## 🔁 Steps to Reproduce
+## Steps to Reproduce
 
 1. Go to '...'
 2. Click on '...'
 3. See error
 
-## ✅ Expected Behavior
+## Expected Behavior
 
 <!-- What should have happened? -->
 
-## ❌ Actual Behavior
+## Actual Behavior
 
 <!-- What actually happened? -->
 
-## 📸 Screenshots
+## Screenshots
 
 <!-- If applicable, add screenshots to help explain the problem -->
 
-## 🌍 Environment
+## Environment
 
 | Field       | Value         |
 |-------------|---------------|
@@ -37,14 +37,14 @@ assignees: ""
 | Node.js     | e.g. v20.x    |
 | Screen size | e.g. Mobile / Desktop |
 
-## 📎 Additional Context
+## Additional Context
 
 <!-- Any other context about the problem? Console errors? Network errors? -->
 
-## 🏷️ NSoC Labels
+## Difficulty & Labels
 
-<!-- Check all that apply -->
+<!-- Check all that apply and specify your organization -->
 - [ ] This is a `good first issue`
 - [ ] This is a `medium` difficulty fix
 - [ ] This is a `hard` difficulty fix
-- [ ] This is related to `nsoc-26`
+- **Organization:** <!-- Mention the organization/program you are contributing under -->
