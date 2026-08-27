@@ -39,33 +39,33 @@
 ## Features
 
 ### Core
-- **Platform Routing** — Predictable links like `/github`, `/linkedin`, `/leetcode`, `/portfolio`
-- **Single Professional Identity** — One username, all your platforms
--  **Auto Platform Detection** — Paste any URL and the platform is detected automatically
-- **Public Profile Page** — Shareable profile at `linkid.qzz.io/username`
-- **Real-time Dashboard** — Add, edit, and delete links instantly without a page reload
+- **Platform Routing** - Predictable links like `/github`, `/linkedin`, `/leetcode`, `/portfolio`
+- **Single Professional Identity** - One username, all your platforms
+-  **Auto Platform Detection** - Paste any URL and the platform is detected automatically
+- **Public Profile Page** - Shareable profile at `linkid.qzz.io/username`
+- **Real-time Dashboard** - Add, edit, and delete links instantly without a page reload
 
 ### 🧩 Chrome Extension
-- **Auto-Fill Applications** — Bypass strict Applicant Tracking Systems (ATS) by automatically injecting your original, raw platform URLs into job application fields.
-- **OAuth Integration** — Securely connects with your LinkID profile in one click.
-- **Source Code** — Available in its own repository: [vishnukothakapu/linkid-extension](https://github.com/vishnukothakapu/linkid-extension).
+- **Auto-Fill Applications** - Bypass strict Applicant Tracking Systems (ATS) by automatically injecting your original, raw platform URLs into job application fields.
+- **OAuth Integration** - Securely connects with your LinkID profile in one click.
+- **Source Code** - Available in its own repository: [vishnukothakapu/linkid-extension](https://github.com/vishnukothakapu/linkid-extension).
 
 ### Auth & Security
-- **OAuth Login** — Google & GitHub sign-in via NextAuth.js
-- **Email + Password Auth** — Traditional credential-based login with bcrypt hashing
-- **Route Protection** — Middleware-based auth guards on dashboard and API routes
+- **OAuth Login** - Google & GitHub sign-in via NextAuth.js
+- **Email + Password Auth** - Traditional credential-based login with bcrypt hashing
+- **Route Protection** - Middleware-based auth guards on dashboard and API routes
 
 ### UX & Design
-- **Dark Mode** — Full system, light, and dark theme support via `next-themes`
-- **Fully Responsive** — Mobile-first design with Tailwind CSS
-- **Toast Notifications** — Instant feedback on all user actions
-- **Platform Icons** — Automatic icon matching for 10+ platforms
+- **Dark Mode** - Full system, light, and dark theme support via `next-themes`
+- **Fully Responsive** - Mobile-first design with Tailwind CSS
+- **Toast Notifications** - Instant feedback on all user actions
+- **Platform Icons** - Automatic icon matching for 10+ platforms
 
 ### Developer Experience
-- **Type-safe** — End-to-end TypeScript with strict mode
-- **Prisma ORM** — Type-safe database access with PostgreSQL
-- **URL Validation** — Strict per-platform URL validation before saving
-- **Optimistic UI** — Local state updates before server confirmation
+- **Type-safe** - End-to-end TypeScript with strict mode
+- **Prisma ORM** - Type-safe database access with PostgreSQL
+- **URL Validation** - Strict per-platform URL validation before saving
+- **Optimistic UI** - Local state updates before server confirmation
 
 ---
 
@@ -231,7 +231,7 @@ Since the extension is not yet published on the Chrome Web Store, you can easily
 
 1. Sign up at [linkid.qzz.io/register](https://linkid.qzz.io/register)
 2. Pick your unique username (e.g., `vishnu`)
-3. Paste your profile URLs — platform is detected automatically
+3. Paste your profile URLs - platform is detected automatically
 4. Share `linkid.qzz.io/vishnu` everywhere
 
 ### Supported Platforms
@@ -287,11 +287,11 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more infor
 
 ## 🙏 Acknowledgements
 
-- [Next.js](https://nextjs.org/) — The React framework for production
-- [shadcn/ui](https://ui.shadcn.com/) — Beautifully designed component library
-- [Prisma](https://prisma.io/) — Next-generation ORM for Node.js
-- [NextAuth.js](https://next-auth.js.org/) — Authentication for Next.js
-- [Vercel](https://vercel.com/) — Platform for deploying Next.js apps
+- [Next.js](https://nextjs.org/) - The React framework for production
+- [shadcn/ui](https://ui.shadcn.com/) - Beautifully designed component library
+- [Prisma](https://prisma.io/) - Next-generation ORM for Node.js
+- [NextAuth.js](https://next-auth.js.org/) - Authentication for Next.js
+- [Vercel](https://vercel.com/) - Platform for deploying Next.js apps
 
 ---
 
