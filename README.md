@@ -45,7 +45,7 @@
 - **Public Profile Page** - Shareable profile at `linkid.qzz.io/username`
 - **Real-time Dashboard** - Add, edit, and delete links instantly without a page reload
 
-### 🧩 Chrome Extension
+### Chrome Extension
 - **Auto-Fill Applications** - Bypass strict Applicant Tracking Systems (ATS) by automatically injecting your original, raw platform URLs into job application fields.
 - **OAuth Integration** - Securely connects with your LinkID profile in one click.
 - **Source Code** - Available in its own repository: [vishnukothakapu/linkid-extension](https://github.com/vishnukothakapu/linkid-extension).
@@ -69,7 +69,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -285,7 +285,7 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more infor
 
 ---
 
-## 🙏 Acknowledgements
+##  Acknowledgements
 
 - [Next.js](https://nextjs.org/) - The React framework for production
 - [shadcn/ui](https://ui.shadcn.com/) - Beautifully designed component library
