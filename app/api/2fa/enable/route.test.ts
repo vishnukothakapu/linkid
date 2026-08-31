@@ -4,7 +4,8 @@ import { NextRequest } from "next/server";
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
 let mockSession: unknown = null;
-let mockUser: unknown = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockUser: any = null;
 let capturedUpdateArgs: unknown = null;
 let rateLimited = false;
 let codeValid = true;

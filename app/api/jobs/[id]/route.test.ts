@@ -29,7 +29,8 @@ mock.module("@/lib/prisma", {
     },
 });
 
-let GET: (...args: unknown[]) => Promise<Response>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let GET: (...args: any[]) => Promise<Response>;
 
 before(async () => {
     const route = await import("./route");

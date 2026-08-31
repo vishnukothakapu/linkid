@@ -27,7 +27,8 @@ mock.module("@/lib/jobs", {
     },
 });
 
-let POST: (...args: unknown[]) => Promise<Response>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let POST: (...args: any[]) => Promise<Response>;
 
 before(async () => {
     const route = await import("./route");

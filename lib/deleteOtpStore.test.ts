@@ -248,3 +248,5 @@ test("checkRateLimit: rate limit resets after time window", async () => {
   entry.windowStart = new Date(Date.now() - 11 * 60 * 1000);
   assert.equal(await checkRateLimit("u8"), true);
 });
+
+export {};
