@@ -20,8 +20,11 @@ export type Platform =
     | "codechef"
     | "kaggle"
     | "geeksforgeeks"
-    | "website";
-
+    | "website"
+    | "behance"
+    | "substack"
+    | "codepen"
+    | "hackernews";
 
 // ─── URL Validation Patterns ─────────────────────────────────────────────────
 
@@ -42,10 +45,19 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     instagram: /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}|p\/[A-Za-z0-9_-]+|reel\/[A-Za-z0-9_-]+|reels\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     discord: /^https?:\/\/(www\.)?discord\.com\/(users\/\d+|invite\/[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
     twitch: /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]{4,25}\/?(\?.*)?$/i,
-    hashnode: /^https?:\/\/([A-Za-z0-9_-]+\.hashnode\.(com|dev)|hashnode\.(com|dev)\/[A-Za-z0-9_@-]+)\/?(\?.*)?$/i,
-    devto: /^https?:\/\/(www\.)?dev\.to\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
-    medium: /^https?:\/\/(www\.)?medium\.com\/@?[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
-    dribbble: /^https?:\/\/(www\.)?dribbble\.com\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    
+    // Updated patterns for existing platforms (more uniform, no trailing query params allowed)
+    hashnode: /^https?:\/\/[\w-]+\.hashnode\.dev\/?$|^https?:\/\/(www\.)?hashnode\.com\/@?[\w.-]+\/?$/i,
+    devto: /^https?:\/\/(www\.)?dev\.to\/[\w.-]+\/?$/i,
+    medium: /^https?:\/\/(www\.)?medium\.com\/@?[\w.-]+\/?$/i,
+    dribbble: /^https?:\/\/(www\.)?dribbble\.com\/[\w.-]+\/?$/i,
+
+    // New platforms
+    behance: /^https?:\/\/(www\.)?behance\.net\/[\w.-]+\/?$/i,
+    substack: /^https?:\/\/[\w-]+\.substack\.com\/?$/i,
+    codepen: /^https?:\/\/(www\.)?codepen\.io\/[\w.-]+\/?$/i,
+    hackernews: /^https?:\/\/news\.ycombinator\.com\/user\?id=[\w.-]+$/i,
+
     codechef: /^https?:\/\/(www\.)?codechef\.com\/users\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     codeforces: /^https?:\/\/(www\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     kaggle: /^https?:\/\/(www\.)?kaggle\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
