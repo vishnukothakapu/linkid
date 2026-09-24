@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useCsrf } from "@/lib/useCsrf";
 import { PLATFORMS } from "@/lib/constants";
+import { getPasswordError } from "@/lib/validations/auth";
 
 import { Navbar } from "../components/Navbar";
 
@@ -27,16 +28,6 @@ export default function RegisterPage() {
 
     const [googleLoading, setGoogleLoading] = useState(false);
     const [githubLoading, setGithubLoading] = useState(false);
-
-    const getPasswordError = (value: string) => {
-        if (value.length < 8) return "Must be at least 8 characters";
-        if (!/[A-Z]/.test(value)) return "Must include one uppercase letter";
-        if (!/[a-z]/.test(value)) return "Must include one lowercase letter";
-        if (!/\d/.test(value)) return "Must include one number";
-        if (!/[@$!%*?&]/.test(value)) return "Must include one special character";
-
-        return null;
-    };
 
     const error = getPasswordError(password);
 
