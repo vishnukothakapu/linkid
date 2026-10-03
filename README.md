@@ -246,6 +246,7 @@ Since the extension is not yet published on the Chrome Web Store, you can easily
 | Instagram | `/instagram` | `linkid.qzz.io/vishnu/instagram` |
 | Facebook | `/facebook` | `linkid.qzz.io/vishnu/facebook` |
 | Discord | `/discord` | `linkid.qzz.io/vishnu/discord` |
+| Hugging Face | `/huggingface` | `linkid.qzz.io/vishnu/huggingface` |
 | Twitch | `/twitch` | `linkid.qzz.io/vishnu/twitch` |
 | Custom Website | `/your-label` | `linkid.qzz.io/vishnu/blog` |
 

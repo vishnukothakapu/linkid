@@ -24,6 +24,7 @@ export type Platform =
     | "codechef"
     | "kaggle"
     | "geeksforgeeks"
+    | "huggingface"
     | "website";
 
 
@@ -59,6 +60,8 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     codeforces: /^https?:\/\/(www\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     kaggle: /^https?:\/\/(www\.)?kaggle\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     geeksforgeeks: /^https?:\/\/(www\.|auth\.)?geeksforgeeks\.org\/user\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    // Single-segment profile/org URLs only; reserved site sections (models, datasets, spaces, ...) are excluded.
+    huggingface: /^https?:\/\/(www\.)?huggingface\.co\/(?!(models|datasets|spaces|docs|blog|papers|collections|tasks|join|login|settings|pricing|chat|posts|learn|organizations|enterprise|new|api|welcome)(\/|\?|$))[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     website: /^https?:\/\/.+/i,
 };
 
