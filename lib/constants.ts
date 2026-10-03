@@ -1,5 +1,6 @@
 export const PLATFORMS = {
     GITHUB: "github",
+    HACKERRANK: "hackerrank",
     SUBSTACK: "substack",
     BEHANCE: "behance",
     STACKOVERFLOW: "stackoverflow",

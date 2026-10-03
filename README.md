@@ -247,6 +247,7 @@ Since the extension is not yet published on the Chrome Web Store, you can easily
 | Facebook | `/facebook` | `linkid.qzz.io/vishnu/facebook` |
 | Discord | `/discord` | `linkid.qzz.io/vishnu/discord` |
 | Twitch | `/twitch` | `linkid.qzz.io/vishnu/twitch` |
+| HackerRank | `/hackerrank` | `linkid.qzz.io/vishnu/hackerrank` |
 | Custom Website | `/your-label` | `linkid.qzz.io/vishnu/blog` |
 
 ---
