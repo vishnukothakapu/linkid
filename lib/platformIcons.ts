@@ -22,6 +22,7 @@ import {
     SiBehance,
     SiStackoverflow,
     SiGitlab,
+    SiHuggingface,
 } from "react-icons/si";
 
 import type { ComponentType, SVGProps } from "react";
@@ -50,6 +51,7 @@ export const PLATFORMS = {
     codeforces: { icon: SiCodeforces, name: "Codeforces" },
     kaggle: { icon: SiKaggle, name: "Kaggle" },
     geeksforgeeks: { icon: SiGeeksforgeeks, name: "GeeksforGeeks" },
+    huggingface: { icon: SiHuggingface, name: "Hugging Face" },
 } as const;
 
 export const PLATFORM_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> =
