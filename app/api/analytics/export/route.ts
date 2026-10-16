@@ -4,7 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { getUserAnalyticsSummary } from "@/lib/analytics";
+import { getUserAnalyticsSummary, parseRangeDays } from "@/lib/analytics";
 import { generateAnalyticsPDF } from "@/lib/generateAnalyticsPDF";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
@@ -57,21 +57,6 @@ async function* iterateClicksInBatches(workspaceId: string): AsyncGenerator<Expo
         if (batch.length < EXPORT_BATCH_SIZE) return;
         cursor = batch[batch.length - 1].id;
     }
-}
-
-// Aggregated exports (json, pdf) share the same date-window semantics as the
-// analytics summary endpoint: a numeric `days` in [1, 365], or `all` for the
-// full history. Anything else is rejected so a typo can't silently widen or
-// narrow the exported range.
-function parseRangeDays(daysQuery: string | null): { days: number | null } | { error: string } {
-    if (daysQuery === null) return { days: 30 };
-    if (daysQuery === "all") return { days: null };
-
-    const parsed = Number.parseInt(daysQuery, 10);
-    if (Number.isNaN(parsed) || parsed < 1 || parsed > 365) {
-        return { error: "days must be between 1 and 365, or 'all'" };
-    }
-    return { days: parsed };
 }
 
 export async function GET(req: NextRequest) {
