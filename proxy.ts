@@ -5,6 +5,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 import { applyCsrfProtection } from "@/lib/middleware/csrf";
+import { checkLocalRateLimit } from "@/lib/localRateLimit";
 
 const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
 const redis = hasRedis ? Redis.fromEnv() : null;
@@ -21,14 +22,8 @@ const linksRateLimit = redis
     ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 m") })
     : null;
 
-const localFallbackMap = new Map<string, number>();
-function checkLocalRateLimit(ip: string, limit: number): boolean {
-    const key = `${ip}-${Math.floor(Date.now() / 60000)}`;
-    const current = localFallbackMap.get(key) || 0;
-    if (current >= limit) return false;
-    localFallbackMap.set(key, current + 1);
-    return true;
-}
+// In-memory fallback used when Upstash is not configured. The helper sweeps
+// expired minute buckets so the map cannot grow with every client IP seen.
 
 export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
