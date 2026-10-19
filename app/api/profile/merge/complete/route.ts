@@ -42,16 +42,20 @@ export async function POST(req: Request) {
             confirmEmail,
         });
 
-        // The merge moves links/usernames into the target profile and deletes
-        // the source — purge both users' cached public profiles, clear the
-        // source username's index (its ownership changed), and refresh the
+        // The merge moves links/usernames into the target workspace and deletes
+        // the source workspace — purge both cached public profiles by workspace
+        // id (the cache is keyed by workspace id, not user id), clear the
+        // username indexes whose ownership changed, and refresh the
         // sitemap-backed Next data cache. The payload invalidation also bumps
-        // both users' cache generations, so an in-flight read of pre-merge data
-        // can never write a stale payload back afterwards.
-        await invalidateProfileCache(result.sourceUserId);
-        await invalidateProfileCache(result.targetUserId);
+        // both workspaces' cache generations, so an in-flight read of pre-merge
+        // data can never write a stale payload back afterwards.
+        await invalidateProfileCache(result.sourceWorkspaceId);
+        await invalidateProfileCache(result.targetWorkspaceId);
         if (result.sourceUsername) {
             await invalidateProfileUsername(result.sourceUsername);
+        }
+        if (result.targetUsername && result.targetUsername !== result.sourceUsername) {
+            await invalidateProfileUsername(result.targetUsername);
         }
         revalidateTag("public-profile", "default");
 

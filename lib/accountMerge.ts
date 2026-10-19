@@ -405,9 +405,17 @@ export async function completeAccountMerge(input: {
         conflicts,
         sourceUserId: sourceUser.id,
         targetUserId: targetUser.id,
+        // The public profile cache is keyed by workspace id, so callers need the
+        // workspace ids to purge the correct payloads.
+        sourceWorkspaceId: sourceWorkspace.id,
+        targetWorkspaceId: targetWorkspace.id,
         // The source username's ownership changes on merge (it becomes the
         // target's alias/canonical username or is freed) — callers clear its
         // cached username→userId index entry alongside the payload purge.
         sourceUsername: sourceWorkspace.username ?? null,
+        // The target may have inherited the source username, in which case the
+        // same index entry needs clearing; otherwise it is the unchanged target
+        // username.
+        targetUsername: finalTargetUsername,
     };
 }

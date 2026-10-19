@@ -168,3 +168,37 @@ test("merge does not touch usernames when the target already has one", async () 
         "old username should still be aliased to the target"
     );
 });
+
+test("merge returns the workspace ids and usernames needed for cache invalidation", async () => {
+    // Target has no username yet, so it inherits the source one.
+    targetWorkspace.username = null;
+    transactionOps = [];
+    const { completeAccountMerge } = await import("@/lib/accountMerge");
+
+    const result = await completeAccountMerge({
+        sourceUserId: "user-source",
+        code: "LNK-AAAAAA-BBBBBB",
+        confirmEmail: "user-source@example.com",
+    });
+
+    // The public profile cache is keyed by workspace id, not user id.
+    assert.equal(result.sourceWorkspaceId, "ws-source");
+    assert.equal(result.targetWorkspaceId, "ws-target");
+    assert.equal(result.sourceUsername, "alice");
+    assert.equal(result.targetUsername, "alice");
+});
+
+test("merge reports the existing target username when it keeps one", async () => {
+    targetWorkspace.username = "bob";
+    transactionOps = [];
+    const { completeAccountMerge } = await import("@/lib/accountMerge");
+
+    const result = await completeAccountMerge({
+        sourceUserId: "user-source",
+        code: "LNK-AAAAAA-BBBBBB",
+        confirmEmail: "user-source@example.com",
+    });
+
+    assert.equal(result.sourceUsername, "alice");
+    assert.equal(result.targetUsername, "bob");
+});
