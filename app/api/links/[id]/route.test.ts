@@ -4,9 +4,10 @@ import { PLATFORMS } from "@/lib/constants";
 
 // ── Mutable state shared across mock closures ─────────────────────────────────
 let mockSession: unknown = null;
+let mockWorkspace: unknown = null;
 let mockLink: unknown = null;
 let capturedUpdateArgs: unknown = null;
-const invalidatedUserIds: string[] = [];
+const invalidatedWorkspaceIds: string[] = [];
 
 // ── Register mocks synchronously BEFORE any module import ─────────────────────
 
@@ -22,10 +23,19 @@ mock.module("@/lib/auth", {
 
 mock.module("@/lib/profileCache", {
     namedExports: {
-        invalidateProfileCache: (userId: string) => {
-            invalidatedUserIds.push(userId);
+        invalidateProfileCache: (workspaceId: string) => {
+            invalidatedWorkspaceIds.push(workspaceId);
             return Promise.resolve();
         },
+    },
+});
+
+// @/lib/workspace starts with `import "server-only"`, which throws under tsx
+// outside a React Server Component. The route calls resolveActiveWorkspace to
+// authorise the mutation against the link's workspace, so mock it.
+mock.module("@/lib/workspace", {
+    namedExports: {
+        resolveActiveWorkspace: () => Promise.resolve(mockWorkspace),
     },
 });
 
@@ -94,7 +104,18 @@ function ctx(id = "test-id") {
 }
 
 function ownerLink(platform = PLATFORMS.GITHUB) {
-    return { id: "test-id", userId: "owner-user-id", platform, user: { email: "owner@example.com" } };
+    return {
+        id: "test-id",
+        workspaceId: "owner-workspace-id",
+        platform,
+        url: "https://github.com/olduser",
+        label: "GitHub",
+        alias: null,
+        isGroup: false,
+        startDate: null,
+        endDate: null,
+        user: { email: "owner@example.com" },
+    };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -107,21 +128,24 @@ test("PUT 401 — no session", async () => {
 });
 
 test("PUT 403 — link belongs to a different user", async () => {
-    mockSession = { user: { email: "attacker@example.com" } };
+    mockSession = { user: { id: "attacker-user-id", email: "attacker@example.com" } };
+    mockWorkspace = { id: "attacker-workspace-id" };
     mockLink = ownerLink();
     const res = await PUT(putRequest({ url: "https://github.com/user" }), ctx());
     assert.equal(res.status, 403);
 });
 
 test("PUT 403 — link not found", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = null;
     const res = await PUT(putRequest({ url: "https://github.com/user" }), ctx());
     assert.equal(res.status, 403);
 });
 
 test("PUT 400 — URL fails basic validation (malformed)", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink();
     // "not-valid" → https://not-valid → single part hostname, no TLD
     const res = await PUT(putRequest({ url: "not-valid" }), ctx());
@@ -131,7 +155,8 @@ test("PUT 400 — URL fails basic validation (malformed)", async () => {
 });
 
 test("PUT 400 — URL does not match stored platform (different-platform URL)", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink(PLATFORMS.GITHUB);
     // Valid LinkedIn URL for a GitHub link → platform mismatch
     const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
@@ -140,7 +165,8 @@ test("PUT 400 — URL does not match stored platform (different-platform URL)", 
 });
 
 test("PUT 400 — nothing to update (empty body)", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink();
     const res = await PUT(putRequest({}), ctx());
     assert.equal(res.status, 400);
@@ -148,10 +174,11 @@ test("PUT 400 — nothing to update (empty body)", async () => {
 });
 
 test("PUT 200 — valid URL matching stored platform updates the link", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink(PLATFORMS.GITHUB);
     capturedUpdateArgs = null;
-    invalidatedUserIds.length = 0;
+    invalidatedWorkspaceIds.length = 0;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);
     const data = await res.json();
@@ -161,25 +188,28 @@ test("PUT 200 — valid URL matching stored platform updates the link", async ()
 });
 
 test("PUT 200 — successful update invalidates the owner's cached public profile", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink(PLATFORMS.GITHUB);
-    invalidatedUserIds.length = 0;
+    invalidatedWorkspaceIds.length = 0;
     const res = await PUT(putRequest({ url: "https://github.com/newuser" }), ctx());
     assert.equal(res.status, 200);
-    assert.deepEqual(invalidatedUserIds, ["owner-user-id"]);
+    assert.deepEqual(invalidatedWorkspaceIds, ["owner-workspace-id"]);
 });
 
 test("PUT 400 — failed update does not invalidate the cache", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink(PLATFORMS.GITHUB);
-    invalidatedUserIds.length = 0;
+    invalidatedWorkspaceIds.length = 0;
     const res = await PUT(putRequest({ url: "https://linkedin.com/in/john-doe" }), ctx());
     assert.equal(res.status, 400);
-    assert.deepEqual(invalidatedUserIds, []);
+    assert.deepEqual(invalidatedWorkspaceIds, []);
 });
 
 test("PUT 200 — isPublic boolean update without URL", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink();
     capturedUpdateArgs = null;
     const res = await PUT(putRequest({ isPublic: false }), ctx());
@@ -191,7 +221,8 @@ test("PUT 200 — isPublic boolean update without URL", async () => {
 });
 
 test("PUT 400 — non-boolean isPublic with no URL is treated as nothing to update", async () => {
-    mockSession = { user: { email: "owner@example.com" } };
+    mockSession = { user: { id: "owner-user-id", email: "owner@example.com" } };
+    mockWorkspace = { id: "owner-workspace-id" };
     mockLink = ownerLink();
     const res = await PUT(putRequest({ isPublic: "yes" }), ctx());
     assert.equal(res.status, 400);
