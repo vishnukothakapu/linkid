@@ -12,6 +12,31 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+/**
+ * The public profile payload and its generation key are stored per workspace
+ * (lib/profileCache.ts), while the avatar lives on the User. Purge every
+ * workspace the user belongs to instead of the user id, otherwise the cached
+ * profile keeps serving the previous image until its TTL expires.
+ */
+async function invalidateAvatarCaches(userId: string) {
+    const memberships = await prisma.workspaceMember.findMany({
+        where: { userId },
+        select: { workspaceId: true },
+    });
+
+    await Promise.all(
+        memberships.map((membership) => invalidateProfileCache(membership.workspaceId))
+    );
+
+    // getPublicUserData also caches the owner image for resume downloads.
+    try {
+        const { revalidateTag } = await import("next/cache");
+        revalidateTag("public-profile", "default");
+    } catch (error) {
+        console.error("Failed to revalidate the public-profile tag:", error);
+    }
+}
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -70,8 +95,8 @@ export async function POST(req: Request) {
         data: { image: result.secure_url },
     });
 
-    // Avatar is rendered on the public profile — purge the cache.
-    await invalidateProfileCache(session.user.id);
+    // Avatar is rendered on the public profile — purge the workspace caches.
+    await invalidateAvatarCaches(session.user.id);
 
     return NextResponse.json({ success: true, imageUrl: result.secure_url });
 }
@@ -86,8 +111,8 @@ export async function DELETE() {
         data: { image: null },
     });
 
-    // Avatar removal is reflected on the public profile — purge the cache.
-    await invalidateProfileCache(session.user.id);
+    // Avatar removal is reflected on the public profile — purge the workspace caches.
+    await invalidateAvatarCaches(session.user.id);
 
     return NextResponse.json({ success: true });
 }
