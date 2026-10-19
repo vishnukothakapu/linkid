@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
+import { activeLinkWhere } from "@/lib/linkVisibility";
 
 export async function GET(
     req: Request,
@@ -26,7 +27,10 @@ export async function GET(
                     take: 1,
                 },
                 links: {
-                    where: { isPublic: true },
+                    // Public profile visibility rule: only links inside their
+                    // schedule window are exposed (scheduled/expired links must
+                    // not leak through the extension either).
+                    where: { isPublic: true, ...activeLinkWhere() },
                     select: {
                         id: true,
                         platform: true,

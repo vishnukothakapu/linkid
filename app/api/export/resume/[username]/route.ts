@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { generateResumePDF } from "@/lib/generateResumePDF";
 import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
+import { activeLinkWhere } from "@/lib/linkVisibility";
 
 export async function GET(
   _req: Request,
@@ -21,7 +22,7 @@ export async function GET(
           take: 1,
         },
         links: {
-          where: { isPublic: true },
+          where: { isPublic: true, ...activeLinkWhere() },
           orderBy: [{ position: "asc" }, { createdAt: "asc" }],
         },
       },

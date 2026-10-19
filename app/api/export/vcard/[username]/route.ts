@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { buildVCard } from "@/lib/buildVCard";
 import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
+import { activeLinkWhere } from "@/lib/linkVisibility";
 
 export async function GET(
   _req: Request,
@@ -20,7 +21,7 @@ export async function GET(
           take: 1,
         },
         links: {
-          where: { isPublic: true },
+          where: { isPublic: true, ...activeLinkWhere() },
           orderBy: [{ position: "asc" }, { createdAt: "asc" }],
         },
       },

@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { ProfileCard } from "./ProfileCard";
 import { ProfileFooter } from "./ProfileFooter";
 import { resolveUserByUsername } from "@/lib/userLookup";
+import { filterActiveLinks } from "@/lib/linkVisibility";
 import { ShareProfileButton } from "./ShareProfileButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
@@ -116,12 +117,7 @@ export default async function PublicProfile({
     bgStyle.backgroundImage = "linear-gradient(180deg, #09090b 0%, #1e1b4b 100%)";
   }
 
-  const now = new Date();
-  const activeLinks = (user.links || []).filter((link: { startDate?: Date | null; endDate?: Date | null }) => {
-    if (link.startDate && new Date(link.startDate) > now) return false;
-    if (link.endDate && new Date(link.endDate) < now) return false;
-    return true;
-  });
+  const activeLinks = filterActiveLinks(user.links || []);
 
   return (
     <main 
