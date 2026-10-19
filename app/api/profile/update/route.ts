@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertProfileDraft } from "@/lib/profileWorkflow";
+import { upsertProfileDraft, ProfileInputError } from "@/lib/profileWorkflow";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -13,8 +13,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { username, name, bio, image, themeType, themeColor, themeCustom, workspaceId: bodyWorkspaceId } = body;
-    username = username?.toLowerCase();
+    const { name, bio, image, themeType, themeColor, themeCustom, workspaceId: bodyWorkspaceId } = body;
+    let { username } = body;
+
+    if (username !== undefined && username !== null && typeof username !== "string") {
+      return NextResponse.json({ error: "Username must be a string" }, { status: 400 });
+    }
+    username = typeof username === "string" ? username.toLowerCase() : username;
 
     const preferredWorkspaceId = req.headers.get("x-workspace-id") || req.nextUrl?.searchParams?.get("workspaceId") || bodyWorkspaceId;
     const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
@@ -42,6 +47,9 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true, draft }, { status: 200 });
   } catch (error: unknown) {
+    if (error instanceof ProfileInputError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     const err = error as { message?: string };
     if (err.message?.includes("Username not available") || err.message?.includes("Username already taken")) {
       return NextResponse.json(

@@ -23,6 +23,17 @@ export interface ProfileSnapshot {
 }
 
 /**
+ * Thrown when the submitted profile input fails validation (username format,
+ * length, etc). Routes map this to a 400 instead of a generic 500.
+ */
+export class ProfileInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProfileInputError";
+  }
+}
+
+/**
  * Upsert a profile draft for a workspace
  */
 export async function upsertProfileDraft(
@@ -33,7 +44,7 @@ export async function upsertProfileDraft(
   if (data.username) {
     const basicValidation = validateUsername(data.username);
     if (!basicValidation.valid) {
-      throw new Error(basicValidation.error || "Invalid username");
+      throw new ProfileInputError(basicValidation.error || "Invalid username");
     }
 
     // Check if username is available
