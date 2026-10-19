@@ -10,6 +10,7 @@ import {
     invalidateProfileCache,
     invalidateProfileUsername,
 } from "@/lib/profileCache";
+import { acquireUsernameLock, UsernameTakenError } from "@/lib/usernameLock";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +50,20 @@ export async function POST(req: NextRequest) {
     }
 
     const updatedWorkspace = await prisma.$transaction(async (tx) => {
+      // The pre-transaction check above can race with a concurrent claim or a
+      // profile publish, so recheck while holding the advisory lock for this
+      // username. The lock is released at commit, after the update lands.
+      await acquireUsernameLock(tx, username);
+
+      const [existingWorkspaceInTx, existingAliasInTx] = await Promise.all([
+        tx.workspace.findUnique({ where: { username } }),
+        tx.workspaceAlias.findUnique({ where: { username } }),
+      ]);
+
+      if (existingWorkspaceInTx || existingAliasInTx) {
+        throw new UsernameTakenError();
+      }
+
       if (workspace.username) {
         await tx.workspaceAlias.upsert({
           where: { username: workspace.username },
@@ -74,6 +89,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, workspace: updatedWorkspace }, { status: 200 });
 
   } catch (error: unknown) {
+    if (error instanceof UsernameTakenError) {
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+    }
     const err = error as { code?: string; meta?: { target?: string[] } };
     if (err.code === "P2002" && err.meta?.target?.includes("username")) {
       return NextResponse.json({ error: "Username already taken" }, { status: 409 });

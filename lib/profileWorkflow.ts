@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { validateUsername } from "@/lib/validations/username";
+import { acquireUsernameLock } from "@/lib/usernameLock";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 
@@ -270,6 +271,12 @@ export async function publishProfileDraft(
 
     // Handle username being set or changed
     if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
+      // Serialize with every other claim for this name before rechecking
+      // availability: the check below and the update further down must not
+      // interleave with a concurrent publish or username claim, or the same
+      // name can end up on an alias row and a primary row at the same time.
+      await acquireUsernameLock(tx, afterSnapshot.username);
+
       const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
       if (!isAvailable) {
         throw new Error("Username already taken");
