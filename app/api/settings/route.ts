@@ -59,12 +59,25 @@ export async function PUT(req: NextRequest) {
       await invalidateProfileCache(workspace.id);
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // The webhook secret is the signing key for outbound deliveries. Only the
+    // workspace OWNER may read it; other members can update unrelated settings
+    // (enableEmailCapture) and previously received the key in this response.
+    const response: {
+      success: boolean;
+      enableEmailCapture: boolean;
+      webhookUrl: string | null;
+      webhookSecret?: string | null;
+    } = {
+      success: true,
       enableEmailCapture: updatedWorkspace.enableEmailCapture,
       webhookUrl: updatedWorkspace.webhookUrl,
-      webhookSecret: updatedWorkspace.webhookSecret 
-    }, { status: 200 });
+    };
+
+    if (workspace.role === "OWNER") {
+      response.webhookSecret = updatedWorkspace.webhookSecret;
+    }
+
+    return NextResponse.json(response, { status: 200 });
 
   } catch (error) {
     console.error("Settings update error:", error);
