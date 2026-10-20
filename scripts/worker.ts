@@ -1,8 +1,7 @@
 import "../lib/prisma";
 import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "../lib/analytics";
-
-import { validateWebhookUrl } from "../lib/ssrf";
+import { deliverWebhook } from "../lib/webhookDelivery";
 
 const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
   "analytics-click": async (payload) => {
@@ -16,25 +15,9 @@ const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
     console.log("[worker] recalc analytics", payload);
   },
   "webhook-dispatch": async (payload) => {
-    const { url, signature, payload: bodyPayload } = payload as { url: string; signature: string; payload: any };
-    
-    // Perform SSRF validation on the destination URL before fetching
-    await validateWebhookUrl(url);
+    const { url, signature, payload: bodyPayload } = payload as { url: string; signature: string; payload: unknown };
 
-    // Prevent redirects to avoid SSRF bypasses via redirection
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-linkid-signature": signature
-      },
-      body: JSON.stringify(bodyPayload),
-      redirect: "error"
-    });
-
-    if (!res.ok) {
-      throw new Error(`Webhook dispatch failed with status: ${res.status}`);
-    }
+    await deliverWebhook({ url, signature, body: bodyPayload });
   }
 };
 
