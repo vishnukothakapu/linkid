@@ -7,6 +7,7 @@ import { ProfileCTA } from "./ProfileCTA";
 import { ProfileCardProps } from "./types/type";
 import { NewsletterSubscribeBlock } from "./NewsletterSubscribeBlock";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { isLinkWithinSchedule } from "@/lib/linkSchedule";
 import { Globe } from "lucide-react";
 
 export function ProfileCard(props: ProfileCardProps) {
@@ -19,12 +20,23 @@ export function ProfileCard(props: ProfileCardProps) {
       "transition-all duration-300 hover:-translate-y-2 hover:shadow-xl";
 
     const socialLinks = (user.links ?? []).flatMap((link) =>
-        link.isGroup ? (link.children ?? []).filter((c) => c.isSocialIcon) : (link.isSocialIcon ? [link] : [])
+        link.isGroup
+            ? (link.children ?? []).filter(
+                  (c) => c.isSocialIcon && isLinkWithinSchedule(c)
+              )
+            : link.isSocialIcon
+              ? [link]
+              : []
     );
 
     const regularLinks = (user.links ?? []).flatMap((link) => {
         if (link.isGroup) {
-            const regularChildren = (link.children ?? []).filter((c) => !c.isSocialIcon);
+            // Top-level links are filtered by the page before they reach this
+            // component. Group children are not, so apply the same schedule
+            // window here before deciding whether the group has anything left.
+            const regularChildren = (link.children ?? []).filter(
+                (c) => !c.isSocialIcon && isLinkWithinSchedule(c)
+            );
             if (regularChildren.length === 0) return [];
             return [{ ...link, children: regularChildren }];
         }
