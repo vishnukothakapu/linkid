@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isReservedUsername } from "@/lib/reservedUsernames";
 import { validateUsername } from "@/lib/validations/username";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
@@ -191,6 +192,10 @@ export async function isProfileUsernameAvailable(
   excludeWorkspaceId?: string,
   tx?: TransactionClient | typeof prisma
 ): Promise<boolean> {
+  if (isReservedUsername(username)) {
+    return false;
+  }
+
   const db = tx || prisma;
   const workspace = await db.workspace.findUnique({
     where: { username },

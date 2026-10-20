@@ -1,3 +1,5 @@
+import { isReservedUsername } from "@/lib/reservedUsernames";
+
 export const usernameRegex = /^[a-zA-Z0-9-]+$/;
 
 export function validateUsername(username: string): { valid: boolean; error?: string } {
@@ -15,6 +17,12 @@ export function validateUsername(username: string): { valid: boolean; error?: st
   }
   if (username.length > 30) {
     return { valid: false, error: "Username must be under 30 characters" };
+  }
+  if (isReservedUsername(username)) {
+    return {
+      valid: false,
+      error: "This username is reserved. Please choose another one.",
+    };
   }
   return { valid: true };
 }
