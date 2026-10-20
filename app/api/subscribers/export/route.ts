@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { escapeCsv } from "@/lib/csv";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
 export async function GET(req: NextRequest) {
@@ -22,16 +23,9 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" },
         });
 
-        const formatCsvField = (field: string) => {
-            const str = String(field);
-            const needsPrefix = /^[=+\-@]/.test(str);
-            const prefixed = needsPrefix ? `'${str}` : str;
-            return `"${prefixed.replace(/"/g, '""')}"`;
-        };
-
         const csvRows = ["id,email,createdAt"];
         for (const sub of subscribers) {
-            csvRows.push(`${formatCsvField(sub.id)},${formatCsvField(sub.email)},${formatCsvField(sub.createdAt.toISOString())}`);
+            csvRows.push(`${escapeCsv(sub.id)},${escapeCsv(sub.email)},${escapeCsv(sub.createdAt.toISOString())}`);
         }
         
         const csvString = csvRows.join("\n");

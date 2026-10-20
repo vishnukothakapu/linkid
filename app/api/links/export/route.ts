@@ -2,13 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { escapeCsv } from "@/lib/csv";
 import { resolveActiveWorkspace } from "@/lib/workspace";
-
-function escapeCsv(value: unknown) {
-    const text = value == null ? "" : String(value);
-    const neutralizedText = /^[=+\-@]/.test(text) ? `'${text}` : text;
-    return `"${neutralizedText.replace(/"/g, '""')}"`;
-}
 
 export async function GET() {
     const session = await getServerSession(authOptions);

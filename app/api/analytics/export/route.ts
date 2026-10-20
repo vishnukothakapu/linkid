@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { getUserAnalyticsSummary } from "@/lib/analytics";
+import { escapeCsv } from "@/lib/csv";
 import { generateAnalyticsPDF } from "@/lib/generateAnalyticsPDF";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
@@ -17,24 +18,15 @@ const EXPORT_BATCH_SIZE = 1000;
 
 type ExportClick = Prisma.ClickEventGetPayload<{ include: { link: true } }>;
 
-function escapeCSV(value: string | null | undefined): string {
-    if (value == null) return "";
-    const str = String(value);
-    if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
-        return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-}
-
 function clickToCSVRow(c: ExportClick): string {
     return [
-        escapeCSV(c.createdAt.toISOString()),
-        escapeCSV(c.link?.label ?? ""),
-        escapeCSV(c.link?.url ?? ""),
-        escapeCSV(c.referrer),
-        escapeCSV(c.country),
-        escapeCSV(c.deviceType),
-        escapeCSV(c.userAgent),
+        escapeCsv(c.createdAt.toISOString()),
+        escapeCsv(c.link?.label ?? ""),
+        escapeCsv(c.link?.url ?? ""),
+        escapeCsv(c.referrer),
+        escapeCsv(c.country),
+        escapeCsv(c.deviceType),
+        escapeCsv(c.userAgent),
     ].join(",");
 }
 
