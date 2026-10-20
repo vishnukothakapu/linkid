@@ -1,32 +1,35 @@
 import assert from "node:assert/strict";
 import { mock, test, before } from "node:test";
 
-let mockVersion: any = null;
-let mockCurrentUser: any = null;
-let mockClaimingUser: any = null;
-let mockAlias: any = null;
+// Mutable state shared with the transaction double. rollbackProfileVersion now
+// works on workspaces: the version carries a workspaceId and the username
+// conflicts are checked against Workspace.username / WorkspaceAlias.username.
+let mockVersion: unknown = null;
+let mockWorkspace: unknown = null;
+let mockClaimingWorkspace: unknown = null;
+let mockAlias: unknown = null;
+let mockOwnerMember: unknown = null;
+
+type FindUniqueArgs = { where?: { id?: string; username?: string } };
 
 const mockTx = {
   profileVersion: {
     findUnique: () => Promise.resolve(mockVersion),
     create: () => Promise.resolve({}),
   },
-  user: {
-    findUnique: (args: any) => {
-      if (args.where.id) {
-        return Promise.resolve(mockCurrentUser);
-      }
-      if (args.where.username) {
-        return Promise.resolve(mockClaimingUser);
-      }
+  workspace: {
+    findUnique: (args: FindUniqueArgs) => {
+      if (args.where?.id) return Promise.resolve(mockWorkspace);
+      if (args.where?.username) return Promise.resolve(mockClaimingWorkspace);
       return Promise.resolve(null);
     },
     update: () => Promise.resolve({}),
   },
-  userAlias: {
-    findUnique: (args: any) => {
-      return Promise.resolve(mockAlias);
-    },
+  workspaceMember: {
+    findFirst: () => Promise.resolve(mockOwnerMember),
+  },
+  workspaceAlias: {
+    findUnique: () => Promise.resolve(mockAlias),
     upsert: () => Promise.resolve({}),
   },
   profileDraft: {
@@ -40,7 +43,7 @@ const mockTx = {
 mock.module("@/lib/prisma", {
   namedExports: {
     prisma: {
-      $transaction: (fn: any) => fn(mockTx),
+      $transaction: (fn: (tx: typeof mockTx) => unknown) => fn(mockTx),
     },
   },
 });
@@ -52,55 +55,57 @@ before(async () => {
   rollbackProfileVersion = workflow.rollbackProfileVersion;
 });
 
-test("rollback succeeds when username is unchanged", async () => {
-  mockVersion = {
+function versionWithUsername(username: string) {
+  return {
     id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
+    workspaceId: "workspace-A",
+    snapshot: {
+      name: "Workspace A",
+      username,
+      bio: "old bio",
+      image: null,
+      themeType: null,
+      themeColor: null,
+      themeCustom: null,
+      backgroundImage: null,
+    },
   };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "coolprofile",
+}
+
+function currentWorkspace(username: string) {
+  return {
+    name: "Workspace A",
+    username,
     bio: "new bio",
-    image: null,
+    backgroundImage: null,
+    themeType: null,
+    themeColor: null,
+    themeCustom: null,
   };
-  mockClaimingUser = null;
+}
+
+test("rollback succeeds when username is unchanged", async () => {
+  mockVersion = versionWithUsername("coolprofile");
+  mockWorkspace = currentWorkspace("coolprofile");
+  mockOwnerMember = { userId: "user-A", user: { image: null } };
+  mockClaimingWorkspace = null;
   mockAlias = null;
 
-  const result = await rollbackProfileVersion("user-A", "version-1");
+  const result = await rollbackProfileVersion("workspace-A", "version-1");
   assert.equal(result.snapshot.username, "coolprofile");
   assert.deepEqual(result.diff.bio, { before: "new bio", after: "old bio" });
 });
 
-test("rollback fails when target username is claimed by another user as primary username", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  // User B has claimed "coolprofile"
-  mockClaimingUser = {
-    id: "user-B",
-    username: "coolprofile",
-  };
+test("rollback fails when target username is claimed by another workspace as primary username", async () => {
+  mockVersion = versionWithUsername("coolprofile");
+  mockWorkspace = currentWorkspace("differentprofile");
+  mockOwnerMember = { userId: "user-A", user: { image: null } };
+  // Workspace B owns "coolprofile" as its primary username.
+  mockClaimingWorkspace = { id: "workspace-B", username: "coolprofile" };
   mockAlias = null;
 
   await assert.rejects(
-    rollbackProfileVersion("user-A", "version-1"),
+    rollbackProfileVersion("workspace-A", "version-1"),
     (err: Error) => {
       assert.equal(err.message, "The username in this profile version is no longer available.");
       return true;
@@ -108,32 +113,20 @@ test("rollback fails when target username is claimed by another user as primary 
   );
 });
 
-test("rollback fails when target username is claimed by another user as an alias", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  mockClaimingUser = null;
-  // User B owns the alias "coolprofile"
+test("rollback fails when target username is claimed by another workspace as an alias", async () => {
+  mockVersion = versionWithUsername("coolprofile");
+  mockWorkspace = currentWorkspace("differentprofile");
+  mockOwnerMember = { userId: "user-A", user: { image: null } };
+  mockClaimingWorkspace = null;
+  // Workspace B owns the alias "coolprofile".
   mockAlias = {
     id: "alias-1",
     username: "coolprofile",
-    userId: "user-B",
+    workspaceId: "workspace-B",
   };
 
   await assert.rejects(
-    rollbackProfileVersion("user-A", "version-1"),
+    rollbackProfileVersion("workspace-A", "version-1"),
     (err: Error) => {
       assert.equal(err.message, "The username in this profile version is no longer available.");
       return true;
@@ -141,30 +134,18 @@ test("rollback fails when target username is claimed by another user as an alias
   );
 });
 
-test("rollback succeeds when target username is an alias owned by the same user", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  mockClaimingUser = null;
-  // User A owns the alias "coolprofile" (it's their own alias)
+test("rollback succeeds when target username is an alias owned by the same workspace", async () => {
+  mockVersion = versionWithUsername("coolprofile");
+  mockWorkspace = currentWorkspace("differentprofile");
+  mockOwnerMember = { userId: "user-A", user: { image: null } };
+  mockClaimingWorkspace = null;
+  // Workspace A owns the alias "coolprofile" (its own previous username).
   mockAlias = {
     id: "alias-1",
     username: "coolprofile",
-    userId: "user-A",
+    workspaceId: "workspace-A",
   };
 
-  const result = await rollbackProfileVersion("user-A", "version-1");
+  const result = await rollbackProfileVersion("workspace-A", "version-1");
   assert.equal(result.snapshot.username, "coolprofile");
 });

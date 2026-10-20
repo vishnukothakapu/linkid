@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 let mockSession: unknown = null;
 let mockUser: unknown = null;
 const callOrder: string[] = [];
+const invalidatedWorkspaceIds: string[] = [];
+const invalidatedUsernames: string[] = [];
 
 mock.module("next-auth", {
   namedExports: {
@@ -16,25 +18,53 @@ mock.module("@/lib/auth", {
   namedExports: { authOptions: {} },
 });
 
-mock.module("@/lib/prisma", {
-  defaultExport: {
-    user: {
-      findUnique: () => Promise.resolve(mockUser),
-      delete: () => {
-        callOrder.push("deleteUser");
-        return Promise.resolve({});
-      },
+// The route deletes the account, then purges every workspace the user was a
+// member of (app/api/user/delete/route.ts:84-102), so the double needs
+// workspaceMember.findMany as well as the user operations. A solo workspace is
+// used so the route deletes it instead of promoting another member.
+const prismaMock = {
+  user: {
+    findUnique: () => Promise.resolve(mockUser),
+    delete: () => {
+      callOrder.push("deleteUser");
+      return Promise.resolve({});
     },
   },
-  namedExports: {
-    prisma: {
-      user: {
-        findUnique: () => Promise.resolve(mockUser),
-        delete: () => {
-          callOrder.push("deleteUser");
-          return Promise.resolve({});
+  workspaceMember: {
+    findMany: () =>
+      Promise.resolve([
+        {
+          id: "membership-1",
+          role: "OWNER",
+          workspace: {
+            id: "workspace-1",
+            username: "test-user",
+            members: [],
+          },
         },
-      },
+      ]),
+    update: () => Promise.resolve({}),
+  },
+  workspace: {
+    deleteMany: () => Promise.resolve({ count: 1 }),
+  },
+  $transaction: (operations: Promise<unknown>[]) => Promise.all(operations),
+};
+
+mock.module("@/lib/prisma", {
+  defaultExport: prismaMock,
+  namedExports: { prisma: prismaMock },
+});
+
+mock.module("@/lib/profileCache", {
+  namedExports: {
+    invalidateProfileCache: (workspaceId: string) => {
+      invalidatedWorkspaceIds.push(workspaceId);
+      return Promise.resolve();
+    },
+    invalidateProfileUsername: (username: string) => {
+      invalidatedUsernames.push(username);
+      return Promise.resolve();
     },
   },
 });
@@ -87,9 +117,16 @@ test("DELETE 200 — performs cleanups and deletes user in the correct order", a
   mockSession = { user: { id: "test-user-id" } };
   mockUser = { id: "test-user-id", password: "hashedpassword", email: "user@example.com" };
   callOrder.length = 0;
+  invalidatedWorkspaceIds.length = 0;
+  invalidatedUsernames.length = 0;
 
   const res = await DELETE(deleteRequest({ password: "password123", otp: "123456" }));
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { success: true });
   assert.deepEqual(callOrder, ["invalidateUserSessions", "clearOtp", "deleteUser"]);
+
+  // The public profile cache is keyed by workspace id; the deleted workspace
+  // and its username index must be purged with those ids.
+  assert.deepEqual(invalidatedWorkspaceIds, ["workspace-1"]);
+  assert.deepEqual(invalidatedUsernames, ["test-user"]);
 });
