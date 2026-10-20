@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendSupportEmail } from "@/lib/email";
+import { getForwardedIp } from "@/lib/analyticsUtils";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 const CONTACT_US_LIMIT = 5;
@@ -19,8 +20,9 @@ function escapeHtml(value: string): string {
 }
 
 export async function POST(req: Request) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // Use the same trust hierarchy as the other public endpoints. Reading the
+  // first x-forwarded-for value directly let a client rotate its own bucket.
+  const ip = getForwardedIp(req.headers) ?? "unknown";
 
   if (!(await checkRateLimit(`contact-us:${ip}`, CONTACT_US_LIMIT, CONTACT_US_WINDOW_MS))) {
     return NextResponse.json(
