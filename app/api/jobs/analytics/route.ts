@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { claimNextJob, releaseJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
+import { claimNextJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
+import { pruneOldJobs } from "@/lib/jobRetention";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "@/lib/analytics";
 import type { Prisma } from "@prisma/client";
 
@@ -33,6 +34,16 @@ async function handleRequest(req: Request) {
                 await markJobFailed(job.id, message);
                 failed++;
             }
+        }
+
+        try {
+            const pruned = await pruneOldJobs();
+            if (pruned.count > 0) {
+                console.log(`[analytics-worker] pruned ${pruned.count} finished jobs`);
+            }
+        } catch (pruneError) {
+            // Cleanup must not turn a successful analytics run into a 500.
+            console.error("[analytics-worker] job cleanup failed:", pruneError);
         }
 
         return NextResponse.json({

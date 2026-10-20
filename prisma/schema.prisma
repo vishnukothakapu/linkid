@@ -316,6 +316,7 @@ model Job {
   updatedAt  DateTime  @updatedAt
 
   @@index([status, runAfter])
+  @@index([status, updatedAt])
   @@index([scheduleAt])
   @@index([userId])
 }
