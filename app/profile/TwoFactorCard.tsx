@@ -32,7 +32,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-type SetupStep = "loading" | "setup" | "recovery";
+type SetupStep = "password" | "loading" | "setup" | "recovery";
 
 interface TwoFactorCardProps {
   enabled: boolean;
@@ -49,6 +49,8 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [codesCopied, setCodesCopied] = useState(false);
+  const [setupPassword, setSetupPassword] = useState("");
+  const [showSetupPassword, setShowSetupPassword] = useState(false);
 
   const [isEnabled, setIsEnabled] = useState(enabled);
 
@@ -79,12 +81,13 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       setVerifyLoading(false);
       setRecoveryCodes([]);
       setCodesCopied(false);
+      setSetupPassword("");
+      setShowSetupPassword(false);
       setError("");
     }
   }, []);
 
-  const startSetup = useCallback(async () => {
-    setSetupOpen(true);
+  const beginSetup = useCallback(async (currentPassword?: string) => {
     setSetupStep("loading");
     setError("");
     try {
@@ -96,12 +99,20 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
           "Content-Type": "application/json",
           "x-csrf-token": csrfToken,
         },
+        body: JSON.stringify(
+          currentPassword ? { password: currentPassword } : {}
+        ),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to start setup. Please try again.");
-        handleSetupOpenChange(false);
+        const data = await res.json().catch(() => ({}));
+        if (hasPassword) {
+          setSetupStep("password");
+          setError(data.error || "Failed to confirm your password.");
+        } else {
+          toast.error(data.error || "Failed to start setup. Please try again.");
+          handleSetupOpenChange(false);
+        }
         return;
       }
 
@@ -110,10 +121,35 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
       setSecret(data.secret);
       setSetupStep("setup");
     } catch {
-      toast.error("Failed to start setup. Please try again.");
-      handleSetupOpenChange(false);
+      if (hasPassword) {
+        setSetupStep("password");
+        setError("Failed to start setup. Please try again.");
+      } else {
+        toast.error("Failed to start setup. Please try again.");
+        handleSetupOpenChange(false);
+      }
     }
-  }, [handleSetupOpenChange]);
+  }, [handleSetupOpenChange, hasPassword]);
+
+  const startSetup = useCallback(() => {
+    setSetupOpen(true);
+    setError("");
+    if (hasPassword) {
+      setSetupPassword("");
+      setShowSetupPassword(false);
+      setSetupStep("password");
+      return;
+    }
+    void beginSetup();
+  }, [beginSetup, hasPassword]);
+
+  const handleSetupPasswordSubmit = useCallback(async () => {
+    if (!setupPassword) {
+      setError("Enter your current password.");
+      return;
+    }
+    await beginSetup(setupPassword);
+  }, [beginSetup, setupPassword]);
 
   const handleEnable = useCallback(async () => {
     const trimmedCode = verifyCode.replace(/\s+/g, "");
@@ -270,6 +306,76 @@ export function TwoFactorCard({ enabled, hasPassword }: TwoFactorCardProps) {
           className="sm:max-w-md"
           showCloseButton={setupStep !== "loading"}
         >
+          {setupStep === "password" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Confirm your password</DialogTitle>
+                <DialogDescription>
+                  Enter your current password before setting up two-factor
+                  authentication.
+                </DialogDescription>
+              </DialogHeader>
+
+              {error && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleSetupPasswordSubmit();
+                }}
+              >
+                <div className="space-y-1.5">
+                  <Label htmlFor="2fa-setup-password">Current password</Label>
+                  <div className="relative">
+                    <Input
+                      id="2fa-setup-password"
+                      type={showSetupPassword ? "text" : "password"}
+                      value={setupPassword}
+                      onChange={(event) => {
+                        setSetupPassword(event.target.value);
+                        setError("");
+                      }}
+                      autoComplete="current-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSetupPassword((value) => !value)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={
+                        showSetupPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showSetupPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => handleSetupOpenChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={!setupPassword}>
+                    Continue
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          )}
+
           {setupStep === "loading" && (
             <div className="flex h-40 flex-col items-center justify-center gap-3 text-muted-foreground">
               <Spinner className="h-6 w-6" />

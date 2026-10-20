@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
+import bcrypt from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -10,7 +11,7 @@ import {
     TWO_FACTOR_ISSUER,
 } from "@/lib/twoFactor";
 
-export async function POST() {
+export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
@@ -31,9 +32,24 @@ export async function POST() {
             );
         }
 
+        let password: string | undefined;
+        try {
+            const body = await req.json();
+            if (body && typeof body.password === "string") {
+                password = body.password;
+            }
+        } catch {
+            // OAuth-only accounts can start setup without a request body.
+        }
+
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true, twoFactorEnabled: true },
+            select: {
+                id: true,
+                email: true,
+                password: true,
+                twoFactorEnabled: true,
+            },
         });
 
         if (!user) {
@@ -45,6 +61,23 @@ export async function POST() {
                 { error: "Two-factor authentication is already enabled." },
                 { status: 400 }
             );
+        }
+
+        if (user.password) {
+            if (!password) {
+                return NextResponse.json(
+                    { error: "Password confirmation is required" },
+                    { status: 400 }
+                );
+            }
+
+            const isValid = await bcrypt.compare(password, user.password);
+            if (!isValid) {
+                return NextResponse.json(
+                    { error: "Password confirmation failed" },
+                    { status: 401 }
+                );
+            }
         }
 
         const secret = generateTotpSecret();
