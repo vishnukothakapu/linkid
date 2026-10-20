@@ -42,8 +42,12 @@ function shapeWorkspaceProfile(
     const owner = workspace.members.find((m) => m.role === "OWNER")?.user ?? null;
 
     const rawLinks = workspace.links ?? [];
+    // PIN-protected destinations are only reachable through the locked-link
+    // page. Keep the URL out of the public payload entirely; the UI resolves
+    // the route from `platform`/`alias` and never needs `url` while locked.
     const safeLinks = rawLinks.map((l) => ({
         ...l,
+        url: l.pinCode ? "" : l.url,
         pinCode: l.pinCode ? "locked" : null,
     }));
 
