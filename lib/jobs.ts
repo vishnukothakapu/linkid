@@ -60,6 +60,47 @@ export async function releaseJob(id: string) {
   });
 }
 
+const STALE_PROCESSING_MS = 5 * 60 * 1000;
+
+/**
+ * Return jobs whose worker disappeared mid-flight to the queue. A job that is
+ * still PROCESSING after the lease has expired either crashed or lost its
+ * process; no later claim can see it otherwise. Rows that already exhausted
+ * the retry budget are marked FAILED instead of being retried again.
+ */
+export async function reclaimStaleJobs(now: Date = new Date()) {
+  const staleBefore = new Date(now.getTime() - STALE_PROCESSING_MS);
+
+  const failed = await prisma.job.updateMany({
+    where: {
+      status: "PROCESSING",
+      updatedAt: { lt: staleBefore },
+      attempts: { gte: MAX_ATTEMPTS },
+    },
+    data: {
+      status: "FAILED",
+      lastError: "Job lease expired before completion",
+      updatedAt: now,
+    },
+  });
+
+  const reclaimed = await prisma.job.updateMany({
+    where: {
+      status: "PROCESSING",
+      updatedAt: { lt: staleBefore },
+      attempts: { lt: MAX_ATTEMPTS },
+    },
+    data: {
+      status: "PENDING",
+      attempts: { increment: 1 },
+      lastError: "Job lease expired before completion",
+      updatedAt: now,
+    },
+  });
+
+  return { failed: failed.count, reclaimed: reclaimed.count };
+}
+
 // Polling-based worker helper: finds the next eligible job and marks it processing.
 // Optionally filter by job type. If a non-matching job is found first, it is left
 // untouched so other workers can process it.
@@ -128,6 +169,7 @@ const jobs = {
   enqueueJob,
   getJob,
   claimNextJob,
+  reclaimStaleJobs,
   releaseJob,
   processJobWithHandler,
 };

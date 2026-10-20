@@ -1,5 +1,5 @@
 import "../lib/prisma";
-import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
+import { claimNextJob, processJobWithHandler, reclaimStaleJobs, type JobPayload } from "../lib/jobs";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "../lib/analytics";
 
 import { validateWebhookUrl } from "../lib/ssrf";
@@ -38,9 +38,31 @@ const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
   }
 };
 
+const STALE_RECLAIM_INTERVAL_MS = 60_000;
+let lastStaleReclaimAt = 0;
+
+async function maybeReclaimStaleJobs() {
+  const now = Date.now();
+  if (now - lastStaleReclaimAt < STALE_RECLAIM_INTERVAL_MS) return;
+  lastStaleReclaimAt = now;
+
+  try {
+    const result = await reclaimStaleJobs();
+    if (result.reclaimed > 0 || result.failed > 0) {
+      console.log(
+        `[worker] reclaimed ${result.reclaimed} stale jobs, failed ${result.failed} exhausted jobs`
+      );
+    }
+  } catch (err) {
+    console.error("[worker] stale job reclaim failed", err);
+    lastStaleReclaimAt = 0;
+  }
+}
+
 async function loop() {
   while (true) {
     try {
+      await maybeReclaimStaleJobs();
       const job = await claimNextJob();
       if (!job) {
         await new Promise((r) => setTimeout(r, 2000));

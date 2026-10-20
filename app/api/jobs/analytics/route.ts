@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { claimNextJob, releaseJob, markJobCompleted, markJobFailed } from "@/lib/jobs";
+import { claimNextJob, reclaimStaleJobs, markJobCompleted, markJobFailed } from "@/lib/jobs";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "@/lib/analytics";
 import type { Prisma } from "@prisma/client";
 
@@ -19,6 +19,10 @@ async function handleRequest(req: Request) {
     let failed = 0;
 
     try {
+        // Recover rows whose worker died after claiming them. This runs once
+        // per cron invocation; the worker loop has its own throttled sweep.
+        await reclaimStaleJobs();
+
         while (Date.now() - startTime < MAX_PROCESSING_TIME_MS && processed < BATCH_SIZE) {
             const job = await claimNextJob("analytics-click");
             if (!job) break;
