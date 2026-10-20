@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { buildMergedPlatformSlug, generateMergeCode, hashMergeCode } from "@/lib/accountMergeUtils";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 
@@ -19,6 +20,19 @@ async function verifyMergeConfirmation(
     userId: string,
     confirmation: { password?: string; confirmEmail?: string }
 ) {
+    const allowed = await checkRateLimit(
+        `merge-confirm:${userId}`,
+        10,
+        15 * 60 * 1000
+    );
+
+    if (!allowed) {
+        throw new MergeError(
+            "Too many confirmation attempts. Please try again later.",
+            429
+        );
+    }
+
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { password: true, email: true },
