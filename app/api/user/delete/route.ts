@@ -83,20 +83,69 @@ export async function DELETE(req: NextRequest) {
 
     const userWorkspaces = await prisma.workspaceMember.findMany({
       where: { userId },
-      include: { workspace: { select: { id: true, username: true } } },
+      select: {
+        id: true,
+        role: true,
+        workspace: {
+          select: {
+            id: true,
+            username: true,
+            members: {
+              where: { userId: { not: userId } },
+              select: { id: true, role: true, createdAt: true },
+              orderBy: { createdAt: "asc" },
+            },
+          },
+        },
+      },
     });
+
+    const workspacesToDelete: string[] = [];
+    const membersToPromote: string[] = [];
+
+    for (const membership of userWorkspaces) {
+      const otherMembers = membership.workspace.members;
+
+      if (otherMembers.length === 0) {
+        workspacesToDelete.push(membership.workspace.id);
+        continue;
+      }
+
+      const hasAnotherOwner = otherMembers.some((member) => member.role === "OWNER");
+      if (membership.role === "OWNER" && !hasAnotherOwner) {
+        // Do not leave a shared workspace ownerless when the only owner
+        // deletes their account. The members are ordered by creation time.
+        membersToPromote.push(otherMembers[0].id);
+      }
+    }
 
     await invalidateUserSessions(userId);
     await clearOtp(userId);
-    await prisma.user.delete({
-      where: { id: session.user.id },
-    });
 
-    // The account no longer exists — drop its cached public profile and clear
-    // its username→workspaceId index entry so any freed usernames resolve fresh.
+    await prisma.$transaction([
+      ...membersToPromote.map((memberId) =>
+        prisma.workspaceMember.update({
+          where: { id: memberId },
+          data: { role: "OWNER" },
+        })
+      ),
+      prisma.workspace.deleteMany({
+        where: { id: { in: workspacesToDelete } },
+      }),
+      prisma.user.delete({
+        where: { id: userId },
+      }),
+    ]);
+
+    // The account no longer exists. Drop its cached public profile and clear
+    // the username index for workspaces that were deleted; retained shared
+    // workspaces still own their username.
     for (const member of userWorkspaces) {
       await invalidateProfileCache(member.workspace.id);
-      if (member.workspace.username) {
+      if (
+        member.workspace.username &&
+        workspacesToDelete.includes(member.workspace.id)
+      ) {
         await invalidateProfileUsername(member.workspace.username);
       }
     }
