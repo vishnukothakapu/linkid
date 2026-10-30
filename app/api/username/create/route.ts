@@ -9,6 +9,7 @@ import { revalidateTag } from "next/cache";
 import {
     invalidateProfileCache,
     invalidateProfileUsername,
+    writeThroughProfileCache,
 } from "@/lib/profileCache";
 
 export async function POST(req: NextRequest) {
@@ -64,11 +65,10 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    // Claiming a username publishes the profile — purge the Redis payload and
-    // the sitemap-backed Next data cache. Clear the claimed username's index
-    // too so any stale entry left by a previous owner never resolves to them.
-    await invalidateProfileCache(workspace.id);
+    // Claiming a username publishes the profile — eagerly purge and repopulate the
+    // Redis payload and refresh the sitemap-backed Next data cache. Clear any stale index.
     await invalidateProfileUsername(username);
+    await writeThroughProfileCache(workspace.id);
     revalidateTag("public-profile", "default");
 
     return NextResponse.json({ success: true, workspace: updatedWorkspace }, { status: 200 });

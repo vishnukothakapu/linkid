@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test, before, after } from "node:test";
+import zlib from "node:zlib";
 
 // ── In-memory fake of the @upstash/redis client ───────────────────────────────
 
@@ -82,6 +83,7 @@ class FakeRedis {
 
 const realUrl = process.env.UPSTASH_REDIS_REST_URL;
 const realToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const realRedisUrl = process.env.REDIS_URL;
 
 mock.module("@upstash/redis", {
     namedExports: { Redis: FakeRedis },
@@ -92,24 +94,28 @@ mock.module("@upstash/redis", {
 let profileCache: any;
 
 before(async () => {
-    profileCache = await import("@/lib/profileCache");
+    profileCache = await import("./profileCache.ts");
 });
 
 after(() => {
     if (realUrl) process.env.UPSTASH_REDIS_REST_URL = realUrl;
+    else delete process.env.UPSTASH_REDIS_REST_URL;
+
     if (realToken) process.env.UPSTASH_REDIS_REST_TOKEN = realToken;
-    else {
-        delete process.env.UPSTASH_REDIS_REST_URL;
-        delete process.env.UPSTASH_REDIS_REST_TOKEN;
-    }
+    else delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (realRedisUrl) process.env.REDIS_URL = realRedisUrl;
+    else delete process.env.REDIS_URL;
 });
 
 function withRedisConfigured() {
+    delete process.env.REDIS_URL;
     process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
 }
 
 function withoutRedis() {
+    delete process.env.REDIS_URL;
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
 }
@@ -136,9 +142,42 @@ test("isRedisConfigured reflects the environment", () => {
 
     withRedisConfigured();
     assert.equal(profileCache.isRedisConfigured(), true);
+
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    process.env.REDIS_URL = "redis://localhost:6379";
+    assert.equal(profileCache.isRedisConfigured(), true);
+    delete process.env.REDIS_URL;
 });
 
-test("cacheResolvedProfile writes a lowercased username index and the payload with TTLs", async () => {
+test("compression: compressPayload produces gzipped Buffer and decompressPayload restores it", () => {
+    const original = {
+        user: { id: "user-123", name: "Alice", bio: "Software Engineer", links: [{ id: "l1", url: "https://example.com" }] },
+        canonicalUsername: "alice",
+    };
+
+    const compressed = profileCache.compressPayload(original);
+    assert.ok(Buffer.isBuffer(compressed), "Compressed payload should be a Buffer");
+    // Verify gzip magic header
+    assert.equal(compressed[0], 0x1f);
+    assert.equal(compressed[1], 0x8b);
+
+    const decompressed = profileCache.decompressPayload(compressed);
+    assert.deepEqual(decompressed, original);
+});
+
+test("compression: decompressPayload handles uncompressed JSON fallback for backward compatibility", () => {
+    const rawObj = { user: { id: "user-legacy" } };
+    const rawJsonStr = JSON.stringify(rawObj);
+
+    const fromString = profileCache.decompressPayload(rawJsonStr);
+    assert.deepEqual(fromString, rawObj);
+
+    const fromBuffer = profileCache.decompressPayload(Buffer.from(rawJsonStr, "utf-8"));
+    assert.deepEqual(fromBuffer, rawObj);
+});
+
+test("cacheResolvedProfile writes a lowercased username index and the compressed payload with TTLs", async () => {
     withRedisConfigured();
     store.clear();
     setCalls.length = 0;
@@ -155,6 +194,11 @@ test("cacheResolvedProfile writes a lowercased username index and the payload wi
     ]);
     assert.deepEqual(setCalls[0].opts, { ex: 60 * 60 * 24 });
     assert.deepEqual(setCalls[1].opts, { ex: 300 });
+
+    // Stored payload is compressed base64 string in Upstash fake
+    const stored = store.get("profile:user-1");
+    const decompressed = profileCache.decompressPayload(stored);
+    assert.equal(decompressed.user.id, "user-1");
 });
 
 test("getCachedResolvedProfile serves a previously cached payload (cache hit)", async () => {
@@ -253,7 +297,8 @@ test("cacheResolvedProfile writes when the captured generation still matches", a
     );
 
     assert.equal(setCalls.length, 2);
-    const payload = store.get("profile:user-1") as { user: { id: string } };
+    const raw = store.get("profile:user-1");
+    const payload = profileCache.decompressPayload(raw) as { user: { id: string } };
     assert.equal(payload.user.id, "user-1");
 });
 
@@ -269,4 +314,27 @@ test("invalidateProfileUsername clears the username index entry", async () => {
 
     assert.equal(store.has("profile:username:johndoe"), false);
     assert.equal(await profileCache.getCachedResolvedProfile("johndoe"), null);
+});
+
+test("writeThroughProfileCache and repopulateProfileCache trigger registered repopulator", async () => {
+    withRedisConfigured();
+    store.clear();
+
+    let repopulatedId: string | null = null;
+    profileCache.registerProfileRepopulator(async (id: string) => {
+        repopulatedId = id;
+        await profileCache.cacheResolvedProfile("repopulateduser", id, {
+            user: { id, name: "Repopulated" },
+            canonicalUsername: "repopulateduser",
+        });
+    });
+
+    await profileCache.writeThroughProfileCache("user-42");
+
+    assert.equal(repopulatedId, "user-42");
+    const cached = await profileCache.getCachedResolvedProfile("repopulateduser");
+    assert.deepEqual(cached, {
+        user: { id: "user-42", name: "Repopulated" },
+        canonicalUsername: "repopulateduser",
+    });
 });

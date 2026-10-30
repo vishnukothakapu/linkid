@@ -3,7 +3,7 @@ import { upsertProfileDraft } from "@/lib/profileWorkflow";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -36,9 +36,9 @@ export async function PATCH(req: NextRequest) {
       themeCustom,
     });
 
-    // Drafted edits land on the public profile once published — purge the cache
-    // so any published (live) version is never served stale.
-    await invalidateProfileCache(workspace.id);
+    // Drafted edits land on the public profile once published — eagerly purge and repopulate
+    // the cache so the live profile reflects current state immediately.
+    await writeThroughProfileCache(workspace.id);
 
     return NextResponse.json({ success: true, draft }, { status: 200 });
   } catch (error: unknown) {

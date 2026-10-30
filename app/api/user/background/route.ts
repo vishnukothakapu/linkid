@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
 import { revalidateTag } from "next/cache";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -35,8 +35,8 @@ export async function PATCH(req: NextRequest) {
             data: { backgroundImage },
         });
         
-        // Purge both cache layers so the background updates immediately.
-        await invalidateProfileCache(workspace.id);
+        // Eagerly purge and repopulate both cache layers so the background updates immediately.
+        await writeThroughProfileCache(workspace.id);
         revalidateTag("public-profile", "default");
 
         return NextResponse.json({ success: true, backgroundImage: updatedWorkspace.backgroundImage }, { status: 200 });

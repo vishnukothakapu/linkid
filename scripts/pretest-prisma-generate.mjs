@@ -10,4 +10,4 @@ if (!env.DATABASE_URL && !env.DIRECT_URL) {
   env.DATABASE_URL = "postgresql://placeholder:placeholder@localhost:5432/placeholder";
 }
 
-execSync("npx prisma generate", { stdio: "inherit", env });
+execSync("npm exec -- prisma generate", { stdio: "inherit", env });
