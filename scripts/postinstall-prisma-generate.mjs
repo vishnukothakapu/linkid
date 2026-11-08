@@ -1,6 +1,10 @@
+import "dotenv/config";
 import { execSync } from "node:child_process";
 
-const hasDbUrl = Boolean(process.env.DATABASE_URL || process.env.DIRECT_URL);
+const directUrl = process.env.DIRECT_URL?.trim();
+const databaseUrl = process.env.DATABASE_URL?.trim();
+
+const hasDbUrl = Boolean(directUrl || databaseUrl);
 
 if (!hasDbUrl) {
   console.log(
@@ -10,10 +14,14 @@ if (!hasDbUrl) {
 }
 
 try {
-  execSync("npx prisma generate", { stdio: "inherit" });
+  execSync("npx prisma generate", {
+    stdio: "inherit",
+    env: process.env,
+  });
 } catch {
   // Keep installs usable; builds should still run `prisma generate` explicitly.
-  console.warn("[postinstall] `prisma generate` failed; continuing install.");
+  console.warn(
+    "[postinstall] `prisma generate` failed; continuing install.",
+  );
   process.exit(0);
 }
-
