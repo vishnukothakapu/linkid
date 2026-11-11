@@ -18,6 +18,7 @@ import {
     SiCodeforces,
     SiKaggle,
     SiGeeksforgeeks,
+    SiHackerrank,
     SiSubstack,
     SiBehance,
     SiStackoverflow,
@@ -29,6 +30,7 @@ import type { ComponentType, SVGProps } from "react";
 
 export const PLATFORMS = {
     github: { icon: Github, name: "GitHub" },
+    hackerrank: { icon: SiHackerrank, name: "HackerRank" },
     substack: { icon: SiSubstack, name: "Substack" },
     behance: { icon: SiBehance, name: "Behance" },
     stackoverflow: { icon: SiStackoverflow, name: "Stack Overflow" },

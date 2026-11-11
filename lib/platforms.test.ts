@@ -12,6 +12,7 @@ test("isKnownPlatform returns true for every declared platform", () => {
         PLATFORMS.FACEBOOK, PLATFORMS.INSTAGRAM, "discord", "twitch", PLATFORMS.HUGGINGFACE,
         "hashnode", "devto", PLATFORMS.MEDIUM, "dribbble", PLATFORMS.WEBSITE,
         "codeforces", "codechef", PLATFORMS.KAGGLE, PLATFORMS.GEEKSFORGEEKS,
+        PLATFORMS.HACKERRANK,
     ];
     for (const p of known) {
         assert.equal(isKnownPlatform(p), true, `expected true for "${p}"`);
@@ -212,4 +213,21 @@ test("validatePlatformUrl accepts GitLab profile URLs", () => {
 
 test("detectPlatform identifies GitLab URLs", () => {
     assert.equal(detectPlatform("https://gitlab.com/username"), "gitlab");
+});
+
+test("validatePlatformUrl accepts HackerRank profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/profile/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://hackerrank.com/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "hackerrank.com/profile/user.name_1"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://github.com/username"), false);
+});
+
+test("validatePlatformUrl rejects HackerRank URLs without a username", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/profile/"), false);
+});
+
+test("detectPlatform identifies HackerRank URLs", () => {
+    assert.equal(detectPlatform("https://www.hackerrank.com/profile/username"), "hackerrank");
+    assert.equal(detectPlatform("https://hackerrank.com/username"), "hackerrank");
 });
