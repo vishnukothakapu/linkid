@@ -4,6 +4,10 @@ import { PLATFORMS } from "@/lib/constants";
 
 export type Platform =
     | "github"
+    | "hackerrank"
+    | "substack"
+    | "behance"
+    | "stackoverflow"
     | "gitlab"
     | "linkedin"
     | "leetcode"
@@ -21,6 +25,7 @@ export type Platform =
     | "codechef"
     | "kaggle"
     | "geeksforgeeks"
+    | "huggingface"
     | "website";
 
 
@@ -29,6 +34,10 @@ export type Platform =
 const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     github: /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
 
+    hackerrank: /^https?:\/\/(www\.)?hackerrank\.com\/(profile\/[A-Za-z0-9_.-]+|(?!profile\/?(\?|$))[A-Za-z0-9_.-]+)\/?(\?.*)?$/i,
+    substack: /^https?:\/\/([A-Za-z0-9-]+\.substack\.com|(www\.)?substack\.com\/@?[A-Za-z0-9_-]+)\/?(\?.*)?$/i,
+    behance: /^https?:\/\/(www\.)?behance\.net\/[A-Za-z0-9_-]+\/?(\?.*)?$/i,
+    stackoverflow: /^https?:\/\/(www\.)?stackoverflow\.com\/users\/\d+(\/[A-Za-z0-9_.-]+)?\/?(\?.*)?$/i,
     gitlab: /^https?:\/\/(www\.)?gitlab\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
 
     // Catch-all domain suffixes force immediate platform identification for paths like /feed or /jobs,
@@ -53,6 +62,8 @@ const PLATFORM_PATTERNS: Record<Platform, RegExp> = {
     codeforces: /^https?:\/\/(www\.)?codeforces\.com\/profile\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     kaggle: /^https?:\/\/(www\.)?kaggle\.com\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     geeksforgeeks: /^https?:\/\/(www\.|auth\.)?geeksforgeeks\.org\/user\/[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
+    // Single-segment profile/org URLs only; reserved site sections (models, datasets, spaces, ...) are excluded.
+    huggingface: /^https?:\/\/(www\.)?huggingface\.co\/(?!(models|datasets|spaces|docs|blog|papers|collections|tasks|join|login|settings|pricing|chat|posts|learn|organizations|enterprise|new|api|welcome)(\/|\?|$))[A-Za-z0-9_.-]+\/?(\?.*)?$/i,
     website: /^https?:\/\/.+/i,
 };
 

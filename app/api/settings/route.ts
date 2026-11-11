@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 import crypto from "crypto";
 import { validateWebhookUrl, WebhookValidationError } from "@/lib/ssrf";
 
@@ -54,9 +54,9 @@ export async function PUT(req: NextRequest) {
       data: updateData,
     });
 
-    // enableEmailCapture renders on the public profile — purge the cache.
+    // enableEmailCapture renders on the public profile — eagerly purge and repopulate the cache.
     if (enableEmailCapture !== undefined) {
-      await invalidateProfileCache(workspace.id);
+      await writeThroughProfileCache(workspace.id);
     }
 
     return NextResponse.json({ 

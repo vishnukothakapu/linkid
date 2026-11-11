@@ -3,7 +3,13 @@ import { unstable_cache } from "next/cache";
 import type { Prisma } from "@prisma/client";
 
 import { nestLinks } from "./linkTree";
-import { cacheResolvedProfile, getProfileGeneration, readCachedResolvedProfile } from "./profileCache";
+import {
+    cacheResolvedProfile,
+    getProfileGeneration,
+    readCachedResolvedProfile,
+    invalidateProfileCache,
+    registerProfileRepopulator,
+} from "./profileCache";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -147,6 +153,80 @@ export async function resolveUserByUsername(
     }
     return resolved;
 }
+
+/**
+ * Database-backed resolution for workspace public profiles by workspace ID
+ * (with fallback to owner user ID).
+ */
+export async function resolveProfileByWorkspaceIdFromDb(
+    workspaceIdOrUserId: string
+): Promise<ResolvedUserProfile | null> {
+    let workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceIdOrUserId },
+        include: workspaceInclude,
+    });
+
+    if (!workspace) {
+        // Fallback: workspaceIdOrUserId may be a User ID (e.g. from session.user.id in avatar/merge)
+        workspace = await prisma.workspace.findFirst({
+            where: {
+                members: {
+                    some: { userId: workspaceIdOrUserId, role: "OWNER" },
+                },
+            },
+            include: workspaceInclude,
+        });
+    }
+
+    if (!workspace || !workspace.username) return null;
+
+    return shapeWorkspaceProfile(workspace, workspace.username);
+}
+
+/**
+ * Repopulates the Redis cache for a workspace directly from PostgreSQL.
+ * Reads the latest public profile, retrieves any aliases, compresses the payload,
+ * and caches it in Redis with TTL.
+ */
+export async function repopulateProfileCache(
+    workspaceIdOrUserId: string
+): Promise<void> {
+    try {
+        const resolved = await resolveProfileByWorkspaceIdFromDb(workspaceIdOrUserId);
+        if (resolved && resolved.user.username) {
+            const aliases = await prisma.workspaceAlias.findMany({
+                where: { workspaceId: resolved.user.id },
+                select: { username: true },
+            });
+            const aliasUsernames = aliases.map((a) => a.username);
+
+            await cacheResolvedProfile(
+                resolved.user.username,
+                resolved.user.id,
+                resolved,
+                null,
+                aliasUsernames
+            );
+        }
+    } catch (err) {
+        console.error("[profileCache] repopulation failed:", err);
+    }
+}
+
+/**
+ * Write-through cache invalidation hook:
+ * Eagerly purges the existing cache entry and repopulates it with fresh
+ * compressed data from PostgreSQL.
+ */
+export async function writeThroughProfileCache(
+    workspaceIdOrUserId: string
+): Promise<void> {
+    await invalidateProfileCache(workspaceIdOrUserId);
+    await repopulateProfileCache(workspaceIdOrUserId);
+}
+
+// Register repopulator hook so profileCache.ts invalidation can write-through
+registerProfileRepopulator(repopulateProfileCache);
 
 /**
  * Get public workspace data including resume URL (used by resume download routes).

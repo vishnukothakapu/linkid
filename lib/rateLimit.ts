@@ -36,6 +36,7 @@
  * ```
  */
 
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ─── In-Memory Backend ────────────────────────────────────────────────────────
@@ -100,16 +101,46 @@ function checkRateLimitMemory(
 // ─── Redis Backend ────────────────────────────────────────────────────────────
 
 /**
+ * Lua script that performs the whole sliding-window check as ONE atomic step.
+ *
+ * Redis executes a script without interleaving any other command, so the
+ * "trim → count → compare → record" sequence cannot be raced by concurrent
+ * requests (possibly arriving from different serverless instances).
+ *
+ * Previously the count and the ZADD were sent as two separate pipelines. An
+ * Upstash pipeline is only a batching optimisation (it is NOT MULTI/EXEC), so
+ * N concurrent requests could all read `count < limit` before any of them had
+ * recorded itself and every one of them was allowed through. That let an
+ * attacker fire a burst of parallel requests and bypass limits such as the
+ * 5-attempts-per-15-minutes 2FA login limit.
+ *
+ * KEYS[1] = rate-limit key
+ * ARGV[1] = now (ms)   ARGV[2] = window (ms)   ARGV[3] = limit   ARGV[4] = unique member
+ *
+ * Returns 1 when the request is allowed (and recorded), 0 when it is blocked.
+ */
+const SLIDING_WINDOW_LUA = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local windowMs = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+local member = ARGV[4]
+
+redis.call('ZREMRANGEBYSCORE', key, 0, now - windowMs)
+
+if redis.call('ZCARD', key) >= limit then
+  return 0
+end
+
+redis.call('ZADD', key, now, member)
+redis.call('PEXPIRE', key, windowMs)
+return 1
+`;
+
+/**
  * Checks and records a request in Redis using a sorted-set sliding window.
- *
- * Algorithm:
- *  1. Remove members (timestamps) outside the current window with ZREMRANGEBYSCORE.
- *  2. Count remaining members with ZCARD.
- *  3. If under limit, add the current timestamp with ZADD and refresh TTL with EXPIRE.
- *  4. Return whether the request is allowed.
- *
- * All four commands are pipelined in a single round-trip via MULTI/EXEC so the
- * operation is atomic and race-condition-safe.
+ * The entire check-and-record operation runs atomically inside Redis via
+ * {@link SLIDING_WINDOW_LUA}.
  */
 async function checkRateLimitRedis(
     key: string,
@@ -126,32 +157,16 @@ async function checkRateLimitRedis(
     });
 
     const now = Date.now();
-    const windowStart = now - windowMs;
-    const redisKey = `ratelimit:${key}`;
-    const ttlSeconds = Math.ceil(windowMs / 1000);
+    // Unique member so several requests in the same millisecond are all stored.
+    const member = `${now}-${randomUUID()}`;
 
-    // Pipeline all commands in one round-trip.
-    const pipeline = redis.pipeline();
-    // 1. Remove expired entries
-    pipeline.zremrangebyscore(redisKey, 0, windowStart);
-    // 2. Count remaining entries in the window
-    pipeline.zcard(redisKey);
+    const allowed = await redis.eval(
+        SLIDING_WINDOW_LUA,
+        [`ratelimit:${key}`],
+        [now, windowMs, limit, member],
+    );
 
-    const [, count] = await pipeline.exec<[number, number]>();
-
-    if (count >= limit) {
-        return false;
-    }
-
-    // 3. Record this request (use timestamp as both score and unique member)
-    // Append a random suffix to the member to allow multiple requests at the exact same ms.
-    const member = `${now}-${Math.random().toString(36).slice(2, 8)}`;
-    const addPipeline = redis.pipeline();
-    addPipeline.zadd(redisKey, { score: now, member });
-    addPipeline.expire(redisKey, ttlSeconds);
-    await addPipeline.exec();
-
-    return true;
+    return Number(allowed) === 1;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────

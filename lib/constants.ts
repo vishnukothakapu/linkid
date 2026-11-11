@@ -1,5 +1,9 @@
 export const PLATFORMS = {
     GITHUB: "github",
+    HACKERRANK: "hackerrank",
+    SUBSTACK: "substack",
+    BEHANCE: "behance",
+    STACKOVERFLOW: "stackoverflow",
     GITLAB: "gitlab",
     LINKEDIN: "linkedin",
     TWITTER: "twitter",
@@ -20,6 +24,7 @@ export const PLATFORMS = {
     DISCORD: "discord",
     KAGGLE: "kaggle",
     GEEKSFORGEEKS: "geeksforgeeks",
+    HUGGINGFACE: "huggingface",
 } as const;
 
 export type PlatformKey = keyof typeof PLATFORMS;

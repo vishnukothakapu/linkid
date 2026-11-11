@@ -193,6 +193,20 @@ export async function completeAccountMerge(input: {
         );
     }
 
+    // Workspace.username is UNIQUE and the source workspace is only deleted at
+    // the very end of this transaction. If the target is about to inherit the
+    // source's username we must release it on the source row first, otherwise
+    // PostgreSQL raises a unique-constraint violation (P2002) and the whole
+    // merge rolls back.
+    if (workspaceUpdateData.username) {
+        transactionOperations.push(
+            prisma.workspace.update({
+                where: { id: sourceWorkspace.id },
+                data: { username: null },
+            })
+        );
+    }
+
     if (Object.keys(workspaceUpdateData).length > 0) {
         transactionOperations.push(
             prisma.workspace.update({ where: { id: targetWorkspace.id }, data: workspaceUpdateData })

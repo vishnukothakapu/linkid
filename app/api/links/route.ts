@@ -16,7 +16,7 @@ import { nestLinks } from "@/lib/linkTree";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
 import { rateLimit } from "@/lib/rateLimit";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 
 // Maximum number of links a single user can add to their profile.
 // Prevents unbounded database growth and degraded public profile performance.
@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
                 isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
             });
 
-            // New link is public — purge the cached public profile.
-            await invalidateProfileCache(workspace.id);
+            // New link is public — eagerly purge and repopulate the public profile cache.
+            await writeThroughProfileCache(workspace.id);
 
             await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 
@@ -242,8 +242,8 @@ export async function POST(req: NextRequest) {
             isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         });
 
-        // New link is public — purge the cached public profile.
-        await invalidateProfileCache(workspace.id);
+        // New link is public — eagerly purge and repopulate the public profile cache.
+        await writeThroughProfileCache(workspace.id);
 
         await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 

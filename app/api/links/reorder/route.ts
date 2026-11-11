@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { triggerPusherEvent } from "@/lib/pusher";
 import { resolveActiveWorkspace } from "@/lib/workspace";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 
 type Body = { orderedIds?: unknown; groupOrders?: unknown };
 
@@ -156,8 +156,8 @@ export async function POST(req: Request) {
       throw err;
     }
 
-    // Link order is part of the public profile payload — purge the cache.
-    await invalidateProfileCache(workspace.id);
+    // Link order is part of the public profile payload — eagerly purge and repopulate the cache.
+    await writeThroughProfileCache(workspace.id);
 
     await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: workspace.id });
 

@@ -145,8 +145,8 @@ export function LinkItem({
 
                     {/* Text content */}
                     <div className="min-w-0 flex flex-col justify-center">
-                        <div className="flex items-center gap-2">
-                            <p className="font-semibold text-sm capitalize truncate">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <p className="font-semibold text-sm capitalize truncate min-w-0">
                                 {editing ? (label || platform) : (link.label || link.platform)}
                             </p>
                             {!link.isPublic && (

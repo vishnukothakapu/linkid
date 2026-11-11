@@ -1,93 +1,155 @@
 /**
- * Redis-backed edge cache for public profile payloads.
+ * Distributed Redis-backed cache for public profile payloads.
  *
- * The public `/u` profile tree is the hottest read path in the app. The resolved
- * payload is cached in Upstash Redis so repeat visitors are served from the edge
- * instead of hitting PostgreSQL on every page load. Every dashboard mutation
- * deletes the owner's key via `invalidateProfileCache`, so edits appear on the
- * public profile immediately.
+ * Supports standard Redis (via ioredis singleton in lib/redis.ts) with
+ * payload compression (gzip) and automatic fallback to Upstash Redis REST
+ * when only Upstash credentials are present.
  *
- * When `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are not set
- * (local dev, CI), every function becomes a safe no-op so the rest of the app
- * behaves exactly as before — no caching, straight to the database.
+ * The public profile tree (/u/[username] and /[username]) is the hottest read
+ * path in the app. Resolved payloads are compressed and cached in Redis with a TTL.
  *
- * ## Key layout
- * - `profile:<userId>`            — JSON payload of one user's public profile.
- *                                   Keyed by user id so a single DEL invalidates
- *                                   the canonical username and every alias at
- *                                   once.
- * - `profile:username:<username>` — maps a requested username (canonical or
- *                                   alias) to its owner's user id. Usernames are
- *                                   permanently reserved once claimed, so a
- *                                   stale entry can only point to a *missing*
- *                                   payload (which triggers a DB fallback) —
- *                                   it can never serve another user's data.
+ * Mutating routes in api/links and api/profile implement a write-through cache strategy:
+ * whenever a user edits their links or profile, the cache is eagerly purged and
+ * repopulated with the fresh compressed payload from PostgreSQL.
  */
 
-type Redis = import("@upstash/redis").Redis;
+import zlib from "node:zlib";
 
-// Payload TTL: how long a resolved profile can be served from Redis before the
-// next visit re-reads it from PostgreSQL.
-const PROFILE_CACHE_TTL_SECONDS = 300; // 5 minutes
+type UpstashRedis = import("@upstash/redis").Redis;
+type IoRedis = import("ioredis").default;
+
+// Payload TTL: how long a resolved profile can be served from Redis before
+// the next visit re-reads from PostgreSQL.
+export const PROFILE_CACHE_TTL_SECONDS = process.env.PROFILE_CACHE_TTL
+    ? parseInt(process.env.PROFILE_CACHE_TTL, 10)
+    : 300; // 5 minutes default
 
 // Username→userId index TTL: long-lived because username→owner mappings are
 // immutable, but bounded so freed usernames (account deletion) self-heal.
-const USERNAME_INDEX_TTL_SECONDS = 60 * 60 * 24; // 24 hours
+export const USERNAME_INDEX_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
-const PROFILE_PAYLOAD_PREFIX = "profile:";
-const USERNAME_INDEX_PREFIX = "profile:username:";
-const PROFILE_GENERATION_PREFIX = "profile:gen:";
+export const PROFILE_PAYLOAD_PREFIX = "profile:";
+export const USERNAME_INDEX_PREFIX = "profile:username:";
+export const PROFILE_GENERATION_PREFIX = "profile:gen:";
 
 // How long a bumped generation key lives. Must comfortably exceed the payload
 // TTL so a captured generation can never outlive the payload it guards.
-const PROFILE_GENERATION_TTL_SECONDS = 60 * 60 * 24; // 24 hours
+export const PROFILE_GENERATION_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
-let redisClient: Redis | null = null;
+let upstashClient: UpstashRedis | null = null;
+let profileRepopulator: ((id: string) => Promise<void>) | null = null;
 
+/**
+ * Returns true if Redis configuration (standard REDIS_URL or Upstash REST)
+ * is present in the environment.
+ */
 export function isRedisConfigured(): boolean {
-    return (
-        Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
-        Boolean(process.env.UPSTASH_REDIS_REST_TOKEN)
+    return Boolean(
+        process.env.REDIS_URL ||
+        (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
     );
 }
 
 /**
- * Lazily constructs (and then reuses) the Upstash Redis client. Lazy-importing
- * `@upstash/redis` keeps cold-start overhead zero in in-memory/no-Redis mode.
- * Any failure to construct the client is logged and swallowed so callers fall
- * through to the database instead of receiving the exception.
+ * Register a repopulator function (typically from lib/userLookup.ts) so that
+ * cache invalidation hooks can eagerly refresh cache entries without circular dependencies.
  */
-async function getRedis(): Promise<Redis | null> {
+export function registerProfileRepopulator(fn: (id: string) => Promise<void>) {
+    profileRepopulator = fn;
+}
+
+/**
+ * Compresses an arbitrary JSON-serializable payload into a gzip Buffer.
+ */
+export function compressPayload<T>(payload: T): Buffer {
+    const jsonStr = JSON.stringify(payload);
+    return zlib.gzipSync(Buffer.from(jsonStr, "utf-8"));
+}
+
+/**
+ * Decompresses a Buffer or string from Redis back into the typed payload.
+ * Handles:
+ * - Gzipped Buffer or base64/hex string (starts with 0x1f, 0x8b)
+ * - Raw uncompressed JSON string or Buffer (for backward compatibility)
+ */
+export function decompressPayload<T>(data: unknown): T {
+    if (!data) {
+        throw new Error("Empty data to decompress");
+    }
+
+    let buffer: Buffer;
+    if (Buffer.isBuffer(data)) {
+        buffer = data;
+    } else if (typeof data === "string") {
+        const trimmed = data.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return JSON.parse(data) as T;
+        }
+        buffer = Buffer.from(data, "base64");
+    } else if (typeof data === "object") {
+        return data as T;
+    } else {
+        throw new Error(`Unexpected data type: ${typeof data}`);
+    }
+
+    // Check gzip magic header (0x1f, 0x8b)
+    if (buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b) {
+        const decompressed = zlib.gunzipSync(buffer);
+        return JSON.parse(decompressed.toString("utf-8")) as T;
+    }
+
+    // Fall back to plain utf-8 JSON parsing
+    return JSON.parse(buffer.toString("utf-8")) as T;
+}
+
+/**
+ * Lazily gets the Redis client.
+ * Prioritizes ioredis when REDIS_URL is present, otherwise falls back to @upstash/redis.
+ */
+async function getRedisClient(): Promise<{ type: "ioredis"; client: IoRedis } | { type: "upstash"; client: UpstashRedis } | null> {
     if (!isRedisConfigured()) {
         return null;
     }
 
-    if (redisClient) {
-        return redisClient;
+    if (process.env.REDIS_URL) {
+        try {
+            const { redis } = await import("./redis");
+            return { type: "ioredis", client: redis };
+        } catch (error) {
+            console.error("[profileCache] ioredis client load failed:", error);
+            return null;
+        }
     }
 
-    try {
-        const { Redis } = await import("@upstash/redis");
-        redisClient = new Redis({
-            url: process.env.UPSTASH_REDIS_REST_URL!,
-            token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-        });
-    } catch (error) {
-        console.error("[profileCache] Redis client init failed:", error);
-        redisClient = null;
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        if (upstashClient) {
+            return { type: "upstash", client: upstashClient };
+        }
+        try {
+            const { Redis } = await import("@upstash/redis");
+            upstashClient = new Redis({
+                url: process.env.UPSTASH_REDIS_REST_URL,
+                token: process.env.UPSTASH_REDIS_REST_TOKEN,
+            });
+            return { type: "upstash", client: upstashClient };
+        } catch (error) {
+            console.error("[profileCache] Upstash client init failed:", error);
+            return null;
+        }
     }
-    return redisClient;
+
+    return null;
 }
 
-function profilePayloadKey(userId: string): string {
+export function profilePayloadKey(userId: string): string {
     return `${PROFILE_PAYLOAD_PREFIX}${userId}`;
 }
 
-function usernameIndexKey(username: string): string {
+export function usernameIndexKey(username: string): string {
     return `${USERNAME_INDEX_PREFIX}${username.toLowerCase()}`;
 }
 
-function profileGenerationKey(userId: string): string {
+export function profileGenerationKey(userId: string): string {
     return `${PROFILE_GENERATION_PREFIX}${userId}`;
 }
 
@@ -98,13 +160,20 @@ function profileGenerationKey(userId: string): string {
 export async function getProfileGeneration(
     userId: string
 ): Promise<number | null> {
-    const redis = await getRedis();
-    if (!redis) {
+    const handle = await getRedisClient();
+    if (!handle) {
         return null;
     }
 
     try {
-        const raw = await redis.get<string>(profileGenerationKey(userId));
+        const key = profileGenerationKey(userId);
+        let raw: string | null = null;
+        if (handle.type === "ioredis") {
+            raw = await handle.client.get(key);
+        } else {
+            raw = await handle.client.get<string>(key);
+        }
+
         if (raw == null) {
             return null;
         }
@@ -117,30 +186,48 @@ export async function getProfileGeneration(
 }
 
 /**
- * Read a cached username index entry (owner id) plus its payload. Returns
- * `{ userId, payload }` so callers can pin the cache generation before a
- * database read. Both are `null` on a miss, when Redis is unavailable, or when
- * the lookup fails — every one of those falls through to the database.
+ * Read a cached username index entry (owner id) plus its decompressed payload.
+ * Returns `{ userId, payload }`. Both are `null` on a miss or error.
  */
 export async function readCachedResolvedProfile<T>(
     username: string
 ): Promise<{ userId: string | null; payload: T | null }> {
-    const redis = await getRedis();
-    if (!redis) {
+    const handle = await getRedisClient();
+    if (!handle) {
         return { userId: null, payload: null };
     }
 
     try {
-        const userId = await redis.get<string>(usernameIndexKey(username));
+        const indexKey = usernameIndexKey(username);
+        let userId: string | null = null;
+
+        if (handle.type === "ioredis") {
+            userId = await handle.client.get(indexKey);
+        } else {
+            userId = await handle.client.get<string>(indexKey);
+        }
+
         if (!userId) {
             return { userId: null, payload: null };
         }
 
-        const payload = await redis.get<T>(profilePayloadKey(userId));
-        return { userId, payload: payload ?? null };
+        const payloadKey = profilePayloadKey(userId);
+        if (handle.type === "ioredis") {
+            const rawBuffer = await handle.client.getBuffer(payloadKey);
+            if (!rawBuffer) {
+                return { userId, payload: null };
+            }
+            const payload = decompressPayload<T>(rawBuffer);
+            return { userId, payload };
+        } else {
+            const raw = await handle.client.get<unknown>(payloadKey);
+            if (!raw) {
+                return { userId, payload: null };
+            }
+            const payload = decompressPayload<T>(raw);
+            return { userId, payload };
+        }
     } catch (error) {
-        // A cache failure must never take the public profile down — fall
-        // through to the database. The next write will retry on the next miss.
         console.error("[profileCache] cache read failed:", error);
         return { userId: null, payload: null };
     }
@@ -148,8 +235,7 @@ export async function readCachedResolvedProfile<T>(
 
 /**
  * Read a cached public profile for a requested username (canonical or alias).
- * Returns `null` on a cache miss, when Redis is unavailable, or when the lookup
- * fails — every one of those falls through to the database.
+ * Returns `null` on a cache miss, when Redis is unavailable, or when lookup fails.
  */
 export async function getCachedResolvedProfile<T>(
     username: string
@@ -159,22 +245,21 @@ export async function getCachedResolvedProfile<T>(
 }
 
 /**
- * Store a resolved public profile in Redis. Writes both the username index and
- * the user-id payload so any alias/canonical username resolves in one round trip.
+ * Store a resolved public profile in Redis. Compresses the payload with gzip,
+ * writes both the username index and the compressed payload with TTLs.
  *
- * `capturedGeneration` is the value of `getProfileGeneration(userId)` read
- * *before* the caller's database query. When it no longer matches the current
- * generation an invalidation happened during the read, so the payload may be
- * stale — the write is skipped and the next request re-reads from PostgreSQL.
+ * `capturedGeneration` guards against stale overwrites if an invalidation
+ * occurred concurrently while fetching from the database.
  */
 export async function cacheResolvedProfile<T>(
     username: string,
     userId: string,
     payload: T,
-    capturedGeneration?: number | null
+    capturedGeneration?: number | null,
+    aliases?: string[]
 ): Promise<void> {
-    const redis = await getRedis();
-    if (!redis) {
+    const handle = await getRedisClient();
+    if (!handle) {
         return;
     }
 
@@ -182,68 +267,125 @@ export async function cacheResolvedProfile<T>(
         if (capturedGeneration != null) {
             const currentGeneration = await getProfileGeneration(userId);
             if (currentGeneration !== capturedGeneration) {
-                // Stale-write guard: the cache was invalidated while the
-                // payload was being read from the database. Do not repopulate
-                // it with pre-invalidation data.
+                // Stale-write guard: cache was invalidated while fetching from DB.
                 return;
             }
         }
 
-        const pipeline = redis.pipeline();
-        pipeline.set(usernameIndexKey(username), userId, {
-            ex: USERNAME_INDEX_TTL_SECONDS,
-        });
-        pipeline.set(profilePayloadKey(userId), payload, {
-            ex: PROFILE_CACHE_TTL_SECONDS,
-        });
-        await pipeline.exec();
+        const compressed = compressPayload(payload);
+
+        if (handle.type === "ioredis") {
+            const pipeline = handle.client.pipeline();
+            pipeline.set(usernameIndexKey(username), userId, "EX", USERNAME_INDEX_TTL_SECONDS);
+            if (aliases && aliases.length > 0) {
+                for (const alias of aliases) {
+                    pipeline.set(usernameIndexKey(alias), userId, "EX", USERNAME_INDEX_TTL_SECONDS);
+                }
+            }
+            pipeline.set(profilePayloadKey(userId), compressed, "EX", PROFILE_CACHE_TTL_SECONDS);
+            await pipeline.exec();
+        } else {
+            const pipeline = handle.client.pipeline();
+            pipeline.set(usernameIndexKey(username), userId, {
+                ex: USERNAME_INDEX_TTL_SECONDS,
+            });
+            if (aliases && aliases.length > 0) {
+                for (const alias of aliases) {
+                    pipeline.set(usernameIndexKey(alias), userId, {
+                        ex: USERNAME_INDEX_TTL_SECONDS,
+                    });
+                }
+            }
+            pipeline.set(profilePayloadKey(userId), compressed.toString("base64"), {
+                ex: PROFILE_CACHE_TTL_SECONDS,
+            });
+            await pipeline.exec();
+        }
     } catch (error) {
-        // Never let a cache write failure break the page render.
         console.error("[profileCache] cache write failed:", error);
     }
 }
 
 /**
- * Delete a user's cached public profile so the next page load is served fresh.
- * Called by every dashboard mutation that changes public profile data.
- *
- * Also bumps the user's cache generation atomically (increment-then-delete) so
- * any in-flight cache write that read the payload before this invalidation sees
- * a mismatch and skips writing stale data back.
+ * Delete a user's cached public profile and bump generation counter atomically.
+ * Optionally triggers eager repopulation (write-through cache strategy).
  */
-export async function invalidateProfileCache(userId: string): Promise<void> {
-    const redis = await getRedis();
-    if (!redis) {
-        return;
+export async function invalidateProfileCache(
+    userId: string,
+    options?: { repopulate?: boolean; writeThrough?: boolean }
+): Promise<void> {
+    const handle = await getRedisClient();
+    if (handle) {
+        try {
+            if (handle.type === "ioredis") {
+                const pipeline = handle.client.pipeline();
+                pipeline.incr(profileGenerationKey(userId));
+                pipeline.expire(profileGenerationKey(userId), PROFILE_GENERATION_TTL_SECONDS);
+                pipeline.del(profilePayloadKey(userId));
+                await pipeline.exec();
+            } else {
+                const pipeline = handle.client.pipeline();
+                pipeline.incr(profileGenerationKey(userId));
+                pipeline.expire(profileGenerationKey(userId), PROFILE_GENERATION_TTL_SECONDS);
+                pipeline.del(profilePayloadKey(userId));
+                await pipeline.exec();
+            }
+        } catch (error) {
+            console.error("[profileCache] cache invalidation failed:", error);
+        }
     }
 
-    try {
-        const pipeline = redis.pipeline();
-        pipeline.incr(profileGenerationKey(userId));
-        pipeline.expire(profileGenerationKey(userId), PROFILE_GENERATION_TTL_SECONDS);
-        pipeline.del(profilePayloadKey(userId));
-        await pipeline.exec();
-    } catch (error) {
-        // Invalidation failures are bounded by the payload TTL.
-        console.error("[profileCache] cache invalidation failed:", error);
+    if (options?.repopulate || options?.writeThrough) {
+        await repopulateProfileCache(userId);
     }
 }
 
 /**
+ * Repopulates the cache for a given workspace/user directly from PostgreSQL.
+ * If a repopulator has been registered (via registerProfileRepopulator), it runs now.
+ */
+export async function repopulateProfileCache(
+    workspaceIdOrUserId: string
+): Promise<void> {
+    if (profileRepopulator) {
+        try {
+            await profileRepopulator(workspaceIdOrUserId);
+        } catch (error) {
+            console.error("[profileCache] repopulation error:", error);
+        }
+    }
+}
+
+/**
+ * Write-through cache strategy hook:
+ * Eagerly purges the existing Redis cache entry and repopulates it
+ * with the fresh compressed payload from PostgreSQL.
+ */
+export async function writeThroughProfileCache(
+    workspaceIdOrUserId: string
+): Promise<void> {
+    await invalidateProfileCache(workspaceIdOrUserId);
+    await repopulateProfileCache(workspaceIdOrUserId);
+}
+
+/**
  * Delete a username→userId index entry. Used when username ownership changes
- * (merge, account deletion, username reclaim) so the index never points at a
- * different owner's payload or a freed username's stale id.
+ * so the index never points at a different owner's payload.
  */
 export async function invalidateProfileUsername(
     username: string
 ): Promise<void> {
-    const redis = await getRedis();
-    if (!redis) {
+    const handle = await getRedisClient();
+    if (!handle) {
         return;
     }
 
     try {
-        await redis.del(usernameIndexKey(username));
+        if (handle.type === "ioredis") {
+            await handle.client.del(usernameIndexKey(username));
+        } else {
+            await handle.client.del(usernameIndexKey(username));
+        }
     } catch (error) {
         console.error("[profileCache] username index invalidation failed:", error);
     }

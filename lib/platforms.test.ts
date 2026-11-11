@@ -9,9 +9,10 @@ import { PLATFORMS } from "@/lib/constants";
 test("isKnownPlatform returns true for every declared platform", () => {
     const known = [
         PLATFORMS.GITHUB, PLATFORMS.LINKEDIN, "leetcode", PLATFORMS.YOUTUBE, "x",
-        PLATFORMS.FACEBOOK, PLATFORMS.INSTAGRAM, "discord", "twitch",
+        PLATFORMS.FACEBOOK, PLATFORMS.INSTAGRAM, "discord", "twitch", PLATFORMS.HUGGINGFACE,
         "hashnode", "devto", PLATFORMS.MEDIUM, "dribbble", PLATFORMS.WEBSITE,
         "codeforces", "codechef", PLATFORMS.KAGGLE, PLATFORMS.GEEKSFORGEEKS,
+        PLATFORMS.HACKERRANK,
     ];
     for (const p of known) {
         assert.equal(isKnownPlatform(p), true, `expected true for "${p}"`);
@@ -28,6 +29,26 @@ test("isKnownPlatform is not fooled by prototype keys", () => {
     assert.equal(isKnownPlatform("__proto__"), false);
     assert.equal(isKnownPlatform("constructor"), false);
     assert.equal(isKnownPlatform("toString"), false);
+});
+
+test("validatePlatformUrl accepts Hugging Face user and org URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://www.huggingface.co/user.name-1/"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "huggingface.co/some_org"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://github.com/username"), false);
+});
+
+test("validatePlatformUrl rejects Hugging Face non-profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/models"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/spaces?sort=trending"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/DATASETS"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/username/model-name"), false);
+});
+
+test("detectPlatform identifies Hugging Face URLs", () => {
+    assert.equal(detectPlatform("https://huggingface.co/username"), "huggingface");
+    assert.equal(detectPlatform("https://huggingface.co/models"), "website");
 });
 
 // --- validatePlatformUrl ---
@@ -154,6 +175,36 @@ test("validatePlatformUrl rejects invalid YouTube URLs", () => {
 });
 
 
+
+test("validatePlatformUrl accepts Substack profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.SUBSTACK, "https://author.substack.com"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.SUBSTACK, "https://substack.com/@author"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.SUBSTACK, "https://github.com/author"), false);
+});
+
+test("detectPlatform identifies Substack URLs", () => {
+    assert.equal(detectPlatform("https://author.substack.com"), "substack");
+});
+
+test("validatePlatformUrl accepts Behance profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.BEHANCE, "https://behance.net/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.BEHANCE, "https://github.com/username"), false);
+});
+
+test("detectPlatform identifies Behance URLs", () => {
+    assert.equal(detectPlatform("https://behance.net/username"), "behance");
+});
+
+test("validatePlatformUrl accepts Stack Overflow profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.STACKOVERFLOW, "https://stackoverflow.com/users/123456/jane"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.STACKOVERFLOW, "stackoverflow.com/users/123456"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.STACKOVERFLOW, "https://stackoverflow.com/questions/1"), false);
+});
+
+test("detectPlatform identifies Stack Overflow URLs", () => {
+    assert.equal(detectPlatform("https://stackoverflow.com/users/123456/jane"), "stackoverflow");
+});
+
 test("validatePlatformUrl accepts GitLab profile URLs", () => {
     assert.equal(validatePlatformUrl(PLATFORMS.GITLAB, "https://gitlab.com/username"), true);
     assert.equal(validatePlatformUrl(PLATFORMS.GITLAB, "gitlab.com/username"), true);
@@ -162,4 +213,21 @@ test("validatePlatformUrl accepts GitLab profile URLs", () => {
 
 test("detectPlatform identifies GitLab URLs", () => {
     assert.equal(detectPlatform("https://gitlab.com/username"), "gitlab");
+});
+
+test("validatePlatformUrl accepts HackerRank profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/profile/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://hackerrank.com/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "hackerrank.com/profile/user.name_1"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://github.com/username"), false);
+});
+
+test("validatePlatformUrl rejects HackerRank URLs without a username", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HACKERRANK, "https://www.hackerrank.com/profile/"), false);
+});
+
+test("detectPlatform identifies HackerRank URLs", () => {
+    assert.equal(detectPlatform("https://www.hackerrank.com/profile/username"), "hackerrank");
+    assert.equal(detectPlatform("https://hackerrank.com/username"), "hackerrank");
 });

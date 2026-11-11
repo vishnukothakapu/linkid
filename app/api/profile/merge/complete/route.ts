@@ -8,6 +8,7 @@ import { revalidateTag } from "next/cache";
 import {
     invalidateProfileCache,
     invalidateProfileUsername,
+    writeThroughProfileCache,
 } from "@/lib/profileCache";
 
 export async function POST(req: Request) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
         // both users' cache generations, so an in-flight read of pre-merge data
         // can never write a stale payload back afterwards.
         await invalidateProfileCache(result.sourceUserId);
-        await invalidateProfileCache(result.targetUserId);
+        await writeThroughProfileCache(result.targetUserId);
         if (result.sourceUsername) {
             await invalidateProfileUsername(result.sourceUsername);
         }

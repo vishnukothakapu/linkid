@@ -260,32 +260,179 @@ export default function DashboardClient({
         }
     }
 
-    async function deleteLink(id: string) {
-        if (!confirm("Delete this link?")) return;
+async function deleteLink(id: string) {
+    // Find the link before removing it so we can restore it
+    // at the exact same position if Undo is clicked.
+    let deletedLink: typeof links[number] | undefined;
+    let deletedIndex = -1;
+    let parentGroupId: string | null = null;
+    let childIndex = -1;
 
-        const csrfToken = await getCsrfToken();
+    // Check top-level links first.
+    const topLevelIndex = links.findIndex((link) => link.id === id);
 
-        await fetch(`/api/links/${id}`, {
-            headers: {
-                "x-csrf-token": csrfToken,
-                "x-workspace-id": workspaceId,
-            },
-            method: "DELETE",
-        });
-        toast.success("Link deleted");
+    if (topLevelIndex !== -1) {
+        deletedLink = links[topLevelIndex];
+        deletedIndex = topLevelIndex;
+    } else {
+        // Check links inside groups.
+        for (const link of links) {
+            if (link.isGroup && link.children) {
+                const index = link.children.findIndex(
+                    (child) => child.id === id
+                );
 
-        // Remove from nested structure
-        setLinks((prev) =>
-            prev
-                .filter((l) => l.id !== id)
-                .map((l) => {
-                    if (l.isGroup && l.children) {
-                        return { ...l, children: l.children.filter((c) => c.id !== id) };
-                    }
-                    return l;
-                })
-        );
+                if (index !== -1) {
+                    deletedLink = link.children[index];
+                    childIndex = index;
+                    parentGroupId = link.id;
+                    break;
+                }
+            }
+        }
     }
+
+    // Nothing found, so there is nothing to delete.
+    if (!deletedLink) {
+        return;
+    }
+
+    // Restore only this deleted link.
+    const restoreDeletedLink = () => {
+        setLinks((prev) => {
+            // Don't restore if the link already exists.
+            if (
+                prev.some((link) => link.id === id) ||
+                prev.some(
+                    (link) =>
+                        link.isGroup &&
+                        link.children?.some((child) => child.id === id)
+                )
+            ) {
+                return prev;
+            }
+
+            // Restore a top-level link.
+            if (!parentGroupId) {
+                const restoredLinks = [...prev];
+                restoredLinks.splice(deletedIndex, 0, deletedLink!);
+                return restoredLinks;
+            }
+
+            // Restore a child inside its original group.
+            return prev.map((group) => {
+                if (group.id !== parentGroupId || !group.isGroup) {
+                    return group;
+                }
+
+                const children = [...(group.children || [])];
+
+                children.splice(childIndex, 0, deletedLink!);
+
+                return {
+                    ...group,
+                    children,
+                };
+            });
+        });
+    };
+
+    // ---------------------------------------------------------
+    // OPTIMISTIC DELETE
+    // ---------------------------------------------------------
+    // Remove the link immediately from the UI.
+    setLinks((prev) =>
+        prev
+            .filter((link) => link.id !== id)
+            .map((link) => {
+                if (link.isGroup && link.children) {
+                    return {
+                        ...link,
+                        children: link.children.filter(
+                            (child) => child.id !== id
+                        ),
+                    };
+                }
+
+                return link;
+            })
+    );
+
+    let deleteTimer: ReturnType<typeof setTimeout>;
+
+    // ---------------------------------------------------------
+    // PERFORM SERVER DELETE
+    // ---------------------------------------------------------
+    const performDelete = async () => {
+        try {
+            const csrfToken = await getCsrfToken();
+
+            const response = await fetch(`/api/links/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "x-csrf-token": csrfToken,
+                    "x-workspace-id": workspaceId,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete link");
+            }
+
+            toast.success("Link deleted");
+        } catch (error) {
+            console.error("Link deletion failed:", error);
+
+            // Restore only the deleted link if the server request fails.
+            restoreDeletedLink();
+
+            toast.error("Failed to delete link");
+        }
+    };
+
+    // ---------------------------------------------------------
+    // UNDO TOAST
+    // ---------------------------------------------------------
+    const toastId = toast.custom(
+        (t) => (
+            <div
+                className={`${
+                    t.visible ? "animate-enter" : "animate-leave"
+                } flex items-center gap-4 rounded-lg bg-foreground px-4 py-3 text-background shadow-lg`}
+            >
+                <span>Link deleted</span>
+
+                <button
+                    type="button"
+                    className="font-semibold underline"
+                    onClick={() => {
+                        // Cancel the permanent deletion timer.
+                        clearTimeout(deleteTimer);
+
+                        // Close the toast.
+                        toast.dismiss(t.id);
+
+                        // Restore only this deleted link.
+                        restoreDeletedLink();
+                    }}
+                >
+                    Undo
+                </button>
+            </div>
+        ),
+        {
+            duration: 5000,
+        }
+    );
+
+    // ---------------------------------------------------------
+    // PERMANENT DELETE AFTER 5 SECONDS
+    // ---------------------------------------------------------
+    deleteTimer = setTimeout(() => {
+        toast.dismiss(toastId);
+        performDelete();
+    }, 5000);
+}
 
     async function deleteGroup(groupId: string, deleteChildren: boolean) {
         const csrfToken = await getCsrfToken();

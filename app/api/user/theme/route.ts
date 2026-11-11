@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveActiveWorkspace } from "@/lib/workspace";
-import { invalidateProfileCache } from "@/lib/profileCache";
+import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 
 export async function PATCH(req: NextRequest) {
     try {
@@ -34,8 +34,8 @@ export async function PATCH(req: NextRequest) {
             data: { theme },
         });
 
-        // Theme is rendered on the public profile — purge the cache.
-        await invalidateProfileCache(workspace.id);
+        // Theme is rendered on the public profile — eagerly purge and repopulate the cache.
+        await writeThroughProfileCache(workspace.id);
         const { revalidateTag } = await import("next/cache");
         revalidateTag("public-profile", "default");
 
