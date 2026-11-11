@@ -9,7 +9,7 @@ import { PLATFORMS } from "@/lib/constants";
 test("isKnownPlatform returns true for every declared platform", () => {
     const known = [
         PLATFORMS.GITHUB, PLATFORMS.LINKEDIN, "leetcode", PLATFORMS.YOUTUBE, "x",
-        PLATFORMS.FACEBOOK, PLATFORMS.INSTAGRAM, "discord", "twitch",
+        PLATFORMS.FACEBOOK, PLATFORMS.INSTAGRAM, "discord", "twitch", PLATFORMS.HUGGINGFACE,
         "hashnode", "devto", PLATFORMS.MEDIUM, "dribbble", PLATFORMS.WEBSITE,
         "codeforces", "codechef", PLATFORMS.KAGGLE, PLATFORMS.GEEKSFORGEEKS,
     ];
@@ -28,6 +28,26 @@ test("isKnownPlatform is not fooled by prototype keys", () => {
     assert.equal(isKnownPlatform("__proto__"), false);
     assert.equal(isKnownPlatform("constructor"), false);
     assert.equal(isKnownPlatform("toString"), false);
+});
+
+test("validatePlatformUrl accepts Hugging Face user and org URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/username"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://www.huggingface.co/user.name-1/"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "huggingface.co/some_org"), true);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://github.com/username"), false);
+});
+
+test("validatePlatformUrl rejects Hugging Face non-profile URLs", () => {
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/models"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/spaces?sort=trending"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/DATASETS"), false);
+    assert.equal(validatePlatformUrl(PLATFORMS.HUGGINGFACE, "https://huggingface.co/username/model-name"), false);
+});
+
+test("detectPlatform identifies Hugging Face URLs", () => {
+    assert.equal(detectPlatform("https://huggingface.co/username"), "huggingface");
+    assert.equal(detectPlatform("https://huggingface.co/models"), "website");
 });
 
 // --- validatePlatformUrl ---
