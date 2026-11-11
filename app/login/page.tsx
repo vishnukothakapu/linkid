@@ -40,10 +40,11 @@ export default function LoginPage() {
   const isEmailAndPasswordEmpty =
     !email.trim() || !password.trim();
 
-  const isTwoFactorCodeValid =
-    /^\d{6}$/.test(totpCode) ||
-    /^[A-Z0-9]{10}$/.test(totpCode);
+  const validateTwoFactorCode = (code: string): boolean =>
+    /^\d{6}$/.test(code) || /^[A-Z0-9]{10}$/.test(code);
 
+  const isTwoFactorCodeValid = validateTwoFactorCode(totpCode.trim());
+  
   async function handleLogin() {
     const trimmedEmail = email.trim();
 
@@ -89,10 +90,7 @@ export default function LoginPage() {
       .replace(/[^A-Za-z0-9]/g, "")
       .toUpperCase();
 
-    if (
-      !/^\d{6}$/.test(trimmedCode) &&
-      !/^[A-Z0-9]{10}$/.test(trimmedCode)
-    ) {
+    if (!validateTwoFactorCode(trimmedCode))  {
       setError(
         "Enter the 6-digit code from your authenticator app or your 10-character recovery code."
       );
@@ -269,7 +267,7 @@ export default function LoginPage() {
 
               <Input
                 type="text"
-                inputMode="numeric"
+                inputMode="text"
                 autoComplete="one-time-code"
                 placeholder="Code or recovery code"
                 maxLength={10}
