@@ -110,9 +110,9 @@ export default function AddLinkBox({
     }
 
     return (
-        <div className="max-h-[90vh] overflow-y-auto rounded-lg border p-4 space-y-3">
+        <div className="max-h-[90vh] overflow-y-auto rounded-lg border p-4 space-y-3 text-foreground">
             <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger>
+                <SelectTrigger className="text-foreground">
                     <SelectValue placeholder="Select a platform" />
                 </SelectTrigger>
                 <SelectContent>
@@ -125,6 +125,7 @@ export default function AddLinkBox({
             </Select>
 
             <Input
+                className="text-foreground"
                 placeholder={
                     !platform
                         ? "Link Display Name"
@@ -137,6 +138,7 @@ export default function AddLinkBox({
             />
 
             <Input
+                className="text-foreground"
                 placeholder="Paste your link here..."
                 value={url}
                 onChange={(e) => {
@@ -168,6 +170,7 @@ export default function AddLinkBox({
                 {showAdvanced && (
                     <div className="mt-3">
                         <Input
+                            className="text-foreground"
                             placeholder="Custom Alias (e.g. github-work)"
                             value={alias}
                             onChange={(e) => setAlias(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
@@ -180,7 +183,7 @@ export default function AddLinkBox({
             </div>
 
             <div className="flex gap-2">
-                <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1">
+               <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1 text-foreground">
                     Cancel
                 </Button>
                 <Button
