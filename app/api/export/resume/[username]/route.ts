@@ -1,13 +1,34 @@
 import prisma from "@/lib/prisma";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { getForwardedIp } from "@/lib/analyticsUtils";
 import { generateResumePDF } from "@/lib/generateResumePDF";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
 
+const RESUME_EXPORT_LIMIT = 10;
+const RESUME_EXPORT_WINDOW_MS = 60 * 1000;
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ username: string }> },
 ) {
   try {
+    const ip = getForwardedIp(req.headers) ?? "unknown";
+    const allowed = await checkRateLimit(
+      `resume-export:${ip}`,
+      RESUME_EXPORT_LIMIT,
+      RESUME_EXPORT_WINDOW_MS,
+    );
+
+    if (!allowed) {
+      return new Response("Too many requests", {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil(RESUME_EXPORT_WINDOW_MS / 1000)),
+        },
+      });
+    }
+
     const { username } = await params;
     const resolved = await resolveWorkspaceByUsernameOrAlias(username);
     if (!resolved) return new Response("Not found", { status: 404 });
