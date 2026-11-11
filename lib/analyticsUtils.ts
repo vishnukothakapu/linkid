@@ -96,3 +96,35 @@ export function utcDayEndExclusive(date: Date): Date {
     const start = utcDayStart(date);
     return new Date(start.getTime() + 24 * 60 * 60 * 1000);
 }
+
+export type ParsedRangeDays = { days: number | null } | { error: string };
+
+/**
+ * Validates and parses the `days` query parameter for analytics endpoints.
+ *
+ * Requirements:
+ * - Omitted (`null` or `undefined`) defaults to 30 days.
+ * - `"all"` specifies the full history (`null` days filter).
+ * - Numeric days must be an exact base-10 positive integer string in [1, 365].
+ * - Non-integer strings (e.g. "1.5", "1e2", "30days", "365x") or out-of-range
+ *   numbers (e.g. 0, 366) are rejected with a 400-safe error message.
+ */
+export function parseRangeDays(daysQuery: string | null | undefined): ParsedRangeDays {
+    if (daysQuery === null || daysQuery === undefined) {
+        return { days: 30 };
+    }
+    if (daysQuery === "all") {
+        return { days: null };
+    }
+
+    if (!/^[1-9]\d*$/.test(daysQuery)) {
+        return { error: "days must be between 1 and 365, or 'all'" };
+    }
+
+    const parsed = Number(daysQuery);
+    if (parsed < 1 || parsed > 365) {
+        return { error: "days must be between 1 and 365, or 'all'" };
+    }
+
+    return { days: parsed };
+}

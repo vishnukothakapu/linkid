@@ -512,3 +512,5 @@ export async function getWorkspaceAnalyticsSummary(input: {
 }
 
 export const getUserAnalyticsSummary = getWorkspaceAnalyticsSummary;
+
+export { parseRangeDays, type ParsedRangeDays } from "@/lib/analyticsUtils";
