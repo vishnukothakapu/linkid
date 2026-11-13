@@ -10,9 +10,6 @@ export function filterLinksBySearch(links: ProfileLink[], searchText: string): P
     if (!query) return links;
 
     return links.reduce<ProfileLink[]>((matches, link) => {
-        const linkMatches = [link.label, link.url]
-            .some((value) => value?.toLocaleLowerCase().includes(query));
-
         if (link.isGroup) {
             const matchingChildren = (link.children || []).filter((child) =>
                 [child.label, child.url].some((value) => value?.toLocaleLowerCase().includes(query))
@@ -21,8 +18,10 @@ export function filterLinksBySearch(links: ProfileLink[], searchText: string): P
             if (matchingChildren.length > 0) {
                 matches.push({ ...link, children: matchingChildren });
             }
-        } else if (linkMatches) {
-            matches.push(link);
+        } else {
+            const linkMatches = [link.label, link.url]
+                .some((value) => value?.toLocaleLowerCase().includes(query));
+            if (linkMatches) matches.push(link);
         }
 
         return matches;

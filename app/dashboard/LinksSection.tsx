@@ -23,6 +23,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import useDebounce from "@/hooks/useDebounce";
+import { filterLinksBySearch } from "./linkSearch";
 
 type LinksSectionProps = {
     username: string;
@@ -42,8 +43,19 @@ type LinksSectionProps = {
     onReorder: (links: ProfileLink[]) => void;
 };
 
-function SortableLinkWrapper({ link, children }: { link: ProfileLink; children: React.ReactNode }) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: link.id });
+function SortableLinkWrapper({
+    link,
+    children,
+    disabled = false,
+}: {
+    link: ProfileLink;
+    children: React.ReactNode;
+    disabled?: boolean;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: link.id,
+        disabled,
+    });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -67,8 +79,19 @@ function SortableLinkWrapper({ link, children }: { link: ProfileLink; children: 
     );
 }
 
-function SortableGroupWrapper({ group, children }: { group: ProfileLink; children: React.ReactNode }) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: group.id });
+function SortableGroupWrapper({
+    group,
+    children,
+    disabled = false,
+}: {
+    group: ProfileLink;
+    children: React.ReactNode;
+    disabled?: boolean;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: group.id,
+        disabled,
+    });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -358,25 +381,9 @@ export function LinksSection({
         [localLinks, triggerReorder, searchQuery]
     );
 
-    // Filter top-level links and links nested inside groups without mutating saved data.
+    // Filter links by title or URL without mutating the saved link list.
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
-    const matchesSearch = (link: ProfileLink) =>
-        `${link.label} ${link.url}`.toLocaleLowerCase().includes(normalizedQuery);
-    const displayedLinks = normalizedQuery
-        ? localLinks.reduce<ProfileLink[]>((results, item) => {
-              if (!item.isGroup) {
-                  if (matchesSearch(item)) results.push(item);
-                  return results;
-              }
-
-              const groupMatches = item.label.toLocaleLowerCase().includes(normalizedQuery);
-              const matchingChildren = (item.children || []).filter(matchesSearch);
-              if (groupMatches || matchingChildren.length > 0) {
-                  results.push({ ...item, children: groupMatches ? item.children : matchingChildren });
-              }
-              return results;
-          }, [])
-        : localLinks;
+    const displayedLinks = filterLinksBySearch(localLinks, searchQuery);
 
     // Reordering is paused while filtered so hidden links cannot be accidentally moved.
     const topLevelIds = displayedLinks.map(l => l.id);
@@ -447,9 +454,11 @@ export function LinksSection({
                             {displayedLinks.map((item) => {
                                 if (item.isGroup) {
                                     return (
-                                        <SortableGroupWrapper key={item.id} group={item}>
+                                        <SortableGroupWrapper key={item.id} group={item} disabled={Boolean(normalizedQuery)}>
                                             <GroupItem
-                                                group={item}
+                                                group={localLinks.find((link) => link.id === item.id) || item}
+                                                displayedChildren={normalizedQuery ? item.children || [] : undefined}
+                                                isSearching={Boolean(normalizedQuery)}
                                                 username={username}
                                                 onUpdate={onUpdate}
                                                 onToggleVisibility={onToggleVisibility}
@@ -461,7 +470,7 @@ export function LinksSection({
                                     );
                                 }
                                 return (
-                                    <SortableLinkWrapper key={item.id} link={item}>
+                                    <SortableLinkWrapper key={item.id} link={item} disabled={Boolean(normalizedQuery)}>
                                         <LinkItem
                                             link={item}
                                             username={username}

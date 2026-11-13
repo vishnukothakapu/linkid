@@ -49,6 +49,10 @@ describe("filterLinksBySearch", () => {
         expect(result[0].children?.map((link) => link.id)).toEqual(["child-one"]);
     });
 
+    it("does not show all children when only the group name matches", () => {
+        expect(filterLinksBySearch(links, "social media")).toEqual([]);
+    });
+
     it("returns no links when nothing matches", () => {
         expect(filterLinksBySearch(links, "not-found")).toEqual([]);
     });
