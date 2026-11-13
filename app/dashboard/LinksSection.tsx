@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, FolderPlus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, FolderPlus, Search, X } from "lucide-react";
 import { EmptyLinksState } from "./EmptyLinksState";
 import { LinkItem } from "./LinkItem";
 import { GroupItem } from "./GroupItem";
@@ -144,6 +145,7 @@ export function LinksSection({
     const localLinksRef = React.useRef(localLinks);
     const [isSaving, setIsSaving] = React.useState(false);
     const [activeId, setActiveId] = React.useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = React.useState("");
 
     const updateLocalLinks = React.useCallback((newLinks: ProfileLink[] | ((prev: ProfileLink[]) => ProfileLink[])) => {
         setLocalLinks(prev => {
@@ -217,10 +219,12 @@ export function LinksSection({
     }, [debouncedSave, onReorder, updateLocalLinks]);
 
     const handleDragStart = React.useCallback((event: DragStartEvent) => {
+        if (searchQuery.trim()) return;
         setActiveId(String(event.active.id));
-    }, []);
+    }, [searchQuery]);
 
     const handleDragOver = React.useCallback((event: DragOverEvent) => {
+        if (searchQuery.trim()) return;
         const { active, over } = event;
         if (!over) return;
 
@@ -300,11 +304,12 @@ export function LinksSection({
             }
             updateLocalLinks(newLinks);
         }
-    }, [localLinks, updateLocalLinks]);
+    }, [localLinks, updateLocalLinks, searchQuery]);
 
     const handleDragEnd = React.useCallback(
         (event: DragEndEvent) => {
             setActiveId(null);
+            if (searchQuery.trim()) return;
             const { active, over } = event;
             if (!over || active.id === over.id) return;
 
@@ -350,17 +355,59 @@ export function LinksSection({
                 triggerReorder(localLinks);
             }
         },
-        [localLinks, triggerReorder]
+        [localLinks, triggerReorder, searchQuery]
     );
 
-    // Get all sortable IDs (top-level + all children for nested contexts)
-    const topLevelIds = localLinks.map(l => l.id);
+    // Filter top-level links and links nested inside groups without mutating saved data.
+    const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+    const matchesSearch = (link: ProfileLink) =>
+        `${link.label} ${link.url}`.toLocaleLowerCase().includes(normalizedQuery);
+    const displayedLinks = normalizedQuery
+        ? localLinks.reduce<ProfileLink[]>((results, item) => {
+              if (!item.isGroup) {
+                  if (matchesSearch(item)) results.push(item);
+                  return results;
+              }
+
+              const groupMatches = item.label.toLocaleLowerCase().includes(normalizedQuery);
+              const matchingChildren = (item.children || []).filter(matchesSearch);
+              if (groupMatches || matchingChildren.length > 0) {
+                  results.push({ ...item, children: groupMatches ? item.children : matchingChildren });
+              }
+              return results;
+          }, [])
+        : localLinks;
+
+    // Reordering is paused while filtered so hidden links cannot be accidentally moved.
+    const topLevelIds = displayedLinks.map(l => l.id);
 
     return (
         <Card>
-            <CardHeader className="flex justify-between items-center">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Your Links</CardTitle>
-                <div className="flex gap-2">
+                <div className="flex flex-1 items-center justify-end gap-2">
+                    <div className="relative w-full max-w-xs">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            aria-label="Search links by title or URL"
+                            placeholder="Search links..."
+                            value={searchQuery}
+                            onChange={(event) => setSearchQuery(event.target.value)}
+                            className="pl-9 pr-9"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                aria-label="Clear search"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
                     <Button size="sm" variant="outline" onClick={onExport}>
                         Export CSV
                     </Button>
@@ -372,6 +419,7 @@ export function LinksSection({
                         <Plus className="mr-2 h-4 w-4" />
                         Add Link
                     </Button>
+                    </div>
                 </div>
             </CardHeader>
 
@@ -379,8 +427,13 @@ export function LinksSection({
                 {showAdd && <AddLinkBox onAdded={onAdd} onCancel={() => setShowAdd(false)} />}
                 {showGroupAdd && <CreateGroupDialog onCreated={onAddGroup} onCancel={() => setShowGroupAdd(false)} />}
 
-                {localLinks.length === 0 && !showAdd && !showGroupAdd && (
+                {localLinks.length === 0 && !showAdd && !showGroupAdd && !normalizedQuery && (
                     <EmptyLinksState onAdd={() => setShowAdd(true)} />
+                )}
+                {normalizedQuery && displayedLinks.length === 0 && (
+                    <p role="status" className="py-6 text-center text-sm text-muted-foreground">
+                        No results found
+                    </p>
                 )}
 
                 <DndContext
@@ -391,7 +444,7 @@ export function LinksSection({
                 >
                     <SortableContext items={topLevelIds} strategy={verticalListSortingStrategy}>
                         <div className="space-y-4">
-                            {localLinks.map((item) => {
+                            {displayedLinks.map((item) => {
                                 if (item.isGroup) {
                                     return (
                                         <SortableGroupWrapper key={item.id} group={item}>
@@ -423,7 +476,7 @@ export function LinksSection({
                     </SortableContext>
 
                     <DragOverlay>
-                        {activeId ? (
+                        {activeId && !normalizedQuery ? (
                             <div className="opacity-70 pointer-events-none bg-background rounded-md border p-4 shadow-lg">
                                 {(() => {
                                     const found = findLinkById(localLinks, activeId);
