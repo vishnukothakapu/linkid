@@ -127,12 +127,20 @@ export default function DashboardClient({
     }
 
     async function addLink(link: ProfileLink) {
-        setLinks((prev) => [...prev, link]);
+        setLinks((prev) => {
+            const exists = prev.some((l) => l.id === link.id || l.children?.some((c) => c.id === link.id));
+            if (exists) return prev;
+            return [...prev, link];
+        });
         setShowAdd(false);
     }
 
     async function addGroup(group: ProfileLink) {
-        setLinks((prev) => [...prev, { ...group, children: group.children || [] }]);
+        setLinks((prev) => {
+            const exists = prev.some((l) => l.id === group.id);
+            if (exists) return prev;
+            return [...prev, { ...group, children: group.children || [] }];
+        });
         setShowGroupAdd(false);
     }
 
