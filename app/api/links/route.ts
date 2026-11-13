@@ -15,25 +15,23 @@ import { nestLinks } from "@/lib/linkTree";
 
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
-import { rateLimit } from "@/lib/rateLimit";
-import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { writeThroughProfileCache } from "@/lib/profileCache";
 
 // Maximum number of links a single user can add to their profile.
 // Prevents unbounded database growth and degraded public profile performance.
 const MAX_LINKS_PER_USER = 20;
 
-// Rate limiter for link creation: 30 requests per minute per IP
-const linksLimiter = rateLimit(30, 60_000);
-
 export async function POST(req: NextRequest) {
-    // Apply IP‑based rate limiting first
-    const limited = await linksLimiter(req);
-    if (limited) return limited;
-
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const allowed = await checkRateLimit(`link-mutate:${session.user.id}`, 30, 60_000);
+    if (!allowed) {
+        return rateLimitResponse(30, 60_000, { error: "Too many requests. Please slow down." });
     }
 
     const workspace = await resolveActiveWorkspace(session.user.id);

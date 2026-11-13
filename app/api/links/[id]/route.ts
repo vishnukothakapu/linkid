@@ -10,11 +10,11 @@ import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, 
 import { PLATFORMS } from "@/lib/constants";
 import { validateUrlBackend } from "@/lib/urlValidation";
 import { PLATFORM_ICONS } from "@/lib/platformIcons";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { writeThroughProfileCache } from "@/lib/profileCache";
 
-const LINK_MUTATE_LIMIT = 20;
-const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 20 updates/deletes per minute per user
+const LINK_MUTATE_LIMIT = 30;
+const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 30 mutations per minute per user
 
 export async function PUT(
   req: Request,
@@ -33,10 +33,9 @@ export async function PUT(
   );
 
   if (!allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please slow down." },
-      { status: 429 }
-    );
+    return rateLimitResponse(LINK_MUTATE_LIMIT, LINK_MUTATE_WINDOW_MS, {
+      error: "Too many requests. Please slow down.",
+    });
   }
 
   const { id } = await context.params;
@@ -270,10 +269,9 @@ export async function DELETE(
   );
 
   if (!allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please slow down." },
-      { status: 429 }
-    );
+    return rateLimitResponse(LINK_MUTATE_LIMIT, LINK_MUTATE_WINDOW_MS, {
+      error: "Too many requests. Please slow down.",
+    });
   }
 
   const { id } = await context.params;

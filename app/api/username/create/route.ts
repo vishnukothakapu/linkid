@@ -2,18 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateUsername } from "@/lib/validations/username";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidateTag } from "next/cache";
 import {
-    invalidateProfileCache,
     invalidateProfileUsername,
     writeThroughProfileCache,
 } from "@/lib/profileCache";
 
 export async function POST(req: NextRequest) {
   try {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0].trim() : (req.headers.get("x-real-ip") || "unknown");
+    const allowed = await checkRateLimit(`username-create:${ip}`, 10, 60_000);
+
+    if (!allowed) {
+      return rateLimitResponse(10, 60_000, { error: "Too many requests. Please try again later." });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
