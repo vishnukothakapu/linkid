@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { validateUsername } from "@/lib/validations/username";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 async function isAvailable(username: string): Promise<boolean> {
     const [workspace, alias] = await Promise.all([
@@ -12,6 +13,17 @@ async function isAvailable(username: string): Promise<boolean> {
 }
 
 export async function GET(req: Request) {
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+    const allowed = await checkRateLimit(`username-check:${ip}`, 20, 60_000);
+
+    if (!allowed) {
+        return NextResponse.json(
+            { available: false, error: "Too many requests. Please try again later." },
+            { status: 429 }
+        );
+    }
+
     const { searchParams } = new URL(req.url);
     const username = searchParams.get("username")?.toLowerCase();
 
