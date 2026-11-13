@@ -11,10 +11,8 @@ import {
     Check,
     X,
     FolderOpen,
-    GripVertical,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getCsrfToken } from "@/lib/csrfClient";
 import type { Link as ProfileLink } from "@/app/[username]/types/type";
 import { LinkItem } from "./LinkItem";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -24,8 +22,19 @@ import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import React from "react";
 
-function SortableChildWrapper({ link, children }: { link: ProfileLink; children: React.ReactNode }) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: link.id });
+function SortableChildWrapper({
+    link,
+    children,
+    disabled = false,
+}: {
+    link: ProfileLink;
+    children: React.ReactNode;
+    disabled?: boolean;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+        id: link.id,
+        disabled,
+    });
 
     const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
@@ -51,6 +60,8 @@ function SortableChildWrapper({ link, children }: { link: ProfileLink; children:
 
 export function GroupItem({
     group,
+    displayedChildren,
+    isSearching = false,
     username,
     dragListeners,
     dragAttributes,
@@ -61,6 +72,8 @@ export function GroupItem({
     onRenameGroup,
 }: {
     group: ProfileLink;
+    displayedChildren?: ProfileLink[];
+    isSearching?: boolean;
     username: string;
     dragListeners?: SyntheticListenerMap;
     dragAttributes?: DraggableAttributes;
@@ -75,7 +88,8 @@ export function GroupItem({
     const [newName, setNewName] = useState(group.label);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-    const children = group.children || [];
+    const allChildren = group.children || [];
+    const children = displayedChildren ?? allChildren;
 
     // Make the group body a droppable area
     const { setNodeRef: setDroppableRef, isOver } = useDroppable({
@@ -199,7 +213,7 @@ export function GroupItem({
                 <div className="p-3 bg-destructive/5 border-t flex flex-col gap-2">
                     <p className="text-sm font-medium">Delete this group?</p>
                     <p className="text-xs text-muted-foreground">
-                        Choose what happens to the {children.length} link{children.length !== 1 ? "s" : ""} inside:
+                        Choose what happens to the {allChildren.length} link{allChildren.length !== 1 ? "s" : ""} inside:
                     </p>
                     <div className="flex gap-2">
                         <Button
@@ -234,7 +248,7 @@ export function GroupItem({
             )}
 
             {/* Group children */}
-            {expanded && (
+            {(expanded || isSearching) && (
                 <div
                     ref={setDroppableRef}
                     className={`p-3 space-y-3 min-h-[48px] transition-colors rounded-b-lg ${
@@ -248,7 +262,7 @@ export function GroupItem({
                     ) : (
                         <SortableContext items={children.map((l) => l.id)} strategy={verticalListSortingStrategy}>
                             {children.map((link) => (
-                                <SortableChildWrapper key={link.id} link={link}>
+                                <SortableChildWrapper key={link.id} link={link} disabled={isSearching}>
                                     <LinkItem
                                         link={link}
                                         username={username}
