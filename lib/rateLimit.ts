@@ -206,9 +206,32 @@ export async function checkRateLimit(
 }
 
 /**
+ * Creates a standard 429 response with Retry-After and X-RateLimit headers.
+ *
+ * @param limit    Configured maximum requests
+ * @param windowMs Window duration in milliseconds
+ * @param body     JSON response body (defaults to standard error message)
+ */
+export function rateLimitResponse(
+    limit: number,
+    windowMs: number,
+    body: Record<string, unknown> = { error: "Too many requests. Please try again later." }
+): NextResponse {
+    const retryAfter = Math.ceil(windowMs / 1000);
+    return NextResponse.json(body, {
+        status: 429,
+        headers: {
+            "Retry-After": String(retryAfter),
+            "X-RateLimit-Limit": String(limit),
+            "X-RateLimit-Remaining": "0",
+        },
+    });
+}
+
+/**
  * Middleware-style rate limiter for Next.js API routes.
  *
- * Extracts the client IP from `x-forwarded-for` (or falls back to `"unknown"`)
+ * Extracts the client IP from `x-forwarded-for` (or falls back to `x-real-ip` / `"unknown"`)
  * and uses the shared `checkRateLimit` logic to enforce a sliding window.
  *
  * Returns a `NextResponse` with a 429 status if the limit is exceeded, otherwise `null`.
@@ -224,26 +247,12 @@ export function rateLimit(limit: number, windowMs: number) {
     return async function (req: NextRequest): Promise<NextResponse | null> {
         // Extract client IP
         const forwarded = req.headers.get("x-forwarded-for");
-        const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+        const ip = forwarded ? forwarded.split(",")[0].trim() : (req.headers.get("x-real-ip") || "unknown");
 
         const allowed = await checkRateLimit(ip, limit, windowMs);
 
         if (!allowed) {
-            // Approximate time until the window expires; we don't have the exact reset time
-            // for sliding windows, so we use the window duration as a safe estimate.
-            const retryAfter = Math.ceil(windowMs / 1000);
-
-            return NextResponse.json(
-                { error: "Too many requests. Please try again later." },
-                {
-                    status: 429,
-                    headers: {
-                        "Retry-After": String(retryAfter),
-                        "X-RateLimit-Limit": String(limit),
-                        "X-RateLimit-Remaining": "0",
-                    },
-                }
-            );
+            return rateLimitResponse(limit, windowMs);
         }
 
         // Request allowed – proceed

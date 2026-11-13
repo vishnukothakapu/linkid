@@ -1,63 +1,37 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 
 import { applyCsrfProtection } from "@/lib/middleware/csrf";
-
-const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
-const redis = hasRedis ? Redis.fromEnv() : null;
-
-const authRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 m") })
-    : null;
-
-const usernameRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(15, "1 m") })
-    : null;
-
-const linksRateLimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 m") })
-    : null;
-
-const localFallbackMap = new Map<string, number>();
-function checkLocalRateLimit(ip: string, limit: number): boolean {
-    const key = `${ip}-${Math.floor(Date.now() / 60000)}`;
-    const current = localFallbackMap.get(key) || 0;
-    if (current >= limit) return false;
-    localFallbackMap.set(key, current + 1);
-    return true;
-}
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
-    // API routes: apply CSRF protection only. The rest of this middleware
-    // (auth redirects, custom-domain rewrite, CSP nonce) is for page
-    // navigations, not API calls. The matcher previously excluded /api
-    // entirely, so applyCsrfProtection never ran on the mutating API routes.
+    // API routes: apply CSRF protection and specific endpoint rate limiting.
     if (pathname.startsWith("/api")) {
-        const rawForwarded = req.headers.get("x-forwarded-for");
-        const ip = rawForwarded ? rawForwarded.split(",")[0].trim() : req.headers.get("x-real-ip") ?? "127.0.0.1";
-        let isAllowed = true;
+        // Enforce credentials login rate limit: 5 requests per minute per client IP.
+        // Other /api/auth routes and route-level protected endpoints (/api/username, /api/links)
+        // are not rate-limited here.
+        if (pathname.startsWith("/api/auth/callback/credentials")) {
+            const rawForwarded = req.headers.get("x-forwarded-for");
+            const ip = rawForwarded ? rawForwarded.split(",")[0].trim() : req.headers.get("x-real-ip") ?? "127.0.0.1";
 
-        try {
-            if (pathname.startsWith("/api/auth")) {
-                isAllowed = authRateLimit ? (await authRateLimit.limit(ip)).success : checkLocalRateLimit(`auth-${ip}`, 5);
-            } else if (pathname.startsWith("/api/username")) {
-                isAllowed = usernameRateLimit ? (await usernameRateLimit.limit(ip)).success : checkLocalRateLimit(`username-${ip}`, 15);
-            } else if (pathname.startsWith("/api/links")) {
-                isAllowed = linksRateLimit ? (await linksRateLimit.limit(ip)).success : checkLocalRateLimit(`links-${ip}`, 30);
+            try {
+                const allowed = await checkRateLimit(`auth-credentials:${ip}`, 5, 60_000);
+                if (!allowed) {
+                    return new NextResponse("Too Many Requests", {
+                        status: 429,
+                        headers: {
+                            "Retry-After": "60",
+                            "X-RateLimit-Limit": "5",
+                            "X-RateLimit-Remaining": "0",
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error("Rate limit check failed (bypassing):", error);
             }
-        } catch (error) {
-            console.error("Rate limit check failed (bypassing):", error);
-            // If Redis is unreachable, fail open to avoid bringing down the entire application.
-            isAllowed = true;
-        }
-
-        if (!isAllowed) {
-            return new NextResponse("Too Many Requests", { status: 429 });
         }
 
         const csrfResponse = await applyCsrfProtection(req);
