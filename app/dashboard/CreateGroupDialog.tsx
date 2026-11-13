@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getCsrfToken } from "@/lib/csrfClient";
@@ -16,6 +16,7 @@ export default function CreateGroupDialog({
 }) {
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
+    const isSubmittingRef = useRef(false);
 
     function handleCancel() {
         setName("");
@@ -23,14 +24,16 @@ export default function CreateGroupDialog({
     }
 
     async function submit() {
-        if (loading) return;
-        const trimmed = name.trim();
-        if (!trimmed) {
-            return toast.error("Please enter a name for this group");
-        }
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
 
-        setLoading(true);
         try {
+            const trimmed = name.trim();
+            if (!trimmed) {
+                return toast.error("Please enter a name for this group");
+            }
+
+            setLoading(true);
             const csrfToken = await getCsrfToken();
             const res = await fetch("/api/links", {
                 method: "POST",
@@ -54,6 +57,7 @@ export default function CreateGroupDialog({
             const errorMessage = err instanceof Error ? err.message : "Failed to create group";
             toast.error(errorMessage);
         } finally {
+            isSubmittingRef.current = false;
             setLoading(false);
         }
     }
@@ -67,7 +71,7 @@ export default function CreateGroupDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
-                    if (e.key === "Enter" && !loading) submit();
+                    if (e.key === "Enter" && !loading && !isSubmittingRef.current) submit();
                 }}
                 autoFocus
             />

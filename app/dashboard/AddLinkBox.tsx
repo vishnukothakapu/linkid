@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,7 @@ export default function AddLinkBox({
     const [loading, setLoading] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [urlError, setUrlError] = useState("");
+    const isSubmittingRef = useRef(false);
 
     function handleCancel() {
         setUrl("");
@@ -55,22 +56,25 @@ export default function AddLinkBox({
      * Validates input fields and sends a POST request to the API.
      */
     async function submit() {
-        const validation = validateUrl(url);
-        if (!validation.valid) {
-            return toast.error(validation.error);
-        }
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
 
-        if (!platform) {
-            return toast.error("Please select a platform");
-        }
-
-        const finalLabel = label.trim();
-        if (platform === PLATFORMS.WEBSITE && !finalLabel) {
-            return toast.error("Please enter a name for this link");
-        }
-
-        setLoading(true);
         try {
+            const validation = validateUrl(url);
+            if (!validation.valid) {
+                return toast.error(validation.error);
+            }
+
+            if (!platform) {
+                return toast.error("Please select a platform");
+            }
+
+            const finalLabel = label.trim();
+            if (platform === PLATFORMS.WEBSITE && !finalLabel) {
+                return toast.error("Please enter a name for this link");
+            }
+
+            setLoading(true);
             const csrfToken = await getCsrfToken();
 
             const res = await fetch("/api/links", {
@@ -105,6 +109,7 @@ export default function AddLinkBox({
             const errorMessage = err instanceof Error ? err.message : "Failed to add link";
             toast.error(errorMessage);
         } finally {
+            isSubmittingRef.current = false;
             setLoading(false);
         }
     }
