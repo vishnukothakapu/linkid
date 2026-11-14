@@ -1,50 +1,71 @@
-import type { Link as PrismaLink } from "@prisma/client";
+export interface VCardLink {
+  title: string;
+  url: string;
+  platform?: string | null;
+}
 
-export type PublicProfileUser = {
-  name: string | null;
-  username: string | null;
-  email: string | null;
-  bio: string | null;
-  image: string | null;
-};
+export interface VCardUser {
+  name?: string | null;
+  username: string;
+  headline?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  website?: string | null;
+  links?: VCardLink[];
+}
 
-export type VCardUser = PublicProfileUser;
+function escapeVCardText(value: string): string {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
 
-export function buildVCard({
-  user,
-  links,
-}: {
-  user: PublicProfileUser;
-  links: PrismaLink[];
-}): string {
-  const CRLF = "\r\n";
+export function buildVCard(user: VCardUser): string {
+  const fullName = user.name?.trim() || user.username;
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://linkid.in"
+  ).replace(/\/$/, "");
+  const profileUrl = `${baseUrl}/${user.username}`;
 
-  const escapeText = (value: string) =>
-    value
-      .replace(/\\/g, "\\\\")
-      .replace(/\r\n|\n|\r/g, "\\n")
-      .replace(/,/g, "\\,")
-      .replace(/;/g, "\\;");
-  const sanitizeUri = (value: string) => value.replace(/[\r\n]/g, "").trim();
+  const lines: string[] = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${escapeVCardText(fullName)}`,
+    `N:;${escapeVCardText(fullName)};;;`,
+    `URL;TYPE=PROFILE:${escapeVCardText(profileUrl)}`,
+  ];
 
-  let vcard = `BEGIN:VCARD${CRLF}`;
-  vcard += `VERSION:3.0${CRLF}`;
-  vcard += `FN:${escapeText(user.name ?? user.username ?? "")}${CRLF}`;
-  vcard += `N:${escapeText(user.name ?? user.username ?? "")};;;;${CRLF}`;
-
-  if (user.email)
-    vcard += `EMAIL;TYPE=INTERNET:${escapeText(user.email)}${CRLF}`;
-  if (user.bio) vcard += `NOTE:${escapeText(user.bio)}${CRLF}`;
-  if (user.image) vcard += `PHOTO;VALUE=URI:${sanitizeUri(user.image)}${CRLF}`;
-
-  for (const link of links) {
-    vcard += `URL;TYPE=${escapeText(link.platform.toUpperCase())}:${sanitizeUri(link.url)}${CRLF}`;
+  if (user.headline) {
+    lines.push(`TITLE:${escapeVCardText(user.headline)}`);
   }
 
-  if (user.username) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
-    vcard += `URL:${sanitizeUri(`${baseUrl}/${user.username}`)}${CRLF}`;
+  if (user.website) {
+    lines.push(`URL;TYPE=WORK:${escapeVCardText(user.website)}`);
   }
-  vcard += `END:VCARD${CRLF}`;
-  return vcard;
+
+  if (user.location) {
+    lines.push(`ADR;TYPE=HOME:;;${escapeVCardText(user.location)};;;;`);
+  }
+
+  if (user.bio) {
+    lines.push(`NOTE:${escapeVCardText(user.bio)}`);
+  }
+
+  if (user.links && user.links.length > 0) {
+    for (const link of user.links) {
+      if (!link.url) continue;
+      const label = link.platform || link.title;
+      if (label) {
+        lines.push(`URL;TYPE=${escapeVCardText(label.toUpperCase())}:${escapeVCardText(link.url)}`);
+      } else {
+        lines.push(`URL:${escapeVCardText(link.url)}`);
+      }
+    }
+  }
+
+  lines.push("END:VCARD");
+
+  return lines.join("\r\n");
 }

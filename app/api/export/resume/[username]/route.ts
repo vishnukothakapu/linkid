@@ -1,82 +1,56 @@
-import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { getForwardedIp } from "@/lib/analyticsUtils";
+import { prisma } from "@/lib/prisma";
 import { generateResumePDF } from "@/lib/generateResumePDF";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { resolveWorkspaceByUsernameOrAlias } from "@/lib/userLookup";
-
-const RESUME_EXPORT_LIMIT = 10;
-const RESUME_EXPORT_WINDOW_MS = 60 * 1000;
 
 export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ username: string }> },
+  _req: NextRequest,
+  { params }: { params: Promise<{ username: string }> }
 ) {
   try {
-    const ip = getForwardedIp(req.headers) ?? "unknown";
-    const allowed = await checkRateLimit(
-      `resume-export:${ip}`,
-      RESUME_EXPORT_LIMIT,
-      RESUME_EXPORT_WINDOW_MS,
-    );
-
-    if (!allowed) {
-      return new Response("Too many requests", {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.ceil(RESUME_EXPORT_WINDOW_MS / 1000)),
-        },
-      });
-    }
-
     const { username } = await params;
-    const resolved = await resolveWorkspaceByUsernameOrAlias(username);
-    if (!resolved) return new Response("Not found", { status: 404 });
 
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: resolved.workspaceId },
-      include: {
-        members: {
-          where: { role: "OWNER" },
-          include: { user: { select: { name: true, image: true } } },
-          take: 1,
-        },
+    const user = await prisma.user.findUnique({
+      where: { username: username.toLowerCase() },
+      select: {
+        name: true,
+        username: true,
+        headline: true,
+        bio: true,
+        location: true,
+        website: true,
+        skills: true,
         links: {
-          where: { isPublic: true },
-          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+          where: { isVisible: true },
+          orderBy: { order: "asc" },
+          select: {
+            title: true,
+            url: true,
+            platform: true,
+          },
         },
       },
     });
 
-    if (!workspace) return new Response("Not found", { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
 
-    const owner = workspace.members[0]?.user;
-    const user = {
-      name: owner?.name ?? workspace.name ?? workspace.username ?? "",
-      username: workspace.username ?? null,
-      image: owner?.image ?? null,
-      bio: workspace.bio ?? null,
-      email: null,
-    };
+    const pdfBuffer = await renderToBuffer(generateResumePDF(user));
 
-    const buffer = await renderToBuffer(
-      generateResumePDF({
-        user,
-        links: workspace.links,
-      }),
-    );
-    const uint8 = new Uint8Array(buffer);
-
-    return new Response(uint8, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${((user.name || user.username) ?? "profile").replace(/\s+/g, "_")}_profile.pdf"`,
-        "Cache-Control": "no-store",
-        Pragma: "no-cache",
+        "Content-Disposition": `attachment; filename="${user.username}-resume.pdf"`,
+        "Cache-Control": "public, max-age=300, s-maxage=300",
       },
     });
   } catch (error) {
-    console.error("Public resume export error:", error);
-    return new Response("Internal server error", { status: 500 });
+    console.error("Failed to generate resume PDF:", error);
+    return NextResponse.json(
+      { error: "Failed to generate resume PDF" },
+      { status: 500 }
+    );
   }
 }

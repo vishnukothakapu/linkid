@@ -1,181 +1,191 @@
+import React from "react";
 import {
   Document,
   Page,
   Text,
   View,
-  Link as PdfLink,
+  Link,
   StyleSheet,
 } from "@react-pdf/renderer";
-import type { Link as PrismaLink } from "@prisma/client";
-import type { PublicProfileUser } from "@/lib/buildVCard";
+
+export interface ResumeLink {
+  title: string;
+  url: string;
+  platform?: string | null;
+}
+
+export interface ResumeUser {
+  name?: string | null;
+  username: string;
+  headline?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  website?: string | null;
+  skills?: string[];
+  links?: ResumeLink[];
+}
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontFamily: "Helvetica",
-    fontSize: 11,
-    color: "#1a1a1a",
+    fontSize: 10,
+    color: "#111827",
+    lineHeight: 1.45,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-    paddingBottom: 20,
-    borderBottom: "1px solid #e5e5e5",
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#1a7f5a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  avatarText: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontFamily: "Helvetica-Bold",
-  },
-  headerInfo: {
-    flex: 1,
+    marginBottom: 18,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   name: {
     fontSize: 22,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 3,
+    color: "#0F172A",
+    marginBottom: 4,
   },
-  bio: {
+  headline: {
     fontSize: 11,
-    color: "#555555",
-    marginBottom: 3,
+    color: "#475569",
+    marginBottom: 8,
   },
-  email: {
-    fontSize: 10,
-    color: "#1a7f5a",
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    fontSize: 9,
+    color: "#4B5563",
+  },
+  metaLink: {
+    color: "#2563EB",
+    textDecoration: "none",
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: "#888888",
     textTransform: "uppercase",
     letterSpacing: 1,
-    marginBottom: 10,
-    paddingBottom: 4,
-    borderBottom: "0.5px solid #e5e5e5",
+    color: "#374151",
+    marginBottom: 6,
+    paddingBottom: 3,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#E5E7EB",
   },
-  aboutText: {
-    fontSize: 11,
-    color: "#333333",
-    lineHeight: 1.6,
+  bioText: {
+    fontSize: 10,
+    color: "#1F2937",
+  },
+  skillsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  skillBadge: {
+    backgroundColor: "#F3F4F6",
+    color: "#1F2937",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    fontSize: 9,
   },
   linkRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 7,
-    borderBottom: "0.5px solid #f0f0f0",
+    marginBottom: 5,
   },
-  platformName: {
-    width: 100,
-    fontSize: 11,
+  linkTitle: {
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
-  },
-  arrow: {
-    width: 20,
-    fontSize: 11,
-    color: "#aaaaaa",
+    fontSize: 9.5,
+    color: "#111827",
   },
   linkUrl: {
-    fontSize: 11,
-    color: "#1a7f5a",
+    fontSize: 9,
+    color: "#2563EB",
     textDecoration: "none",
   },
   footer: {
     position: "absolute",
-    bottom: 30,
+    bottom: 24,
     left: 40,
     right: 40,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderTop: "0.5px solid #e5e5e5",
-    paddingTop: 10,
-  },
-  footerText: {
-    fontSize: 9,
-    color: "#aaaaaa",
+    textAlign: "center",
+    fontSize: 8,
+    color: "#9CA3AF",
   },
 });
 
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0].toUpperCase())
-    .join("")
-    .toLocaleUpperCase()
-    .slice(0, 2);
-}
-
-export function generateResumePDF({
-  user,
-  links,
-}: {
-  user: PublicProfileUser;
-  links: PrismaLink[];
-}) {
-  const displayName = user.name ?? user.username ?? "";
-  const initials = getInitials(displayName);
-  const generatedDate = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+export function generateResumePDF(user: ResumeUser) {
+  const displayName = user.name?.trim() || user.username;
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://linkid.in"
+  ).replace(/\/$/, "");
+  const profileUrl = `${baseUrl}/${user.username}`;
 
   return (
-    <Document>
+    <Document title={`${displayName} - Resume`} author={displayName}>
       <Page size="A4" style={styles.page}>
+        {/* Header (Private login email intentionally omitted) */}
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.headerInfo}>
-            <Text style={styles.name}>{displayName}</Text>
-            {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-            {user.email && <Text style={styles.email}>{user.email}</Text>}
+          <Text style={styles.name}>{displayName}</Text>
+          {user.headline && (
+            <Text style={styles.headline}>{user.headline}</Text>
+          )}
+          <View style={styles.metaRow}>
+            {user.location && <Text>{user.location}</Text>}
+            {user.website && (
+              <Link src={user.website} style={styles.metaLink}>
+                {user.website}
+              </Link>
+            )}
+            <Link src={profileUrl} style={styles.metaLink}>
+              {profileUrl}
+            </Link>
           </View>
         </View>
 
+        {/* Summary / Bio */}
         {user.bio && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About</Text>
-            <Text style={styles.aboutText}>{user.bio}</Text>
+            <Text style={styles.sectionTitle}>Summary</Text>
+            <Text style={styles.bioText}>{user.bio}</Text>
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profiles & Links</Text>
-          {links.map((link) => (
-            <View key={link.id} style={styles.linkRow}>
-              <Text style={styles.platformName}>{link.platform}</Text>
-              <Text style={styles.arrow}>-</Text>
-              <PdfLink src={link.url} style={styles.linkUrl}>
-                {link.url.replace("https://", "").replace("http://", "")}
-              </PdfLink>
+        {/* Skills */}
+        {user.skills && user.skills.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {user.skills.map((skill, index) => (
+                <Text key={`${skill}-${index}`} style={styles.skillBadge}>
+                  {skill}
+                </Text>
+              ))}
             </View>
-          ))}
-        </View>
+          </View>
+        )}
 
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            {baseUrl}/{user.username}
-          </Text>
-          <Text style={styles.footerText}>Generated {generatedDate}</Text>
-        </View>
+        {/* Links */}
+        {user.links && user.links.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Links</Text>
+            {user.links.map((link, index) => (
+              <View key={`${link.url}-${index}`} style={styles.linkRow}>
+                <Text style={styles.linkTitle}>{link.title}</Text>
+                <Link src={link.url} style={styles.linkUrl}>
+                  {link.url}
+                </Link>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={styles.footer}>Generated via LinkID ({profileUrl})</Text>
       </Page>
     </Document>
   );
