@@ -42,6 +42,29 @@ model User {
   sessions      Session[]
   mergeRequests AccountMergeRequest[]
   workspaces    WorkspaceMember[]
+
+  // Inside your existing model User { ... }, add:
+// auditLogs AuditLog[]
+
+  model AuditLog {
+    id         String   @id @default(cuid())
+    eventId    String   @unique @default(uuid())
+    actorId    String
+    actionType String   // e.g., "PROFILE.UPDATE", "LINK.CREATE", "LINK.UPDATE", "LINK.DELETE"
+    resource   String   // e.g., "User", "Link"
+    resourceId String
+    oldState   Json?
+    newState   Json?
+    ipAddress  String?
+    userAgent  String?
+    createdAt  DateTime @default(now())
+
+    actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+    @@index([actorId, createdAt(sort: Desc)])
+    @@index([resource, resourceId])
+    @@index([actionType])
+  }
 }
 
 
