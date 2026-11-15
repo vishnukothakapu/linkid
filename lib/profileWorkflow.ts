@@ -1,3 +1,4 @@
+
 import { prisma } from "@/lib/prisma";
 import { validateUsername } from "@/lib/validations/username";
 import { Prisma } from "@prisma/client";
@@ -7,6 +8,31 @@ import crypto from "crypto";
  * Type for Prisma transaction client
  */
 type TransactionClient = Prisma.TransactionClient;
+
+/**
+ * Serialize username claims across profile write operations.
+ * The lock is held until the surrounding transaction commits or rolls back.
+ */
+async function lockProfileUsername(
+  tx: TransactionClient,
+  username: string
+): Promise<void> {
+  await tx.$executeRaw`
+    SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))
+  `;
+}
+
+/**
+ * Serialize profile operations within a workspace.
+ */
+async function lockProfileWorkspace(
+  tx: TransactionClient,
+  workspaceId: string
+): Promise<void> {
+  await tx.$executeRaw`
+    SELECT pg_advisory_xact_lock(hashtextextended(${`workspace:${workspaceId}`}, 0))
+  `;
+}
 
 /**
  * Profile snapshot for versioning and comparison
@@ -37,7 +63,10 @@ export async function upsertProfileDraft(
     }
 
     // Check if username is available
-    const isAvailable = await isProfileUsernameAvailable(data.username, workspaceId);
+    const isAvailable = await isProfileUsernameAvailable(
+      data.username,
+      workspaceId
+    );
     if (!isAvailable) {
       throw new Error("Username already taken");
     }
@@ -177,7 +206,10 @@ function diffProfileSnapshots(
     diff.themeCustom = { before: before.themeCustom, after: after.themeCustom };
   }
   if (before.backgroundImage !== after.backgroundImage) {
-    diff.backgroundImage = { before: before.backgroundImage, after: after.backgroundImage };
+    diff.backgroundImage = {
+      before: before.backgroundImage,
+      after: after.backgroundImage,
+    };
   }
 
   return diff;
@@ -192,6 +224,7 @@ export async function isProfileUsernameAvailable(
   tx?: TransactionClient | typeof prisma
 ): Promise<boolean> {
   const db = tx || prisma;
+
   const workspace = await db.workspace.findUnique({
     where: { username },
   });
@@ -219,6 +252,8 @@ export async function publishProfileDraft(
   workspaceId: string
 ): Promise<{ published: ProfileSnapshot; diff: Record<string, unknown> }> {
   const result = await prisma.$transaction(async (tx) => {
+    await lockProfileWorkspace(tx, workspaceId);
+
     const draft = await tx.profileDraft.findUnique({
       where: { workspaceId },
     });
@@ -249,12 +284,14 @@ export async function publishProfileDraft(
       where: { workspaceId, role: "OWNER" },
       include: { user: { select: { image: true } } },
     });
+
     const liveImage = ownerMember?.user?.image ?? null;
 
     const beforeSnapshot: ProfileSnapshot = {
       ...workspace,
       image: liveImage,
     };
+
     const afterSnapshot: ProfileSnapshot = {
       name: draft.name ?? workspace.name,
       username: draft.username ?? workspace.username,
@@ -269,20 +306,39 @@ export async function publishProfileDraft(
     const diff = diffProfileSnapshots(beforeSnapshot, afterSnapshot);
 
     // Handle username being set or changed
-    if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
-      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
+    if (
+      afterSnapshot.username &&
+      afterSnapshot.username !== beforeSnapshot.username
+    ) {
+      await lockProfileUsername(tx, afterSnapshot.username);
+
+      const isAvailable = await isProfileUsernameAvailable(
+        afterSnapshot.username,
+        workspaceId,
+        tx
+      );
+
       if (!isAvailable) {
         throw new Error("Username already taken");
       }
+
       if (beforeSnapshot.username) {
-        await ensureUsernameAliases(tx, workspaceId, beforeSnapshot.username);
+        await ensureUsernameAliases(
+          tx,
+          workspaceId,
+          beforeSnapshot.username
+        );
 
         const existingHistory = await tx.usernameHistory.findUnique({
           where: { previousUsername: beforeSnapshot.username },
         });
+
         if (!existingHistory) {
           await tx.usernameHistory.create({
-            data: { previousUsername: beforeSnapshot.username, workspaceId },
+            data: {
+              previousUsername: beforeSnapshot.username,
+              workspaceId,
+            },
           });
         }
       }
@@ -419,7 +475,10 @@ export async function resolvePreviewToken(
 /**
  * Get profile version history for a workspace
  */
-export async function getProfileVersions(workspaceId: string, limit: number = 20) {
+export async function getProfileVersions(
+  workspaceId: string,
+  limit: number = 20
+) {
   const versions = await prisma.profileVersion.findMany({
     where: { workspaceId },
     orderBy: { createdAt: "desc" },
@@ -427,7 +486,12 @@ export async function getProfileVersions(workspaceId: string, limit: number = 20
   });
 
   return versions
-    .filter((v) => v.snapshot && typeof v.snapshot === "object" && Object.keys(v.snapshot).length > 0)
+    .filter(
+      (v) =>
+        v.snapshot &&
+        typeof v.snapshot === "object" &&
+        Object.keys(v.snapshot).length > 0
+    )
     .map((v) => ({
       id: v.id,
       snapshot: v.snapshot as unknown as ProfileSnapshot,
@@ -445,6 +509,8 @@ export async function rollbackProfileVersion(
   versionId: string
 ): Promise<{ snapshot: ProfileSnapshot; diff: Record<string, unknown> }> {
   const result = await prisma.$transaction(async (tx) => {
+    await lockProfileWorkspace(tx, workspaceId);
+
     const version = await tx.profileVersion.findUnique({
       where: { id: versionId },
     });
@@ -453,7 +519,11 @@ export async function rollbackProfileVersion(
       throw new Error("Version not found or access denied");
     }
 
-    if (!version.snapshot || typeof version.snapshot !== "object" || Object.keys(version.snapshot).length === 0) {
+    if (
+      !version.snapshot ||
+      typeof version.snapshot !== "object" ||
+      Object.keys(version.snapshot).length === 0
+    ) {
       throw new Error("Cannot rollback to a version with an empty snapshot");
     }
 
@@ -481,19 +551,41 @@ export async function rollbackProfileVersion(
       where: { workspaceId, role: "OWNER" },
       include: { user: { select: { image: true } } },
     });
+
     const liveImage = ownerMember?.user?.image ?? null;
 
-    const beforeSnapshot: ProfileSnapshot = { ...workspace, image: liveImage };
+    const beforeSnapshot: ProfileSnapshot = {
+      ...workspace,
+      image: liveImage,
+    };
+
     const diff = diffProfileSnapshots(beforeSnapshot, afterSnapshot);
 
     // Handle username change
-    if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
-      const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
+    if (
+      afterSnapshot.username &&
+      afterSnapshot.username !== beforeSnapshot.username
+    ) {
+      await lockProfileUsername(tx, afterSnapshot.username);
+
+      const isAvailable = await isProfileUsernameAvailable(
+        afterSnapshot.username,
+        workspaceId,
+        tx
+      );
+
       if (!isAvailable) {
-        throw new Error("The username in this profile version is no longer available.");
+        throw new Error(
+          "The username in this profile version is no longer available."
+        );
       }
+
       if (beforeSnapshot.username) {
-        await ensureUsernameAliases(tx, workspaceId, beforeSnapshot.username);
+        await ensureUsernameAliases(
+          tx,
+          workspaceId,
+          beforeSnapshot.username
+        );
       }
     }
 

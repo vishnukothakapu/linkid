@@ -44,34 +44,35 @@ export async function POST(req: NextRequest) {
     if (workspace.username === username) {
       return NextResponse.json({ success: true, workspace: { id: workspace.id, username } }, { status: 200 });
     }
+   const updatedWorkspace = await prisma.$transaction(async (tx) => {
+  // Lock this username until the transaction completes.
+  await tx.$queryRaw`
+    SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))
+  `;
 
-    const [existingWorkspace, existingAlias] = await Promise.all([
-      prisma.workspace.findUnique({ where: { username } }),
-      prisma.workspaceAlias.findUnique({ where: { username } }),
-    ]);
+  const [existingWorkspace, existingAlias] = await Promise.all([
+    tx.workspace.findUnique({ where: { username } }),
+    tx.workspaceAlias.findUnique({ where: { username } }),
+  ]);
 
-    if (existingWorkspace || existingAlias) {
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 409 }
-      );
-    }
+  if (existingWorkspace || existingAlias) {
+    throw new Error("Username already taken");
+  }
 
-    const updatedWorkspace = await prisma.$transaction(async (tx) => {
-      if (workspace.username) {
-        await tx.workspaceAlias.upsert({
-          where: { username: workspace.username },
-          update: { workspaceId: workspace.id },
-          create: { username: workspace.username, workspaceId: workspace.id },
-        });
-      }
-
-      return tx.workspace.update({
-        where: { id: workspace.id },
-        data: { username },
-        select: { id: true, username: true },
-      });
+  if (workspace.username) {
+    await tx.workspaceAlias.upsert({
+      where: { username: workspace.username },
+      update: { workspaceId: workspace.id },
+      create: { username: workspace.username, workspaceId: workspace.id },
     });
+  }
+
+  return tx.workspace.update({
+    where: { id: workspace.id },
+    data: { username },
+    select: { id: true, username: true },
+  });
+});
 
     // Claiming a username publishes the profile — eagerly purge and repopulate the
     // Redis payload and refresh the sitemap-backed Next data cache. Clear any stale index.
@@ -81,12 +82,23 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, workspace: updatedWorkspace }, { status: 200 });
 
-  } catch (error: unknown) {
-    const err = error as { code?: string; meta?: { target?: string[] } };
-    if (err.code === "P2002" && err.meta?.target?.includes("username")) {
-      return NextResponse.json({ error: "Username already taken" }, { status: 409 });
+    } catch (error: unknown) {
+    const err = error as { code?: string; message?: string; meta?: { target?: string[] } };
+
+    if (
+      err.message === "Username already taken" ||
+      (err.code === "P2002" && err.meta?.target?.includes("username"))
+    ) {
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 409 }
+      );
     }
-    console.error("Username create error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Username creation failed:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
