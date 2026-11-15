@@ -4,7 +4,8 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { hasSupportedImageMagicBytes } from "@/lib/imageValidation";
-import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { getAvatarPreset } from "@/lib/avatarPresets";
+import { writeThroughProfileCache } from "@/lib/profileCache";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -90,4 +91,41 @@ export async function DELETE() {
     await writeThroughProfileCache(session.user.id);
 
     return NextResponse.json({ success: true });
+}
+
+// Select a built-in avatar preset.
+export async function PUT(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let body: unknown;
+
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    if (!body || typeof body !== "object" || !("presetId" in body)) {
+        return NextResponse.json({ error: "Preset ID is required" }, { status: 400 });
+    }
+
+    const preset = getAvatarPreset(body.presetId);
+
+    if (!preset) {
+        return NextResponse.json({ error: "Invalid avatar preset" }, { status: 400 });
+    }
+
+    await prisma.user.update({
+        where: { id: session.user.id },
+        data: { image: preset.src },
+    });
+
+    // Keep the public profile cache synchronized with the selected avatar.
+    await writeThroughProfileCache(session.user.id);
+
+    return NextResponse.json({ success: true, imageUrl: preset.src });
 }
