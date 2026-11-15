@@ -5,14 +5,13 @@ import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getForwardedIp } from "@/lib/analyticsUtils";
 import { sendVerificationEmail } from "@/lib/email";
+import { signupSchema } from "@/lib/validations/auth";
 
 const REGISTER_LIMIT = 5;
 const REGISTER_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: Request) {
-    // Use the spoof-resistant client IP (trusts x-real-ip set by the platform)
-    // rather than the raw first x-forwarded-for value, which a client can
-    // rotate to bypass the per-IP registration rate limit.
+    // Use the spoof-resistant client IP for rate limiting.
     const ip = getForwardedIp(req.headers) ?? "unknown";
 
     if (!(await checkRateLimit(`register:${ip}`, REGISTER_LIMIT, REGISTER_WINDOW_MS))) {
@@ -24,34 +23,34 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const name = typeof body?.name === "string" ? body.name.trim() : "";
-        const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-        const password = typeof body?.password === "string" ? body.password : "";
 
-        if (!email || !password) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-        }
+        // Validate signup details using the shared schema.
+        const result = signupSchema.safeParse({
+            name: typeof body?.name === "string" ? body.name.trim() : "",
+            email: typeof body?.email === "string" ? body.email.trim().toLowerCase() : "",
+            password: typeof body?.password === "string" ? body.password : "",
+        });
 
-        const normalizedEmail = email.toLowerCase().trim();
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-
-        if (!passwordRegex.test(password)) {
+        if (!result.success) {
             return NextResponse.json(
-                { error: "Password does not meet requirements" },
+                {
+                    error: result.error.issues[0]?.message ?? "Invalid registration details",
+                },
                 { status: 400 },
             );
         }
 
+        const { name, email, password } = result.data;
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        let user;
         try {
-            user = await prisma.user.create({
+            await prisma.user.create({
                 data: {
                     name,
-                    email: normalizedEmail,
+                    email,
                     password: hashedPassword,
-                    // emailVerified intentionally left null — set only after verification
+                    // emailVerified intentionally left null - set only after verification
                 },
             });
         } catch (err: unknown) {
@@ -61,40 +60,54 @@ export async function POST(req: Request) {
                 "code" in err &&
                 err.code === "P2002"
             ) {
-                return NextResponse.json({ error: "User already exists" }, { status: 409 });
+                return NextResponse.json(
+                    { error: "User already exists" },
+                    { status: 409 },
+                );
             }
+
             throw err;
         }
 
-        // Generate a secure verification token and store it
+        // Generate a secure verification token and store it.
         const token = crypto.randomBytes(32).toString("hex");
-        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         await prisma.verificationToken.create({
             data: {
-                identifier: normalizedEmail,
+                identifier: email,
                 token,
                 expires,
             },
         });
 
-        // Send verification email — non-blocking in dev if SMTP not configured
+        // Send verification email.
         try {
-            await sendVerificationEmail(normalizedEmail, token);
+            await sendVerificationEmail(email, token);
         } catch {
-            // Email sending failure should not block registration
-            console.error("Failed to send verification email to", normalizedEmail);
+            console.error("Failed to send verification email to", email);
         }
 
         return NextResponse.json(
-            { success: true, message: "Account created. Please check your email to verify your account." },
+            {
+                success: true,
+                message: "Account created. Please check your email to verify your account.",
+            },
             { status: 201 },
         );
     } catch (err) {
         console.error("Registration error:", err);
-        const message = err instanceof Error ? err.message : "Something went wrong";
+
+        const message =
+            err instanceof Error ? err.message : "Something went wrong";
+
         return NextResponse.json(
-            { error: process.env.NODE_ENV === "production" ? "Something went wrong" : message },
+            {
+                error:
+                    process.env.NODE_ENV === "production"
+                        ? "Something went wrong"
+                        : message,
+            },
             { status: 500 },
         );
     }
