@@ -1,37 +1,50 @@
+
 import assert from "node:assert/strict";
 import { mock, test, before } from "node:test";
 
 let mockVersion: any = null;
-let mockCurrentUser: any = null;
-let mockClaimingUser: any = null;
+let mockWorkspace: any = null;
+let mockClaimingWorkspace: any = null;
 let mockAlias: any = null;
 
 const mockTx = {
+  $queryRaw: () => Promise.resolve([]),
+
   profileVersion: {
     findUnique: () => Promise.resolve(mockVersion),
     create: () => Promise.resolve({}),
   },
-  user: {
+
+  workspace: {
     findUnique: (args: any) => {
       if (args.where.id) {
-        return Promise.resolve(mockCurrentUser);
+        return Promise.resolve(mockWorkspace);
       }
       if (args.where.username) {
-        return Promise.resolve(mockClaimingUser);
+        return Promise.resolve(mockClaimingWorkspace);
       }
       return Promise.resolve(null);
     },
     update: () => Promise.resolve({}),
   },
-  userAlias: {
-    findUnique: (args: any) => {
-      return Promise.resolve(mockAlias);
-    },
-    upsert: () => Promise.resolve({}),
+
+  workspaceAlias: {
+    findUnique: () => Promise.resolve(mockAlias),
+    create: () => Promise.resolve({}),
   },
+
+  workspaceMember: {
+    findFirst: () => Promise.resolve(null),
+  },
+
+  user: {
+    update: () => Promise.resolve({}),
+  },
+
   profileDraft: {
     deleteMany: () => Promise.resolve({}),
   },
+
   profilePreviewToken: {
     updateMany: () => Promise.resolve({}),
   },
@@ -52,119 +65,111 @@ before(async () => {
   rollbackProfileVersion = workflow.rollbackProfileVersion;
 });
 
+function setupMocks() {
+ mockVersion = {
+  id: "version-1",
+  workspaceId: "workspace-A",
+  snapshot: {
+    name: "Workspace A",
+    username: "coolprofile",
+    bio: "old bio",
+    image: null,
+    themeType: "solid",
+    themeColor: "slate",
+    themeCustom: null,
+    backgroundImage: null,
+  },
+};
+  mockWorkspace = {
+    name: "Workspace A",
+    username: "coolprofile",
+    bio: "new bio",
+    image: null,
+    themeType: "solid",
+    themeColor: "slate",
+    themeCustom: null,
+    backgroundImage: null,
+  };
+
+  mockClaimingWorkspace = null;
+  mockAlias = null;
+}
+
 test("rollback succeeds when username is unchanged", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "new bio",
-    image: null,
-  };
-  mockClaimingUser = null;
-  mockAlias = null;
+  setupMocks();
 
-  const result = await rollbackProfileVersion("user-A", "version-1");
+  const result = await rollbackProfileVersion(
+    "workspace-A",
+    "version-1"
+  );
+
   assert.equal(result.snapshot.username, "coolprofile");
-  assert.deepEqual(result.diff.bio, { before: "new bio", after: "old bio" });
+  assert.deepEqual(result.diff.bio, {
+    before: "new bio",
+    after: "old bio",
+  });
 });
 
-test("rollback fails when target username is claimed by another user as primary username", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  // User B has claimed "coolprofile"
-  mockClaimingUser = {
-    id: "user-B",
+test("rollback fails when target username is claimed by another workspace as primary username", async () => {
+  setupMocks();
+
+  mockWorkspace.username = "differentprofile";
+
+  mockClaimingWorkspace = {
+    id: "workspace-B",
     username: "coolprofile",
   };
-  mockAlias = null;
 
   await assert.rejects(
-    rollbackProfileVersion("user-A", "version-1"),
+    rollbackProfileVersion("workspace-A", "version-1"),
     (err: Error) => {
-      assert.equal(err.message, "The username in this profile version is no longer available.");
+      assert.equal(
+        err.message,
+        "The username in this profile version is no longer available."
+      );
       return true;
     }
   );
 });
 
-test("rollback fails when target username is claimed by another user as an alias", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  mockClaimingUser = null;
-  // User B owns the alias "coolprofile"
+test("rollback fails when target username is claimed by another workspace as an alias", async () => {
+  setupMocks();
+
+  mockWorkspace.username = "differentprofile";
+
   mockAlias = {
     id: "alias-1",
     username: "coolprofile",
-    userId: "user-B",
+    workspaceId: "workspace-B",
   };
 
   await assert.rejects(
-    rollbackProfileVersion("user-A", "version-1"),
+    rollbackProfileVersion("workspace-A", "version-1"),
     (err: Error) => {
-      assert.equal(err.message, "The username in this profile version is no longer available.");
+      assert.equal(
+        err.message,
+        "The username in this profile version is no longer available."
+      );
       return true;
     }
   );
 });
 
-test("rollback succeeds when target username is an alias owned by the same user", async () => {
-  mockVersion = {
-    id: "version-1",
-    userId: "user-A",
-    name: "User A",
-    username: "coolprofile",
-    bio: "old bio",
-    image: null,
-  };
-  mockCurrentUser = {
-    id: "user-A",
-    name: "User A",
-    username: "differentprofile",
-    bio: "new bio",
-    image: null,
-  };
-  mockClaimingUser = null;
-  // User A owns the alias "coolprofile" (it's their own alias)
+test("rollback succeeds when target username is an alias owned by the same workspace", async () => {
+  setupMocks();
+
+  mockWorkspace.username = "differentprofile";
+
   mockAlias = {
     id: "alias-1",
     username: "coolprofile",
-    userId: "user-A",
+    workspaceId: "workspace-A",
   };
 
-  const result = await rollbackProfileVersion("user-A", "version-1");
+  const result = await rollbackProfileVersion(
+    "workspace-A",
+    "version-1"
+  );
+
   assert.equal(result.snapshot.username, "coolprofile");
 });

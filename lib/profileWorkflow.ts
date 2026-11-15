@@ -7,6 +7,18 @@ import crypto from "crypto";
  * Type for Prisma transaction client
  */
 type TransactionClient = Prisma.TransactionClient;
+/**
+ * Serialize username claims across profile write operations.
+ * The lock is held until the surrounding transaction commits or rolls back.
+ */
+async function lockProfileUsername(
+  tx: TransactionClient,
+  username: string
+): Promise<void> {
+  await tx.$queryRaw`
+    SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))
+  `;
+}
 
 /**
  * Profile snapshot for versioning and comparison
@@ -270,6 +282,7 @@ export async function publishProfileDraft(
 
     // Handle username being set or changed
     if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
+await lockProfileUsername(tx, afterSnapshot.username);
       const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
       if (!isAvailable) {
         throw new Error("Username already taken");
@@ -488,6 +501,7 @@ export async function rollbackProfileVersion(
 
     // Handle username change
     if (afterSnapshot.username && afterSnapshot.username !== beforeSnapshot.username) {
+await lockProfileUsername(tx, afterSnapshot.username);
       const isAvailable = await isProfileUsernameAvailable(afterSnapshot.username, workspaceId, tx);
       if (!isAvailable) {
         throw new Error("The username in this profile version is no longer available.");
