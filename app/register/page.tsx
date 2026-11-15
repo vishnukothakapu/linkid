@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { getCsrfToken } from "@/lib/csrfClient";
 import { useCsrf } from "@/lib/useCsrf";
 import { PLATFORMS } from "@/lib/constants";
+import { signupSchema } from "@/lib/validations/auth";
 
 import { Navbar } from "../components/Navbar";
 
@@ -29,13 +30,11 @@ export default function RegisterPage() {
     const [githubLoading, setGithubLoading] = useState(false);
 
     const getPasswordError = (value: string) => {
-        if (value.length < 8) return "Must be at least 8 characters";
-        if (!/[A-Z]/.test(value)) return "Must include one uppercase letter";
-        if (!/[a-z]/.test(value)) return "Must include one lowercase letter";
-        if (!/\d/.test(value)) return "Must include one number";
-        if (!/[@$!%*?&]/.test(value)) return "Must include one special character";
+        const result = signupSchema.shape.password.safeParse(value);
 
-        return null;
+        return result.success
+            ? null
+            : result.error.issues[0]?.message ?? "Invalid password";
     };
 
     const error = getPasswordError(password);
@@ -47,36 +46,56 @@ export default function RegisterPage() {
 
         const form = e.currentTarget;
         const requestCsrfToken = csrfToken || await getCsrfToken();
+
         const data = {
-            _csrf: requestCsrfToken,
             email: (form.elements.namedItem("email") as HTMLInputElement).value,
             name: (form.elements.namedItem("name") as HTMLInputElement).value,
             password: (form.elements.namedItem("password") as HTMLInputElement).value,
         };
 
-        const passErr = getPasswordError(data.password);
-        if (passErr) {
-            setSubmitError(passErr);
+        const validation = signupSchema.safeParse({
+            name: data.name.trim(),
+            email: data.email.trim().toLowerCase(),
+            password: data.password,
+        });
+
+        if (!validation.success) {
+            setSubmitError(
+                validation.error.issues[0]?.message ?? "Invalid registration details"
+            );
             setLoading(false);
             return;
         }
 
-        const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-csrf-token": requestCsrfToken,
-            },
-            body: JSON.stringify(data),
-        });
+        const validatedData = validation.data;
 
-        setLoading(false);
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": requestCsrfToken,
+                },
+                body: JSON.stringify({
+                    _csrf: requestCsrfToken,
+                    name: validatedData.name,
+                    email: validatedData.email,
+                    password: validatedData.password,
+                }),
+            });
 
-        if (res.ok) {
-            router.push("/login");
-        } else {
-            const data = await res.json().catch(() => null) as { error?: string } | null;
-            setSubmitError(data?.error ?? "Registration failed");
+            if (res.ok) {
+                router.push("/login");
+            } else {
+                const responseData = await res.json().catch(() => null) as
+                    { error?: string } | null;
+
+                setSubmitError(responseData?.error ?? "Registration failed");
+            }
+        } catch {
+            setSubmitError("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -87,7 +106,9 @@ export default function RegisterPage() {
             <div className="flex min-h-screen items-center justify-center px-4 py-24 bg-muted/20">
                 <div className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-8 shadow-sm">
                     <div className="text-center space-y-2">
-                        <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">
+                            Create your account
+                        </h1>
                         <p className="text-sm text-muted-foreground">
                             Start building your LinkID
                         </p>
@@ -107,13 +128,17 @@ export default function RegisterPage() {
                             onClick={async () => {
                                 setGoogleLoading(true);
                                 try {
-                                    await signIn(PLATFORMS.GOOGLE, { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GOOGLE, {
+                                        callbackUrl: "/dashboard",
+                                    });
                                 } finally {
                                     setGoogleLoading(false);
                                 }
                             }}
                         >
-                            {googleLoading ? <Spinner className="h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
+                            {googleLoading
+                                ? <Spinner className="h-5 w-5" />
+                                : <FcGoogle className="h-5 w-5" />}
                             {googleLoading ? "Connecting..." : "Continue with Google"}
                         </Button>
 
@@ -124,16 +149,18 @@ export default function RegisterPage() {
                             onClick={async () => {
                                 setGithubLoading(true);
                                 try {
-                                    await signIn(PLATFORMS.GITHUB, { callbackUrl: "/dashboard" });
+                                    await signIn(PLATFORMS.GITHUB, {
+                                        callbackUrl: "/dashboard",
+                                    });
                                 } finally {
                                     setGithubLoading(false);
                                 }
                             }}
                         >
-
-                            {githubLoading ? <Spinner className="h-5 w-5" /> : <FaGithub className="h-5 w-5" />}
+                            {githubLoading
+                                ? <Spinner className="h-5 w-5" />
+                                : <FaGithub className="h-5 w-5" />}
                             {githubLoading ? "Connecting..." : "Continue with GitHub"}
-
                         </Button>
                     </div>
 
@@ -147,7 +174,10 @@ export default function RegisterPage() {
                         <input type="hidden" name="_csrf" value={csrfToken} />
 
                         <div className="relative flex items-center">
-                            <User className="absolute left-3 text-muted-foreground" size={20} />
+                            <User
+                                className="absolute left-3 text-muted-foreground"
+                                size={20}
+                            />
                             <Input
                                 name="name"
                                 placeholder="Full name"
@@ -158,7 +188,10 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="relative flex items-center">
-                            <Mail className="absolute left-3 text-muted-foreground" width="20" />
+                            <Mail
+                                className="absolute left-3 text-muted-foreground"
+                                width="20"
+                            />
                             <Input
                                 name="email"
                                 type="email"
@@ -170,7 +203,10 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="relative flex items-center">
-                            <Lock className="absolute left-3 text-muted-foreground" width="20" />
+                            <Lock
+                                className="absolute left-3 text-muted-foreground"
+                                width="20"
+                            />
                             <Input
                                 name="password"
                                 type={showPassword ? "text" : "password"}
@@ -179,15 +215,23 @@ export default function RegisterPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className={`pl-10 pr-10 transition-colors h-11 ${password && error ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30" : ""}`}
+                                className={`pl-10 pr-10 transition-colors h-11 ${
+                                    password && error
+                                        ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30"
+                                        : ""
+                                }`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword((prev) => !prev)}
-                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                aria-label={
+                                    showPassword ? "Hide password" : "Show password"
+                                }
                                 className="absolute right-3 cursor-pointer text-muted-foreground hover:text-foreground top-1/2 -translate-y-1/2"
                             >
-                                {showPassword ? <EyeOff width="20" /> : <Eye width="20" />}
+                                {showPassword
+                                    ? <EyeOff width="20" />
+                                    : <Eye width="20" />}
                             </button>
                         </div>
 
@@ -195,7 +239,11 @@ export default function RegisterPage() {
                             <p className="text-sm text-red-500">{error}</p>
                         )}
 
-                        <Button className="w-full h-11 font-medium" disabled={loading} type="submit">
+                        <Button
+                            className="w-full h-11 font-medium"
+                            disabled={loading}
+                            type="submit"
+                        >
                             {loading ? "Creating account..." : "Signup with Email"}
                         </Button>
                     </form>
