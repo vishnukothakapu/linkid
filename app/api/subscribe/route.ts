@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+import { enqueueWorkspaceWebhook } from "@/lib/webhooks";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
@@ -41,19 +43,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email capture is not enabled for this profile" }, { status: 403 });
     }
 
-    // Upsert or create subscriber
-    await prisma.subscriber.create({
-      data: {
-        email,
-        workspaceId: workspace.id,
-      },
-    }).catch(err => {
-        // If unique constraint fails, it means already subscribed
-        if (err.code === 'P2002') {
-            return;
-        }
-        throw err;
-    });
+    try {
+      await prisma.$transaction(async tx=>{
+        const subscriber=await tx.subscriber.create({data:{email:email.toLowerCase(),workspaceId:workspace.id}});
+        await enqueueWorkspaceWebhook(tx,workspace.id,'subscriber.created',{email:subscriber.email,timestamp:subscriber.createdAt.toISOString()},subscriber.id);
+      });
+    } catch(error) {
+      if(!(error instanceof Prisma.PrismaClientKnownRequestError)||error.code!=='P2002')throw error;
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

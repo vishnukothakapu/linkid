@@ -1,13 +1,27 @@
 import "../lib/prisma";
-import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
-import { processAnalyticsJob, type AnalyticsJobPayload } from "../lib/analytics";
+import {
+  claimNextJob,
+  processJobWithHandler,
+  type JobPayload,
+} from "../lib/jobs";
+import {
+  processAnalyticsJob,
+  type AnalyticsJobPayload,
+} from "../lib/analytics";
 
-import { validateWebhookUrl } from "../lib/ssrf";
+import { dispatchWebhook } from "../lib/webhooks";
+import prisma from "../lib/prisma";
 
-const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
-  "analytics-click": async (payload) => {
+const handlers: Record<
+  string,
+  (
+    payload: JobPayload,
+    context: { jobId: string; attempt: number },
+  ) => Promise<void>
+> = {
+  "analytics-click": async (payload, context) => {
     const data = payload as unknown as AnalyticsJobPayload;
-    await processAnalyticsJob(data);
+    await processAnalyticsJob(data, context.jobId);
   },
   "send-email": async (payload) => {
     console.log("[worker] send-email", payload);
@@ -15,27 +29,14 @@ const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
   "recalculate-analytics": async (payload) => {
     console.log("[worker] recalc analytics", payload);
   },
-  "webhook-dispatch": async (payload) => {
-    const { url, signature, payload: bodyPayload } = payload as { url: string; signature: string; payload: any };
-    
-    // Perform SSRF validation on the destination URL before fetching
-    await validateWebhookUrl(url);
-
-    // Prevent redirects to avoid SSRF bypasses via redirection
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-linkid-signature": signature
-      },
-      body: JSON.stringify(bodyPayload),
-      redirect: "error"
-    });
-
-    if (!res.ok) {
-      throw new Error(`Webhook dispatch failed with status: ${res.status}`);
-    }
-  }
+  "webhook-dispatch": async (payload, context) => {
+    const { deliveryId } = payload as { deliveryId?: string };
+    if (typeof deliveryId !== "string")
+      throw new Error(
+        "Unsupported legacy webhook job: recreate with the new outbox format",
+      );
+    await dispatchWebhook(prisma, deliveryId, context.attempt);
+  },
 };
 
 async function loop() {

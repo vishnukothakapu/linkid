@@ -108,15 +108,15 @@ export async function claimNextJob(type?: string) {
   return result.length > 0 ? result[0] : null;
 }
 
-type JobRecord = { id: string; type: string; payload: Prisma.JsonValue };
+type JobRecord = { id: string; type: string; payload: Prisma.JsonValue; attempts?: number };
 
-export async function processJobWithHandler(job: JobRecord, handlers: Record<string, (payload: JobPayload) => Promise<void> | void>) {
+export async function processJobWithHandler(job: JobRecord, handlers: Record<string, (payload: JobPayload, context: {jobId:string;attempt:number}) => Promise<void> | void>) {
   try {
     const handler = handlers[job.type];
     if (!handler) throw new Error(`no handler for job type ${job.type}`);
     // Cast payload to JobPayload, excluding null values that shouldn't exist
     const payload = job.payload as JobPayload;
-    await handler(payload);
+    await handler(payload,{jobId:job.id,attempt:(job.attempts??0)+1});
     await markJobCompleted(job.id);
   } catch (err: unknown) {
     await markJobFailed(job.id, err instanceof Error ? err.message : String(err));
