@@ -144,6 +144,10 @@ async function ensureUsernameAliases(
     where: { username: previousUsername },
   });
 
+  if (existingAlias && existingAlias.workspaceId !== workspaceId) {
+    throw new Error("Username already taken");
+  }
+
   if (!existingAlias) {
     await tx.workspaceAlias.create({
       data: {

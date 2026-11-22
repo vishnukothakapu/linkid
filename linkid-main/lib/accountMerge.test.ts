@@ -71,8 +71,21 @@ const fakePrisma = {
     }),
     link: modelProxy("link", { findMany: async () => [] }),
     subscriber: modelProxy("subscriber", { findMany: async () => [] }),
-    workspace: modelProxy("workspace"),
-    workspaceAlias: modelProxy("workspaceAlias"),
+    workspace: modelProxy("workspace", {
+        findUnique: async ({ where }: any) => {
+            if (where.id === sourceWorkspace.id) {
+                return { id: sourceWorkspace.id, username: sourceWorkspace.username };
+            }
+            if (where.id === targetWorkspace.id) {
+                return { id: targetWorkspace.id, username: targetWorkspace.username };
+            }
+            return null;
+        },
+    }),
+    workspaceAlias: modelProxy("workspaceAlias", {
+        findMany: async () => [],
+        findUnique: async () => null,
+    }),
     clickEvent: modelProxy("clickEvent"),
     dailyLinkAnalytics: modelProxy("dailyLinkAnalytics"),
     usernameHistory: modelProxy("usernameHistory"),
@@ -82,9 +95,15 @@ const fakePrisma = {
     account: modelProxy("account"),
     session: modelProxy("session"),
     accountMergeEvent: modelProxy("accountMergeEvent"),
-    $transaction: async (batch: Op[]) => {
-        transactionOps = batch;
-        return batch;
+    $queryRaw: async () => {
+        const entry = { model: "$queryRaw", action: "lock", args: {} };
+        ops.push(entry);
+        return [];
+    },
+    $transaction: async (callback: (tx: any) => Promise<unknown>) => {
+        ops.length = 0;
+        transactionOps = ops;
+        return callback(fakePrisma);
     },
 };
 

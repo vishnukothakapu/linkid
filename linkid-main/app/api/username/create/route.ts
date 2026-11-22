@@ -15,6 +15,7 @@ import {
   lockProfileUsernames,
   lockProfileWorkspace,
 } from "@/lib/profileLocks";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,6 +74,16 @@ export async function POST(req: NextRequest) {
       }
 
       if (currentWorkspace.username) {
+        const existingCurrentAlias = await tx.workspaceAlias.findUnique({
+          where: { username: currentWorkspace.username },
+        });
+        if (
+          existingCurrentAlias &&
+          existingCurrentAlias.workspaceId !== workspace.id
+        ) {
+          throw new Error("Username already taken");
+        }
+
         await tx.workspaceAlias.upsert({
           where: { username: currentWorkspace.username },
           update: { workspaceId: workspace.id },
@@ -99,11 +110,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, workspace: updatedWorkspace }, { status: 200 });
 
     } catch (error: unknown) {
-    const err = error as { code?: string; message?: string; meta?: { target?: string[] } };
+    const err = error as { message?: string };
 
     if (
       err.message === "Username already taken" ||
-      (err.code === "P2002" && err.meta?.target?.includes("username"))
+      isUsernameUniqueConstraintError(error)
     ) {
       return NextResponse.json(
         { error: "Username already taken" },

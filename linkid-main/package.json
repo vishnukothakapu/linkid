@@ -15,7 +15,7 @@
     "pretest:integration": "node scripts/pretest-prisma-generate.mjs",
     "pretest": "node scripts/pretest-prisma-generate.mjs",
     "test": "tsx --test --experimental-test-module-mocks",
-    "test:integration": "tsx --test --experimental-test-module-mocks app/api/username/create/route.integration.test.ts",
+    "test:integration": "tsx --test --experimental-test-module-mocks app/api/username/create/route.integration.ts",
     "test:ui": "jest",
     "test:ui:watch": "jest --watch"
   },

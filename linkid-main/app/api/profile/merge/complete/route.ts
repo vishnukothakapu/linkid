@@ -10,6 +10,7 @@ import {
     invalidateProfileUsername,
     writeThroughProfileCache,
 } from "@/lib/profileCache";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -66,6 +67,12 @@ export async function POST(req: Request) {
     } catch (error) {
         if (error instanceof MergeError) {
             return NextResponse.json({ error: error.message }, { status: error.status });
+        }
+        if (isUsernameUniqueConstraintError(error)) {
+            return NextResponse.json(
+                { error: "Username already taken" },
+                { status: 409 }
+            );
         }
 
         console.error("Complete merge error:", error);

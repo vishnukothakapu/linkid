@@ -4,6 +4,7 @@ import { resolveActiveWorkspace } from "@/lib/workspace";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -43,7 +44,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true, draft }, { status: 200 });
   } catch (error: unknown) {
     const err = error as { message?: string };
-    if (err.message?.includes("Username not available") || err.message?.includes("Username already taken")) {
+    if (
+      err.message?.includes("Username not available") ||
+      err.message?.includes("Username already taken") ||
+      isUsernameUniqueConstraintError(error)
+    ) {
       return NextResponse.json(
         { error: "Username already taken" },
         { status: 409 }
