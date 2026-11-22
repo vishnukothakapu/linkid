@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { verifyOtp, clearOtp } from "@/lib/deleteOtpStore";
-import { invalidateUserSessions } from "@/lib/sessionInvalidation";
+import { verifyOtp } from "@/lib/deleteOtpStore";
+import { deleteAccountWorkspaces } from "@/lib/accountDeletion";
+import { revalidateTag } from "next/cache";
 import { checkRateLimit } from "@/lib/rateLimit";
 import {
     invalidateProfileCache,
@@ -81,25 +82,15 @@ export async function DELETE(req: NextRequest) {
     }
 
 
-    const userWorkspaces = await prisma.workspaceMember.findMany({
-      where: { userId },
-      include: { workspace: { select: { id: true, username: true } } },
-    });
-
-    await invalidateUserSessions(userId);
-    await clearOtp(userId);
-    await prisma.user.delete({
-      where: { id: session.user.id },
-    });
+    const userWorkspaces = await deleteAccountWorkspaces(prisma, userId);
 
     // The account no longer exists — drop its cached public profile and clear
     // its username→workspaceId index entry so any freed usernames resolve fresh.
-    for (const member of userWorkspaces) {
-      await invalidateProfileCache(member.workspace.id);
-      if (member.workspace.username) {
-        await invalidateProfileUsername(member.workspace.username);
-      }
+    for (const workspace of userWorkspaces) {
+      await invalidateProfileCache(workspace.id);
+      for (const username of workspace.usernames) await invalidateProfileUsername(username);
     }
+    revalidateTag("public-profile", "default");
 
     return NextResponse.json({ success: true });
   } catch (error) {
