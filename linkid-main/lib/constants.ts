@@ -1,0 +1,31 @@
+export const PLATFORMS = {
+    GITHUB: "github",
+    HACKERRANK: "hackerrank",
+    SUBSTACK: "substack",
+    BEHANCE: "behance",
+    STACKOVERFLOW: "stackoverflow",
+    GITLAB: "gitlab",
+    LINKEDIN: "linkedin",
+    TWITTER: "twitter",
+    INSTAGRAM: "instagram",
+    YOUTUBE: "youtube",
+    FACEBOOK: "facebook",
+    SNAPCHAT: "snapchat",
+    TIKTOK: "tiktok",
+    REDDIT: "reddit",
+    MEDIUM: "medium",
+    DEVTO: "devto",
+    HASHNODE: "hashnode",
+    WEBSITE: "website",
+    OTHER: "other",
+    GOOGLE: "google",
+    X: "x",
+    TWITCH: "twitch",
+    DISCORD: "discord",
+    KAGGLE: "kaggle",
+    GEEKSFORGEEKS: "geeksforgeeks",
+    HUGGINGFACE: "huggingface",
+} as const;
+
+export type PlatformKey = keyof typeof PLATFORMS;
+export type PlatformValue = (typeof PLATFORMS)[PlatformKey];

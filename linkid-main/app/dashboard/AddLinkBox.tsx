@@ -1,0 +1,209 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { getCsrfToken } from "@/lib/csrfClient";
+import toast from "react-hot-toast";
+import { PLATFORMS } from "@/lib/constants";
+
+import { validateUrl } from "@/lib/urlValidation";
+import type { Link as ProfileLink } from "@/app/[username]/types/type";
+import { POPULAR_PLATFORMS } from "@/lib/platformHelpers";
+
+/**
+ * AddLinkBox Component
+ * Renders a form to add a new link to the user's profile.
+ * It includes inputs for platform selection, custom display name, and URL.
+ *
+ * @param {Object} props - The component props.
+ * @param {function} props.onAdded - Callback function triggered when a new link is successfully added.
+ */
+export default function AddLinkBox({
+    onAdded,
+    onCancel,
+}: {
+    onAdded: (link: ProfileLink) => void;
+    onCancel?: () => void;
+}) {
+    const [url, setUrl] = useState("");
+    const [label, setLabel] = useState("");
+    const [alias, setAlias] = useState("");
+    const [platform, setPlatform] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [urlError, setUrlError] = useState("");
+    const isSubmittingRef = useRef(false);
+
+    function handleCancel() {
+        setUrl("");
+        setLabel("");
+        setAlias("");
+        setPlatform("");
+        setUrlError("");
+        onCancel?.();
+    }
+
+    /**
+     * Handles the form submission to add a link.
+     * Validates input fields and sends a POST request to the API.
+     */
+    async function submit() {
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
+
+        try {
+            const validation = validateUrl(url);
+            if (!validation.valid) {
+                return toast.error(validation.error);
+            }
+
+            if (!platform) {
+                return toast.error("Please select a platform");
+            }
+
+            const finalLabel = label.trim();
+            if (platform === PLATFORMS.WEBSITE && !finalLabel) {
+                return toast.error("Please enter a name for this link");
+            }
+
+            setLoading(true);
+            const csrfToken = await getCsrfToken();
+
+            const res = await fetch("/api/links", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-csrf-token": csrfToken,
+                },
+                body: JSON.stringify({
+                    url,
+                    label: finalLabel,
+                    alias,
+                    platform,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                return toast.error(data.error ?? "Failed to add link");
+            }
+
+            toast.success("Link added");
+            onAdded(data.link);
+
+            setUrl("");
+            setLabel("");
+            setAlias("");
+            setPlatform("");
+            setShowAdvanced(false);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "Failed to add link";
+            toast.error(errorMessage);
+        } finally {
+            isSubmittingRef.current = false;
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className="max-h-[90vh] overflow-y-auto rounded-lg border p-4 space-y-3 text-foreground">
+            <Select value={platform} onValueChange={setPlatform}>
+                <SelectTrigger className="text-foreground">
+                    <SelectValue placeholder="Select a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                    {POPULAR_PLATFORMS.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Input
+                className="text-foreground"
+                placeholder={
+                    !platform
+                        ? "Link Display Name"
+                        : platform === PLATFORMS.WEBSITE
+                        ? "Link Display Name (Required)"
+                        : "Link Display Name (Optional)"
+                }
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+            />
+
+            <Input
+                className="text-foreground"
+                placeholder="Paste your link here..."
+                value={url}
+                onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (e.target.value.trim()) {
+                        const validation = validateUrl(e.target.value);
+                        setUrlError(validation.valid ? "" : validation.error);
+                    } else {
+                        setUrlError("");
+                    }
+                }}
+                aria-invalid={!!urlError}
+                aria-describedby={urlError ? "url-error" : undefined}
+            />
+            {urlError && (
+                <p id="url-error" className="text-xs text-red-500 mt-1" role="alert">
+                    {urlError}
+                </p>
+            )}
+
+            <div>
+                <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+                >
+                    {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options (Custom URL Alias)"}
+                </button>
+                {showAdvanced && (
+                    <div className="mt-3">
+                        <Input
+                            className="text-foreground"
+                            placeholder="Custom Alias (e.g. github-work)"
+                            value={alias}
+                            onChange={(e) => setAlias(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Overrides the default route. Your link will be accessible at: /username/{alias || platform || "[alias]"}
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className="flex gap-2">
+               <Button onClick={handleCancel} variant="outline" disabled={loading} className="flex-1 text-foreground">
+                    Cancel
+                </Button>
+                <Button
+                    onClick={submit}
+                    disabled={loading || !url.trim() || !platform}
+                    className="flex-1"
+                    aria-busy={loading}
+                >
+                    {loading ? (
+                        <span className="flex items-center gap-2">
+                            <span className="animate-spin">⟳</span> Adding…
+                        </span>
+                    ) : "Add link"}
+                </Button>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,353 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { triggerPusherEvent } from "@/lib/pusher";
+import { resolveActiveWorkspace } from "@/lib/workspace";
+
+import { validatePlatformUrl, detectPlatform, slugifyPlatform, isKnownPlatform, type Platform } from "@/lib/platforms";
+import { PLATFORMS } from "@/lib/constants";
+import { validateUrlBackend } from "@/lib/urlValidation";
+import { PLATFORM_ICONS } from "@/lib/platformIcons";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { writeThroughProfileCache } from "@/lib/profileCache";
+
+const LINK_MUTATE_LIMIT = 30;
+const LINK_MUTATE_WINDOW_MS = 60 * 1000; // 30 mutations per minute per user
+
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const allowed = await checkRateLimit(
+    `link-mutate:${session.user.id}`,
+    LINK_MUTATE_LIMIT,
+    LINK_MUTATE_WINDOW_MS
+  );
+
+  if (!allowed) {
+    return rateLimitResponse(LINK_MUTATE_LIMIT, LINK_MUTATE_WINDOW_MS, {
+      error: "Too many requests. Please slow down.",
+    });
+  }
+
+  const { id } = await context.params;
+  const body = await req.json();
+  const url = body?.url;
+  const isPublic = body?.isPublic;
+  const label = body?.label;
+  const platform = body?.platform;
+  const startDate = body?.startDate;
+  const endDate = body?.endDate;
+  const parentId = body?.parentId;
+  const pinCode = body?.pinCode;
+  const isSocialIcon = body?.isSocialIcon;
+
+  const rawExplicitPlatform = typeof platform === "string" ? platform.trim() : null;
+  const explicitPlatform = rawExplicitPlatform && Object.keys(PLATFORM_ICONS).includes(rawExplicitPlatform)
+    ? rawExplicitPlatform as Platform
+    : null;
+
+  const link = await prisma.link.findUnique({ where: { id } });
+  if (!link) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const data: { url?: string; isPublic?: boolean; label?: string; platform?: string; startDate?: Date | null; endDate?: Date | null; parentId?: string | null; pinCode?: string | null; isSocialIcon?: boolean } = {};
+
+  // Handle parentId changes (move link into/out of a group)
+  if (parentId !== undefined) {
+    if (link.isGroup) {
+      return NextResponse.json(
+        { error: "Groups cannot be nested inside other groups" },
+        { status: 400 }
+      );
+    }
+    if (parentId === null) {
+      data.parentId = null;
+    } else {
+      const parentGroup = await prisma.link.findFirst({
+        where: { id: parentId, workspaceId: link.workspaceId, isGroup: true },
+      });
+      if (!parentGroup) {
+        return NextResponse.json(
+          { error: "The specified group does not exist" },
+          { status: 400 }
+        );
+      }
+      data.parentId = parentId;
+    }
+  }
+
+  const activeLabel = typeof label === "string" ? label.trim() : link.label;
+
+  if (typeof label === "string") {
+    if (!activeLabel) {
+      return NextResponse.json(
+        { error: "Please enter a name for this link" },
+        { status: 400 }
+      );
+    }
+    data.label = activeLabel;
+  }
+
+  if (typeof url === "string") {
+    const validation = validateUrlBackend(url);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const finalUrl = validation.normalizedUrl;
+
+    const platformForValidation = explicitPlatform || (isKnownPlatform(link.platform) ? link.platform : detectPlatform(finalUrl));
+
+    if (!validatePlatformUrl(platformForValidation, finalUrl)) {
+      return NextResponse.json(
+        { error: "Please enter a valid public link" },
+        { status: 400 },
+      );
+    }
+
+    data.url = finalUrl;
+  }
+
+  if (typeof url === "string" || typeof label === "string" || platform !== undefined) {
+    const finalUrlForPlatform = data.url || link.url || "";
+    const detectedPlatform = explicitPlatform || detectPlatform(finalUrlForPlatform);
+    let finalPlatform: string;
+
+    if (detectedPlatform === PLATFORMS.WEBSITE) {
+      finalPlatform = slugifyPlatform(activeLabel);
+
+      if (!finalPlatform) {
+        return NextResponse.json(
+          { error: "Please enter a valid alphanumeric name for this link" },
+          { status: 400 }
+        );
+      }
+    } else {
+      finalPlatform = detectedPlatform;
+    }
+
+    if (finalPlatform !== link.platform) {
+      data.platform = finalPlatform;
+    }
+  }
+
+  if (typeof isPublic === "boolean") {
+    data.isPublic = isPublic;
+  }
+
+  if (typeof isSocialIcon === "boolean") {
+    data.isSocialIcon = isSocialIcon;
+  }
+
+  if (startDate !== undefined) {
+    if (startDate) {
+      const d = new Date(startDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
+      }
+      data.startDate = d;
+    } else {
+      data.startDate = null;
+    }
+  }
+
+  if (endDate !== undefined) {
+    if (endDate) {
+      const d = new Date(endDate);
+      if (isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
+      }
+      data.endDate = d;
+    } else {
+      data.endDate = null;
+    }
+  }
+
+  const finalStartDate = data.startDate !== undefined ? data.startDate : link.startDate;
+  const finalEndDate = data.endDate !== undefined ? data.endDate : link.endDate;
+
+  if (finalStartDate && finalEndDate && finalStartDate > finalEndDate) {
+    return NextResponse.json({ error: "Start date cannot be later than end date" }, { status: 400 });
+  }
+
+  if (pinCode !== undefined) {
+    data.pinCode = pinCode;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  try {
+    const updatedLink = await prisma.$transaction(async (tx) => {
+        // Enforce uniqueness for the resulting route if platform is changing
+        if (data.platform && data.platform !== "system_group") {
+            const proposedRoute = link.alias || data.platform;
+            const existingLink = await tx.link.findFirst({
+                where: {
+                    workspaceId: link.workspaceId,
+                    id: { not: link.id },
+                    isGroup: false,
+                    OR: [
+                        { alias: proposedRoute },
+                        { platform: proposedRoute, alias: null }
+                    ]
+                }
+            });
+
+            if (existingLink) {
+                throw Object.assign(new Error("ROUTE_ALREADY_EXISTS"), { code: "ROUTE_ALREADY_EXISTS", proposedRoute });
+            }
+        }
+
+        return tx.link.update({
+            where: { id },
+            data,
+        });
+    });
+
+    // The updated link may be rendered on the public profile — eagerly purge and repopulate cache.
+    await writeThroughProfileCache(link.workspaceId);
+
+    await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
+
+    return NextResponse.json({ success: true, link: updatedLink });
+  } catch (err: unknown) {
+    const error = err as { code?: string; proposedRoute?: string };
+    
+    if (error?.code === "ROUTE_ALREADY_EXISTS") {
+        return NextResponse.json(
+            { error: `The route '/${error.proposedRoute}' is already in use.` },
+            { status: 409 }
+        );
+    }
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const labelForErrorMessage = (typeof label === "string" ? label.trim() : link.label) || "custom link";
+      return NextResponse.json(
+        { error: `You already added your ${labelForErrorMessage} link.` },
+        { status: 409 }
+      );
+    }
+    console.error("Link update error:", err);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const allowed = await checkRateLimit(
+    `link-mutate:${session.user.id}`,
+    LINK_MUTATE_LIMIT,
+    LINK_MUTATE_WINDOW_MS
+  );
+
+  if (!allowed) {
+    return rateLimitResponse(LINK_MUTATE_LIMIT, LINK_MUTATE_WINDOW_MS, {
+      error: "Too many requests. Please slow down.",
+    });
+  }
+
+  const { id } = await context.params;
+
+  const link = await prisma.link.findUnique({ where: { id } });
+  if (!link) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const preferredWorkspaceId = req.headers.get("x-workspace-id") || link.workspaceId;
+  const workspace = await resolveActiveWorkspace(session.user.id, preferredWorkspaceId);
+  if (!workspace || link.workspaceId !== workspace.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Parse body for group deletion options (may be empty for regular links)
+  let deleteChildren = false;
+  try {
+    const body = await req.json();
+    deleteChildren = body?.deleteChildren === true;
+  } catch {
+    // No body is fine for regular link deletion
+  }
+
+  // Group deletion with transaction
+  if (link.isGroup) {
+    await prisma.$transaction(async (tx) => {
+      if (deleteChildren) {
+        // Delete all children first, then the group
+        await tx.link.deleteMany({
+          where: { parentId: id, workspaceId: link.workspaceId },
+        });
+      } else {
+        // Ungroup: set children's parentId to null and reassign positions
+        const children = await tx.link.findMany({
+            where: { parentId: id, workspaceId: link.workspaceId },
+            orderBy: { position: 'asc' },
+        });
+
+        const maxOrder = await tx.link.aggregate({
+            where: { workspaceId: link.workspaceId, parentId: null },
+            _max: { position: true },
+        });
+
+        let nextPosition = (maxOrder._max.position ?? 0) + 1;
+        
+        for (const child of children) {
+            await tx.link.update({
+                where: { id: child.id },
+                data: { parentId: null, position: nextPosition++ },
+            });
+        }
+      }
+      await tx.link.delete({ where: { id } });
+    });
+
+    // Deleted links disappear from the public profile — eagerly purge and repopulate cache.
+    await writeThroughProfileCache(link.workspaceId);
+
+    await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
+
+    return NextResponse.json({ success: true });
+  }
+
+  // Regular link deletion
+  await prisma.link.delete({
+    where: { id },
+  });
+
+  // Deleted links disappear from the public profile — eagerly purge and repopulate cache.
+  await writeThroughProfileCache(link.workspaceId);
+
+  await triggerPusherEvent(`private-user-${session.user.id}`, 'links-updated', { workspaceId: link.workspaceId });
+
+  return NextResponse.json({ success: true });
+}
+
+
+

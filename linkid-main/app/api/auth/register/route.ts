@@ -1,0 +1,114 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { getForwardedIp } from "@/lib/analyticsUtils";
+import { sendVerificationEmail } from "@/lib/email";
+import { signupSchema } from "@/lib/validations/auth";
+
+const REGISTER_LIMIT = 5;
+const REGISTER_WINDOW_MS = 60 * 60 * 1000;
+
+export async function POST(req: Request) {
+    // Use the spoof-resistant client IP for rate limiting.
+    const ip = getForwardedIp(req.headers) ?? "unknown";
+
+    if (!(await checkRateLimit(`register:${ip}`, REGISTER_LIMIT, REGISTER_WINDOW_MS))) {
+        return NextResponse.json(
+            { error: "Too many registration attempts. Please wait before trying again." },
+            { status: 429 },
+        );
+    }
+
+    try {
+        const body = await req.json();
+
+        // Validate signup details using the shared schema.
+        const result = signupSchema.safeParse({
+            name: typeof body?.name === "string" ? body.name.trim() : "",
+            email: typeof body?.email === "string" ? body.email.trim().toLowerCase() : "",
+            password: typeof body?.password === "string" ? body.password : "",
+        });
+
+        if (!result.success) {
+            return NextResponse.json(
+                {
+                    error: result.error.issues[0]?.message ?? "Invalid registration details",
+                },
+                { status: 400 },
+            );
+        }
+
+        const { name, email, password } = result.data;
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        try {
+            await prisma.user.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    // emailVerified intentionally left null - set only after verification
+                },
+            });
+        } catch (err: unknown) {
+            if (
+                typeof err === "object" &&
+                err !== null &&
+                "code" in err &&
+                err.code === "P2002"
+            ) {
+                return NextResponse.json(
+                    { error: "User already exists" },
+                    { status: 409 },
+                );
+            }
+
+            throw err;
+        }
+
+        // Generate a secure verification token and store it.
+        const token = crypto.randomBytes(32).toString("hex");
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await prisma.verificationToken.create({
+            data: {
+                identifier: email,
+                token,
+                expires,
+            },
+        });
+
+        // Send verification email.
+        try {
+            await sendVerificationEmail(email, token);
+        } catch {
+            console.error("Failed to send verification email to", email);
+        }
+
+        return NextResponse.json(
+            {
+                success: true,
+                message: "Account created. Please check your email to verify your account.",
+            },
+            { status: 201 },
+        );
+    } catch (err) {
+        console.error("Registration error:", err);
+
+        const message =
+            err instanceof Error ? err.message : "Something went wrong";
+
+        return NextResponse.json(
+            {
+                error:
+                    process.env.NODE_ENV === "production"
+                        ? "Something went wrong"
+                        : message,
+            },
+            { status: 500 },
+        );
+    }
+}
