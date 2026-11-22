@@ -1,5 +1,12 @@
 import nodemailer from "nodemailer";
 
+export async function sendWorkspaceInvitationEmail(to: string, url: string): Promise<void> {
+  const transporter = createTransporter();
+  if (!transporter) throw new Error('SMTP is not configured');
+  await transporter.sendMail({ from: process.env.EMAIL_FROM || 'noreply@linkid.app', to,
+    subject: 'You are invited to a LinkID workspace', text: `Accept this invitation within seven days: ${url}` });
+}
+
 function createTransporter() {
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT;

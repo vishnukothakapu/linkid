@@ -27,10 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const workspace = await resolveActiveWorkspace(session.user.id);
+    const workspace = await resolveActiveWorkspace(session.user.id, req.headers.get("x-workspace-id") || new URL(req.url).searchParams.get("workspaceId"));
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
+
+    if (workspace.role !== "OWNER") return NextResponse.json({error:"Only owners can change usernames"},{status:403});
 
     const body = await req.json();
     let { username } = body;
@@ -45,6 +47,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, workspace: { id: workspace.id, username } }, { status: 200 });
     }
    const updatedWorkspace = await prisma.$transaction(async (tx) => {
+  await tx.$queryRaw`SELECT id FROM "Workspace" WHERE id = ${workspace.id} FOR UPDATE`;
+  const currentMember = await tx.workspaceMember.findUnique({where:{workspaceId_userId:{workspaceId:workspace.id,userId:session.user.id}}});
+  if (currentMember?.role !== "OWNER") throw new Error("Only owners can change usernames");
   // Lock this username until the transaction completes.
   await tx.$queryRaw`
     SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))

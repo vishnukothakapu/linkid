@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const workspace = await resolveActiveWorkspace(session.user.id);
+    const workspace = await resolveActiveWorkspace(session.user.id, req.headers.get("x-workspace-id") || new URL(req.url).searchParams.get("workspaceId"));
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }

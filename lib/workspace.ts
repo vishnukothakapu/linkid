@@ -24,16 +24,14 @@ export async function resolveActiveWorkspace(
     });
 
     if (memberships.length === 0) {
-        return autoMigratePersonalWorkspace(userId);
+        return preferredWorkspaceId ? null : autoMigratePersonalWorkspace(userId);
     }
 
     if (preferredWorkspaceId) {
         const preferred = memberships.find(
             (m) => m.workspaceId === preferredWorkspaceId
         );
-        if (preferred) {
-            return { ...preferred.workspace, role: preferred.role };
-        }
+        return preferred ? { ...preferred.workspace, role: preferred.role } : null;
     }
 
     const ownerMembership =

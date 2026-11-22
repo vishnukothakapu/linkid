@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         return rateLimitResponse(30, 60_000, { error: "Too many requests. Please slow down." });
     }
 
-    const workspace = await resolveActiveWorkspace(session.user.id);
+    const workspace = await resolveActiveWorkspace(session.user.id, req.headers.get("x-workspace-id") || new URL(req.url).searchParams.get("workspaceId"));
     if (!workspace) {
         return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
     }
@@ -286,14 +286,14 @@ export async function POST(req: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const workspace = await resolveActiveWorkspace(session.user.id);
+    const workspace = await resolveActiveWorkspace(session.user.id, req.headers.get("x-workspace-id") || new URL(req.url).searchParams.get("workspaceId"));
     if (!workspace) return NextResponse.json({ links: [] });
 
     const allLinks = await prisma.link.findMany({
