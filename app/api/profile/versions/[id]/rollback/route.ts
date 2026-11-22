@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidateTag } from "next/cache";
 import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function POST(
   request: NextRequest,
@@ -60,6 +61,12 @@ export async function POST(
     );
   } catch (error) {
     console.error("Profile rollback error:", error);
+    if (isUsernameUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "Username already taken" },
+        { status: 409 }
+      );
+    }
     if (error instanceof Error) {
       if (error.message.includes("empty snapshot")) {
         return NextResponse.json({ error: error.message }, { status: 400 });

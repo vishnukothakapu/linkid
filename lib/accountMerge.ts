@@ -4,6 +4,10 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { buildMergedPlatformSlug, generateMergeCode, hashMergeCode } from "@/lib/accountMergeUtils";
 import { resolveActiveWorkspace } from "@/lib/workspace";
+import {
+    lockProfileUsernames,
+    lockProfileWorkspace,
+} from "@/lib/profileLocks";
 
 export class MergeError extends Error {
     status: number;
@@ -179,223 +183,272 @@ export async function completeAccountMerge(input: {
     if (sourceWorkspace.bio && !targetWorkspace.bio) workspaceUpdateData.bio = sourceWorkspace.bio;
     if (!targetWorkspace.username && sourceWorkspace.username) workspaceUpdateData.username = sourceWorkspace.username;
 
-    const transactionOperations: Prisma.PrismaPromise<unknown>[] = [];
+    const deletedSubscribers = await prisma.$transaction(async (tx) => {
+        const workspaceIds = [sourceWorkspace.id, targetWorkspace.id].sort();
+        for (const workspaceId of workspaceIds) {
+            await lockProfileWorkspace(tx, workspaceId);
+        }
 
-    // Merge user-level fields (image, emailVerified) that still live on User.
-    const userUpdateData: Prisma.UserUpdateInput = {};
-    if (sourceUser.name && !targetUser.name) userUpdateData.name = sourceUser.name;
-    if (sourceUser.image && !targetUser.image) userUpdateData.image = sourceUser.image;
-    if (sourceUser.emailVerified && !targetUser.emailVerified) userUpdateData.emailVerified = sourceUser.emailVerified;
+        const [currentSourceWorkspace, currentTargetWorkspace, currentMergeRequest] =
+            await Promise.all([
+                tx.workspace.findUnique({
+                    where: { id: sourceWorkspace.id },
+                    select: { id: true, username: true },
+                }),
+                tx.workspace.findUnique({
+                    where: { id: targetWorkspace.id },
+                    select: { id: true, username: true },
+                }),
+                tx.accountMergeRequest.findUnique({
+                    where: { id: mergeRequest.id },
+                }),
+            ]);
 
-    if (Object.keys(userUpdateData).length > 0) {
-        transactionOperations.push(
-            prisma.user.update({ where: { id: targetUser.id }, data: userUpdateData })
-        );
-    }
+        if (!currentSourceWorkspace || !currentTargetWorkspace) {
+            throw new MergeError("One of the workspaces no longer exists", 409);
+        }
+        if (
+            currentSourceWorkspace.username !== sourceWorkspace.username ||
+            currentTargetWorkspace.username !== targetWorkspace.username
+        ) {
+            throw new MergeError(
+                "A workspace username changed during the merge. Please try again.",
+                409
+            );
+        }
+        if (
+            !currentMergeRequest ||
+            currentMergeRequest.consumedAt ||
+            currentMergeRequest.expiresAt.getTime() < Date.now()
+        ) {
+            throw new MergeError("This merge code is no longer available", 409);
+        }
 
-    // Workspace.username is UNIQUE and the source workspace is only deleted at
-    // the very end of this transaction. If the target is about to inherit the
-    // source's username we must release it on the source row first, otherwise
-    // PostgreSQL raises a unique-constraint violation (P2002) and the whole
-    // merge rolls back.
-    if (workspaceUpdateData.username) {
-        transactionOperations.push(
-            prisma.workspace.update({
-                where: { id: sourceWorkspace.id },
-                data: { username: null },
-            })
-        );
-    }
+        const sourceAliases = await tx.workspaceAlias.findMany({
+            where: { workspaceId: sourceWorkspace.id },
+            select: { username: true },
+        });
+        await lockProfileUsernames(tx, [
+            sourceWorkspace.username,
+            targetWorkspace.username,
+            ...sourceAliases.map((alias) => alias.username),
+        ]);
 
-    if (Object.keys(workspaceUpdateData).length > 0) {
-        transactionOperations.push(
-            prisma.workspace.update({ where: { id: targetWorkspace.id }, data: workspaceUpdateData })
-        );
-    }
-
-    // Alias source workspace username → target workspace so old URLs keep working.
-    const shouldAliasSourceUsername = Boolean(
-        sourceWorkspace.username &&
-        targetWorkspace.username &&
-        sourceWorkspace.username !== targetWorkspace.username
-    );
-    if (shouldAliasSourceUsername && sourceWorkspace.username) {
-        transactionOperations.push(
-            prisma.workspaceAlias.upsert({
+        if (sourceWorkspace.username) {
+            const existingAlias = await tx.workspaceAlias.findUnique({
                 where: { username: sourceWorkspace.username },
-                update: { workspaceId: targetWorkspace.id },
-                create: { username: sourceWorkspace.username, workspaceId: targetWorkspace.id },
-            })
-        );
-    }
-
-    // Transfer links from source workspace → target workspace.
-    const mergeCandidatePlatforms = new Set<string>(targetPlatformSet);
-    for (const link of sourceLinks) {
-        let platform = link.platform;
-        if (mergeCandidatePlatforms.has(platform)) {
-            platform = uniqueTransferPlatform({
-                platform,
-                sourceIdentifier,
-                existingPlatforms: mergeCandidatePlatforms,
             });
-            conflicts.push(link.platform);
+            if (
+                existingAlias &&
+                existingAlias.workspaceId !== sourceWorkspace.id &&
+                existingAlias.workspaceId !== targetWorkspace.id
+            ) {
+                throw new MergeError("Username already taken", 409);
+            }
+        }
+
+        const transactionOperations: Prisma.PrismaPromise<unknown>[] = [];
+
+        const userUpdateData: Prisma.UserUpdateInput = {};
+        if (sourceUser.name && !targetUser.name) userUpdateData.name = sourceUser.name;
+        if (sourceUser.image && !targetUser.image) userUpdateData.image = sourceUser.image;
+        if (sourceUser.emailVerified && !targetUser.emailVerified) userUpdateData.emailVerified = sourceUser.emailVerified;
+
+        if (Object.keys(userUpdateData).length > 0) {
+            transactionOperations.push(
+                tx.user.update({ where: { id: targetUser.id }, data: userUpdateData })
+            );
+        }
+
+        if (workspaceUpdateData.username) {
+            transactionOperations.push(
+                tx.workspace.update({
+                    where: { id: sourceWorkspace.id },
+                    data: { username: null },
+                })
+            );
+        }
+
+        if (Object.keys(workspaceUpdateData).length > 0) {
+            transactionOperations.push(
+                tx.workspace.update({
+                    where: { id: targetWorkspace.id },
+                    data: workspaceUpdateData,
+                })
+            );
+        }
+
+        const shouldAliasSourceUsername = Boolean(
+            sourceWorkspace.username &&
+            targetWorkspace.username &&
+            sourceWorkspace.username !== targetWorkspace.username
+        );
+        if (shouldAliasSourceUsername && sourceWorkspace.username) {
+            transactionOperations.push(
+                tx.workspaceAlias.upsert({
+                    where: { username: sourceWorkspace.username },
+                    update: { workspaceId: targetWorkspace.id },
+                    create: {
+                        username: sourceWorkspace.username,
+                        workspaceId: targetWorkspace.id,
+                    },
+                })
+            );
+        }
+
+        const mergeCandidatePlatforms = new Set<string>(targetPlatformSet);
+        for (const link of sourceLinks) {
+            let platform = link.platform;
+            if (mergeCandidatePlatforms.has(platform)) {
+                platform = uniqueTransferPlatform({
+                    platform,
+                    sourceIdentifier,
+                    existingPlatforms: mergeCandidatePlatforms,
+                });
+                conflicts.push(link.platform);
+            }
+
+            transactionOperations.push(
+                tx.link.update({
+                    where: { id: link.id },
+                    data: {
+                        workspaceId: targetWorkspace.id,
+                        platform,
+                        position: basePosition + mergedLinks + 1,
+                    },
+                })
+            );
+            mergeCandidatePlatforms.add(platform);
+            mergedLinks += 1;
         }
 
         transactionOperations.push(
-            prisma.link.update({
-                where: { id: link.id },
+            tx.clickEvent.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.dailyLinkAnalytics.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.workspaceAlias.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.usernameHistory.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.profileVersion.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.profilePreviewToken.updateMany({
+                where: { workspaceId: sourceWorkspace.id },
+                data: { workspaceId: targetWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.profileDraft.deleteMany({
+                where: { workspaceId: sourceWorkspace.id },
+            })
+        );
+
+        let deletedSubscriberCount = 0;
+        const [sourceSubscribers, targetSubscribers] = await Promise.all([
+            tx.subscriber.findMany({
+                where: { workspaceId: sourceWorkspace.id },
+            }),
+            tx.subscriber.findMany({
+                where: { workspaceId: targetWorkspace.id },
+                select: { email: true },
+            }),
+        ]);
+        const targetEmailSet = new Set(
+            targetSubscribers.map((subscriber) => subscriber.email.toLowerCase())
+        );
+
+        for (const subscriber of sourceSubscribers) {
+            if (!targetEmailSet.has(subscriber.email.toLowerCase())) {
+                transactionOperations.push(
+                    tx.subscriber.update({
+                        where: { id: subscriber.id },
+                        data: { workspaceId: targetWorkspace.id },
+                    })
+                );
+                targetEmailSet.add(subscriber.email.toLowerCase());
+            } else {
+                deletedSubscriberCount += 1;
+                transactionOperations.push(
+                    tx.subscriber.delete({ where: { id: subscriber.id } })
+                );
+            }
+        }
+
+        transactionOperations.push(
+            tx.account.updateMany({
+                where: { userId: sourceUser.id },
+                data: { userId: targetUser.id },
+            })
+        );
+        transactionOperations.push(
+            tx.session.updateMany({
+                where: { userId: sourceUser.id },
+                data: { userId: targetUser.id },
+            })
+        );
+        transactionOperations.push(
+            tx.accountMergeEvent.create({
                 data: {
-                    workspaceId: targetWorkspace.id,
-                    platform,
-                    position: basePosition + mergedLinks + 1,
+                    sourceUserId: sourceUser.id,
+                    targetUserId: targetUser.id,
+                    sourceEmail: sourceUser.email,
+                    targetEmail: targetUser.email,
+                    sourceUsername: sourceWorkspace.username,
+                    targetUsername: finalTargetUsername,
+                    mergedLinks,
+                    mergedAccounts: sourceUser.accounts.length,
+                    transferredSessions: sourceUser.sessions.length,
+                    conflictsJson:
+                        conflicts.length > 0 ? JSON.stringify(conflicts) : null,
                 },
             })
         );
-        mergeCandidatePlatforms.add(platform);
-        mergedLinks += 1;
-    }
+        transactionOperations.push(
+            tx.accountMergeRequest.update({
+                where: { id: mergeRequest.id },
+                data: {
+                    consumedAt: new Date(),
+                    consumedByUserId: sourceUser.id,
+                },
+            })
+        );
+        transactionOperations.push(
+            tx.workspaceMember.deleteMany({
+                where: { workspaceId: sourceWorkspace.id },
+            })
+        );
+        transactionOperations.push(
+            tx.workspace.delete({ where: { id: sourceWorkspace.id } })
+        );
+        transactionOperations.push(tx.user.delete({ where: { id: sourceUser.id } }));
 
-    // Reassign analytics, workspace aliases, version history, preview tokens, and subscribers from sourceWorkspace -> targetWorkspace
-    transactionOperations.push(
-        prisma.clickEvent.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.dailyLinkAnalytics.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.workspaceAlias.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.usernameHistory.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.profileVersion.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.profilePreviewToken.updateMany({
-            where: { workspaceId: sourceWorkspace.id },
-            data: { workspaceId: targetWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.profileDraft.deleteMany({
-            where: { workspaceId: sourceWorkspace.id },
-        })
-    );
-
-    let deletedSubscribers = 0;
-
-    // Transfer non-duplicate subscribers from sourceWorkspace -> targetWorkspace
-    const [sourceSubscribers, targetSubscribers] = await Promise.all([
-        prisma.subscriber.findMany({ where: { workspaceId: sourceWorkspace.id } }),
-        prisma.subscriber.findMany({ where: { workspaceId: targetWorkspace.id }, select: { email: true } }),
-    ]);
-    const targetEmailSet = new Set(targetSubscribers.map((s) => s.email.toLowerCase()));
-
-    for (const sub of sourceSubscribers) {
-        if (!targetEmailSet.has(sub.email.toLowerCase())) {
-            transactionOperations.push(
-                prisma.subscriber.update({
-                    where: { id: sub.id },
-                    data: { workspaceId: targetWorkspace.id },
-                })
-            );
-            targetEmailSet.add(sub.email.toLowerCase());
-        } else {
-            deletedSubscribers += 1;
-            transactionOperations.push(
-                prisma.subscriber.delete({
-                    where: { id: sub.id },
-                })
-            );
+        for (const operation of transactionOperations) {
+            await operation;
         }
-    }
 
-    // Transfer auth accounts and sessions from source user → target user.
-    transactionOperations.push(
-        prisma.account.updateMany({
-            where: { userId: sourceUser.id },
-            data: { userId: targetUser.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.session.updateMany({
-            where: { userId: sourceUser.id },
-            data: { userId: targetUser.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.accountMergeEvent.create({
-            data: {
-                sourceUserId: sourceUser.id,
-                targetUserId: targetUser.id,
-                sourceEmail: sourceUser.email,
-                targetEmail: targetUser.email,
-                sourceUsername: sourceWorkspace.username,
-                targetUsername: finalTargetUsername,
-                mergedLinks,
-                mergedAccounts: sourceUser.accounts.length,
-                transferredSessions: sourceUser.sessions.length,
-                conflictsJson: conflicts.length > 0 ? JSON.stringify(conflicts) : null,
-            },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.accountMergeRequest.update({
-            where: { id: mergeRequest.id },
-            data: {
-                consumedAt: new Date(),
-                consumedByUserId: sourceUser.id,
-            },
-        })
-    );
-
-    // Delete source workspace membership, then the workspace itself (cascades data),
-    // then the source user.
-    transactionOperations.push(
-        prisma.workspaceMember.deleteMany({
-            where: { workspaceId: sourceWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.workspace.delete({
-            where: { id: sourceWorkspace.id },
-        })
-    );
-
-    transactionOperations.push(
-        prisma.user.delete({
-            where: { id: sourceUser.id },
-        })
-    );
-
-    await prisma.$transaction(transactionOperations);
+        return deletedSubscriberCount;
+    });
 
     return {
         mergedLinks,

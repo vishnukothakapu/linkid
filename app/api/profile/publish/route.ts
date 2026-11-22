@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
+import { writeThroughProfileCache } from "@/lib/profileCache";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,9 +45,18 @@ export async function POST(request: NextRequest) {
     console.error("Profile publish error:", error);
     const message =
       error instanceof Error ? error.message : "Failed to publish profile";
+    const isUsernameConflict =
+      message === "Username already taken" ||
+      isUsernameUniqueConstraintError(error);
+    const status =
+      message === "No draft to publish"
+        ? 400
+        : isUsernameConflict
+          ? 409
+          : 500;
     return NextResponse.json(
-      { error: message },
-      { status: error instanceof Error && error.message === "No draft to publish" ? 400 : 500 }
+      { error: isUsernameConflict ? "Username already taken" : message },
+      { status }
     );
   }
 }

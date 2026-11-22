@@ -3,36 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { validateUsername } from "@/lib/validations/username";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
+import {
+  lockProfileUsernames,
+  lockProfileWorkspace,
+} from "@/lib/profileLocks";
 
 /**
  * Type for Prisma transaction client
  */
 type TransactionClient = Prisma.TransactionClient;
-
-/**
- * Serialize username claims across profile write operations.
- * The lock is held until the surrounding transaction commits or rolls back.
- */
-async function lockProfileUsername(
-  tx: TransactionClient,
-  username: string
-): Promise<void> {
-  await tx.$executeRaw`
-    SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))
-  `;
-}
-
-/**
- * Serialize profile operations within a workspace.
- */
-async function lockProfileWorkspace(
-  tx: TransactionClient,
-  workspaceId: string
-): Promise<void> {
-  await tx.$executeRaw`
-    SELECT pg_advisory_xact_lock(hashtextextended(${`workspace:${workspaceId}`}, 0))
-  `;
-}
 
 /**
  * Profile snapshot for versioning and comparison
@@ -164,6 +143,10 @@ async function ensureUsernameAliases(
   const existingAlias = await tx.workspaceAlias.findUnique({
     where: { username: previousUsername },
   });
+
+  if (existingAlias && existingAlias.workspaceId !== workspaceId) {
+    throw new Error("Username already taken");
+  }
 
   if (!existingAlias) {
     await tx.workspaceAlias.create({
@@ -310,7 +293,10 @@ export async function publishProfileDraft(
       afterSnapshot.username &&
       afterSnapshot.username !== beforeSnapshot.username
     ) {
-      await lockProfileUsername(tx, afterSnapshot.username);
+      await lockProfileUsernames(tx, [
+        beforeSnapshot.username,
+        afterSnapshot.username,
+      ]);
 
       const isAvailable = await isProfileUsernameAvailable(
         afterSnapshot.username,
@@ -566,7 +552,10 @@ export async function rollbackProfileVersion(
       afterSnapshot.username &&
       afterSnapshot.username !== beforeSnapshot.username
     ) {
-      await lockProfileUsername(tx, afterSnapshot.username);
+      await lockProfileUsernames(tx, [
+        beforeSnapshot.username,
+        afterSnapshot.username,
+      ]);
 
       const isAvailable = await isProfileUsernameAvailable(
         afterSnapshot.username,

@@ -8,7 +8,7 @@ let mockClaimingWorkspace: any = null;
 let mockAlias: any = null;
 
 const mockTx = {
-  $executeRaw: () => Promise.resolve(0),
+  $queryRaw: () => Promise.resolve([]),
 
   profileVersion: {
     findUnique: () => Promise.resolve(mockVersion),

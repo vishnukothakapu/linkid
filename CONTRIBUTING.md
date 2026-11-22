@@ -344,6 +344,13 @@ For now, **manual testing** is expected for all PRs:
 - Test with an **authenticated** and **unauthenticated** user where relevant
 - Test edge cases (empty states, long usernames, invalid URLs)
 
+### PostgreSQL Integration Tests
+
+The username alias race regression test uses a real PostgreSQL database. Point
+`TEST_DATABASE_URL` at a dedicated test database with the project schema applied,
+then run `npm run test:integration`. The test creates uniquely named users and
+workspaces and removes them after it finishes.
+
 ---
 
 ## 💬 Questions?

@@ -26,6 +26,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/linkid_ci
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/linkid_ci
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/linkid_ci
 
     steps:
       - uses: actions/checkout@v4
@@ -41,9 +42,15 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Prepare test database
+        run: npx prisma db push
+
       # Required gate — the test suite runs green from a fresh checkout.
       - name: Test
         run: npm test
+
+      - name: Username alias concurrency integration test
+        run: npm run test:integration
 
       # Advisory for now (non-blocking): the repo has pre-existing lint/type
       # errors, and a production build may need extra runtime secrets. Kept

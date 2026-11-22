@@ -11,6 +11,11 @@ import {
     invalidateProfileUsername,
     writeThroughProfileCache,
 } from "@/lib/profileCache";
+import {
+  lockProfileUsernames,
+  lockProfileWorkspace,
+} from "@/lib/profileLocks";
+import { isUsernameUniqueConstraintError } from "@/lib/usernameConflict";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,38 +46,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (workspace.username === username) {
-      return NextResponse.json({ success: true, workspace: { id: workspace.id, username } }, { status: 200 });
-    }
-   const updatedWorkspace = await prisma.$transaction(async (tx) => {
-  // Lock this username until the transaction completes.
-  await tx.$queryRaw`
-    SELECT pg_advisory_xact_lock(hashtextextended(${username}, 0))
-  `;
+    const updatedWorkspace = await prisma.$transaction(async (tx) => {
+      await lockProfileWorkspace(tx, workspace.id);
 
-  const [existingWorkspace, existingAlias] = await Promise.all([
-    tx.workspace.findUnique({ where: { username } }),
-    tx.workspaceAlias.findUnique({ where: { username } }),
-  ]);
+      const currentWorkspace = await tx.workspace.findUnique({
+        where: { id: workspace.id },
+        select: { id: true, username: true },
+      });
 
-  if (existingWorkspace || existingAlias) {
-    throw new Error("Username already taken");
-  }
+      if (!currentWorkspace) {
+        throw new Error("Workspace not found");
+      }
 
-  if (workspace.username) {
-    await tx.workspaceAlias.upsert({
-      where: { username: workspace.username },
-      update: { workspaceId: workspace.id },
-      create: { username: workspace.username, workspaceId: workspace.id },
+      await lockProfileUsernames(tx, [currentWorkspace.username, username]);
+
+      if (currentWorkspace.username === username) {
+        return currentWorkspace;
+      }
+
+      const [existingWorkspace, existingAlias] = await Promise.all([
+        tx.workspace.findUnique({ where: { username } }),
+        tx.workspaceAlias.findUnique({ where: { username } }),
+      ]);
+
+      if (existingWorkspace || existingAlias) {
+        throw new Error("Username already taken");
+      }
+
+      if (currentWorkspace.username) {
+        const existingCurrentAlias = await tx.workspaceAlias.findUnique({
+          where: { username: currentWorkspace.username },
+        });
+        if (
+          existingCurrentAlias &&
+          existingCurrentAlias.workspaceId !== workspace.id
+        ) {
+          throw new Error("Username already taken");
+        }
+
+        await tx.workspaceAlias.upsert({
+          where: { username: currentWorkspace.username },
+          update: { workspaceId: workspace.id },
+          create: {
+            username: currentWorkspace.username,
+            workspaceId: workspace.id,
+          },
+        });
+      }
+
+      return tx.workspace.update({
+        where: { id: workspace.id },
+        data: { username },
+        select: { id: true, username: true },
+      });
     });
-  }
-
-  return tx.workspace.update({
-    where: { id: workspace.id },
-    data: { username },
-    select: { id: true, username: true },
-  });
-});
 
     // Claiming a username publishes the profile — eagerly purge and repopulate the
     // Redis payload and refresh the sitemap-backed Next data cache. Clear any stale index.
@@ -83,11 +110,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, workspace: updatedWorkspace }, { status: 200 });
 
     } catch (error: unknown) {
-    const err = error as { code?: string; message?: string; meta?: { target?: string[] } };
+    const err = error as { message?: string };
 
     if (
       err.message === "Username already taken" ||
-      (err.code === "P2002" && err.meta?.target?.includes("username"))
+      isUsernameUniqueConstraintError(error)
     ) {
       return NextResponse.json(
         { error: "Username already taken" },
