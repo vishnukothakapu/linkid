@@ -24,9 +24,11 @@ const userUpdate = (args: unknown) => {
     return Promise.resolve(updateResult);
 };
 
+mock.module("@/lib/workspace", { namedExports: { resolveActiveWorkspace: async () => ({ id: "workspace", role: "OWNER" }) } });
+mock.module("@/lib/profileCache", { namedExports: { invalidateProfileCache: async () => {}, writeThroughProfileCache: async () => {} } });
 mock.module("@/lib/prisma", {
-    defaultExport: { user: { update: userUpdate } },
-    namedExports: { prisma: { user: { update: userUpdate } } },
+    defaultExport: { workspace: { update: userUpdate } },
+    namedExports: { prisma: { workspace: { update: userUpdate } } },
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,14 +54,14 @@ test("returns 401 when unauthorized", async () => {
 });
 
 test("returns 400 for an invalid layoutStyle", async () => {
-    mockSession = { user: { email: "test@example.com" } };
+    mockSession = { user: { id: "test-user", email: "test@example.com" } };
     const res = await PATCH(makeReq({ layoutStyle: "INVALID" }));
     assert.equal(res.status, 400);
     assert.equal((await res.json()).error, "Invalid layout style");
 });
 
 test("returns 200 and updates the layoutStyle", async () => {
-    mockSession = { user: { email: "test@example.com" } };
+    mockSession = { user: { id: "test-user", email: "test@example.com" } };
     capturedUpdateArgs = null;
     updateResult = { layoutStyle: "GRID" };
 
@@ -69,7 +71,7 @@ test("returns 200 and updates the layoutStyle", async () => {
     assert.equal(data.success, true);
     assert.equal(data.layoutStyle, "GRID");
     assert.deepEqual(capturedUpdateArgs, {
-        where: { email: "test@example.com" },
+        where: { id: "workspace" },
         data: { layoutStyle: "GRID" },
     });
 });
