@@ -58,7 +58,7 @@ export function ProfileCard(props: ProfileCardProps) {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
-                                            aria-label={link.label || link.platform}
+                                            aria-label={`Visit ${link.label || link.platform}`}
                                         >
                                             <Icon className="h-6 w-6" />
                                         </a>
