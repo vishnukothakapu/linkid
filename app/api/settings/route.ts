@@ -6,6 +6,7 @@ import { resolveActiveWorkspace } from "@/lib/workspace";
 import { invalidateProfileCache, writeThroughProfileCache } from "@/lib/profileCache";
 import crypto from "crypto";
 import { validateWebhookUrl, WebhookValidationError } from "@/lib/ssrf";
+import { teamTransaction, TeamError } from "@/lib/workspaceTeam";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -49,10 +50,11 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    const updatedWorkspace = await prisma.workspace.update({
-      where: { id: workspace.id },
-      data: updateData,
+    const saved = await teamTransaction(prisma, workspace.id, session.user.id, async (tx, role) => {
+      if (webhookUrl !== undefined && role !== 'OWNER') throw new TeamError('Only workspace owners can configure webhooks',403);
+      return { workspace: await tx.workspace.update({ where: { id: workspace.id }, data: updateData }), role };
     });
+    const updatedWorkspace = saved.workspace;
 
     // enableEmailCapture renders on the public profile — eagerly purge and repopulate the cache.
     if (enableEmailCapture !== undefined) {
@@ -62,11 +64,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       enableEmailCapture: updatedWorkspace.enableEmailCapture,
-      webhookUrl: updatedWorkspace.webhookUrl,
-      webhookSecret: updatedWorkspace.webhookSecret 
+      ...(saved.role === "OWNER" ? { webhookUrl: updatedWorkspace.webhookUrl, webhookSecret: updatedWorkspace.webhookSecret } : {})
     }, { status: 200 });
 
   } catch (error) {
+    if (error instanceof TeamError) return NextResponse.json({error:error.message},{status:error.status});
     console.error("Settings update error:", error);
     if (error instanceof WebhookValidationError) {
         return NextResponse.json({ error: error.message }, { status: 400 });

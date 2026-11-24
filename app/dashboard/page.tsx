@@ -47,6 +47,7 @@ export default async function DashboardPage() {
 
     return (
         <DashboardClient
+            key={workspace.id}
             userId={session.user.id}
             workspaceId={workspace.id}
             username={workspace.username}

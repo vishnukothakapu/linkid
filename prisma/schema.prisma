@@ -42,6 +42,7 @@ model User {
   sessions      Session[]
   mergeRequests AccountMergeRequest[]
   workspaces    WorkspaceMember[]
+  invitationsSent WorkspaceInvitation[]
 }
 
 
@@ -67,6 +68,7 @@ model Workspace {
   webhookSecret String?
 
   members     WorkspaceMember[]
+  invitations WorkspaceInvitation[]
   aliases     WorkspaceAlias[]
   links       Link[]
   subscribers Subscriber[]
@@ -349,4 +351,18 @@ model Subscriber {
 
   @@unique([email, workspaceId])
   @@index([workspaceId])
+}
+model WorkspaceInvitation {
+  id String @id @default(uuid())
+  workspaceId String
+  email String
+  role WorkspaceRole @default(EDITOR)
+  tokenHash String @unique
+  expiresAt DateTime
+  inviterId String
+  createdAt DateTime @default(now())
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter User @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId,email])
+  @@index([workspaceId,expiresAt])
 }

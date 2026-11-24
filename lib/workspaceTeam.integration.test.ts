@@ -1,0 +1,188 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import {
+  inviteMember,
+  acceptInvitation,
+  changeMember,
+  hashInvitation,
+  TeamError,
+} from "./workspaceTeam";
+test(
+  "real PostgreSQL invitation lifecycle, permissions and concurrent owner protection",
+  { skip: !process.env.TEAM_TEST_URL },
+  async () => {
+    const client = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: process.env.TEAM_TEST_URL }),
+    });
+    const prefix = `team-${crypto.randomUUID()}`;
+    const createUser = (name: string, verified = true) =>
+      client.user.create({
+        data: {
+          email: `${prefix}-${name}@example.test`,
+          emailVerified: verified ? new Date() : null,
+        },
+      });
+    const denied = (status: number) => (error: unknown) =>
+      error instanceof TeamError && error.status === status;
+    try {
+      const owner = await createUser("owner"),
+        editor = await createUser("editor"),
+        invitee = await createUser("invited"),
+        wrong = await createUser("wrong"),
+        unverified = await createUser("unverified", false);
+      const workspace = await client.workspace.create({
+        data: {
+          members: {
+            create: [
+              { userId: owner.id, role: "OWNER" },
+              { userId: editor.id, role: "EDITOR" },
+            ],
+          },
+        },
+      });
+      await assert.rejects(
+        inviteMember(client, workspace.id, editor.id, invitee.email),
+        denied(403),
+      );
+      await assert.rejects(
+        inviteMember(client, workspace.id, wrong.id, invitee.email),
+        denied(403),
+      );
+      await assert.rejects(
+        inviteMember(client, workspace.id, owner.id, editor.email),
+        denied(409),
+      );
+      const first = await inviteMember(
+        client,
+        workspace.id,
+        owner.id,
+        invitee.email,
+      );
+      assert.match(first.token, /^[a-f0-9]{64}$/);
+      assert.notEqual(first.invitation.tokenHash, first.token);
+      assert.equal(first.invitation.tokenHash, hashInvitation(first.token));
+      await assert.rejects(
+        acceptInvitation(client, wrong.id, first.token),
+        denied(403),
+      );
+      const resent = await inviteMember(
+        client,
+        workspace.id,
+        owner.id,
+        invitee.email,
+      );
+      assert.notEqual(first.token, resent.token);
+      await assert.rejects(
+        acceptInvitation(client, invitee.id, first.token),
+        denied(410),
+      );
+      const accepted = await Promise.allSettled([
+        acceptInvitation(client, invitee.id, resent.token),
+        acceptInvitation(client, invitee.id, resent.token),
+      ]);
+      assert.equal(accepted.filter((r) => r.status === "fulfilled").length, 1);
+      assert.equal(
+        await client.workspaceMember.count({
+          where: { workspaceId: workspace.id, userId: invitee.id },
+        }),
+        1,
+      );
+      const unver = await inviteMember(
+        client,
+        workspace.id,
+        owner.id,
+        unverified.email,
+      );
+      await assert.rejects(
+        acceptInvitation(client, unverified.id, unver.token),
+        denied(403),
+      );
+      const expired = await inviteMember(
+        client,
+        workspace.id,
+        owner.id,
+        wrong.email,
+      );
+      await client.workspaceInvitation.update({
+        where: { id: expired.invitation.id },
+        data: { expiresAt: new Date(0) },
+      });
+      await assert.rejects(
+        acceptInvitation(client, wrong.id, expired.token),
+        denied(410),
+      );
+      const revoked = await inviteMember(
+        client,
+        workspace.id,
+        owner.id,
+        wrong.email,
+      );
+      await client.workspaceInvitation.delete({
+        where: { id: revoked.invitation.id },
+      });
+      await assert.rejects(
+        acceptInvitation(client, wrong.id, revoked.token),
+        denied(410),
+      );
+      const ownerMember = await client.workspaceMember.findUniqueOrThrow({
+        where: {
+          workspaceId_userId: { workspaceId: workspace.id, userId: owner.id },
+        },
+      });
+      const editorMember = await client.workspaceMember.findUniqueOrThrow({
+        where: {
+          workspaceId_userId: { workspaceId: workspace.id, userId: editor.id },
+        },
+      });
+      await assert.rejects(
+        changeMember(client, workspace.id, owner.id, ownerMember.id, null),
+        denied(400),
+      );
+      await assert.rejects(
+        changeMember(client, workspace.id, editor.id, ownerMember.id, null),
+        denied(403),
+      );
+      await changeMember(
+        client,
+        workspace.id,
+        owner.id,
+        editorMember.id,
+        "OWNER",
+      );
+      const results = await Promise.allSettled([
+        changeMember(client, workspace.id, owner.id, ownerMember.id, "EDITOR"),
+        changeMember(
+          client,
+          workspace.id,
+          editor.id,
+          editorMember.id,
+          "EDITOR",
+        ),
+      ]);
+      assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+      assert.equal(
+        await client.workspaceMember.count({
+          where: { workspaceId: workspace.id, role: "OWNER" },
+        }),
+        1,
+      );
+      const otherWorkspace = await client.workspace.create({
+        data: { members: { create: { userId: wrong.id, role: "OWNER" } } },
+      });
+      await assert.rejects(
+        changeMember(
+          client,
+          otherWorkspace.id,
+          owner.id,
+          ownerMember.id,
+          "EDITOR",
+        ),
+        denied(403),
+      );
+    } finally {
+      await client.$disconnect();
+    }
+  },
+);

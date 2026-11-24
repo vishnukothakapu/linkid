@@ -15,6 +15,7 @@ import { SeoSection } from "./SeoSection";
 import { LayoutStyle } from "@/app/[username]/types/type";
 import { LivePreview } from "@/components/dashboard/LivePreview";
 import { WebhookSection } from "./WebhookSection";
+import Link from "next/link";
 
 export default function DashboardClient({
     userId,
@@ -520,6 +521,7 @@ async function deleteLink(id: string) {
                     <p className="text-muted-foreground">
                         Manage and share your professional links
                     </p>
+                    <Link href={`/dashboard/team?workspaceId=${encodeURIComponent(workspaceId)}`} className="underline">Manage workspace team</Link>
                 </section>
 
                 <LinkIdCard username={username} qrCode={qrCode} />
