@@ -1,5 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import {getCsrfToken} from '@/lib/csrfClient';
+import {WebhookDeliveries} from './WebhookDeliveries';
 
 interface WebhookSectionProps {
     workspaceId: string;
@@ -20,7 +22,8 @@ export function WebhookSection({ workspaceId, initialWebhookUrl, initialWebhookS
                 method: "PUT",
                 headers: { 
                     "Content-Type": "application/json",
-                    "x-workspace-id": workspaceId
+                    "x-workspace-id": workspaceId,
+                    "x-csrf-token": await getCsrfToken()
                 },
                 body: JSON.stringify({ webhookUrl: webhookUrl.trim() === "" ? "" : webhookUrl }),
             });
@@ -75,6 +78,7 @@ export function WebhookSection({ workspaceId, initialWebhookUrl, initialWebhookS
                     {saving ? "Saving..." : "Save Webhook"}
                 </button>
             </div>
+            <WebhookDeliveries key={workspaceId} workspaceId={workspaceId}/>
         </div>
     );
 }

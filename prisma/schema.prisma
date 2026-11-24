@@ -67,6 +67,7 @@ model Workspace {
   webhookSecret String?
 
   members     WorkspaceMember[]
+  webhookDeliveries WebhookDelivery[]
   aliases     WorkspaceAlias[]
   links       Link[]
   subscribers Subscriber[]
@@ -349,4 +350,22 @@ model Subscriber {
 
   @@unique([email, workspaceId])
   @@index([workspaceId])
+}
+model WebhookDelivery {
+ id String @id @default(uuid())
+ eventId String
+ workspaceId String
+ event String
+ url String
+ statusCode Int?
+ requestBody Json
+ responseBody String?
+ durationMs Int?
+ status String
+ error String?
+ attempt Int @default(1)
+ createdAt DateTime @default(now())
+ workspace Workspace @relation(fields:[workspaceId],references:[id],onDelete:Cascade)
+ @@unique([eventId,attempt])
+ @@index([workspaceId,createdAt])
 }

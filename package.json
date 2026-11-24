@@ -13,7 +13,7 @@
     "dbpush": "prisma db push",
     "lint": "eslint",
     "pretest": "node scripts/pretest-prisma-generate.mjs",
-    "test": "tsx --test --experimental-test-module-mocks",
+    "test": "node scripts/run-node-tests.mjs",
     "test:ui": "jest",
     "test:ui:watch": "jest --watch"
   },

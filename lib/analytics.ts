@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { enqueueWorkspaceWebhook } from "./webhooks";
 import {
     detectDeviceType,
     getForwardedIp,
@@ -64,7 +66,7 @@ export async function trackLinkClick(input: TrackClickInput): Promise<void> {
     await enqueueJob("analytics-click", jobPayload);
 }
 
-export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise<void> {
+export async function processAnalyticsJob(payload: AnalyticsJobPayload, sourceId: string = randomUUID()): Promise<void> {
     const { linkId, userAgent, referrer, country, acceptLanguage, ip } = payload;
 
     let effectiveWorkspaceId = payload.workspaceId;
@@ -110,46 +112,19 @@ export async function processAnalyticsJob(payload: AnalyticsJobPayload): Promise
     const isUniqueVisitor = Boolean(!isBot && visitorKey && !existingRecentClick);
     const today = utcDayStart(new Date());
 
-    await prisma.$transaction([
-        prisma.clickEvent.create({
-            data: {
-                linkId,
-                workspaceId,
-                visitorKey,
-                userAgent,
-                referrer,
-                country,
-                deviceType,
-                isBot,
-                isUniqueVisitor,
-            },
-        }),
-        prisma.dailyLinkAnalytics.upsert({
-            where: {
-                linkId_date: {
-                    linkId,
-                    date: today,
-                },
-            },
-            update: {
-                totalClicks: { increment: isBot ? 0 : 1 },
-                uniqueClicks: { increment: isUniqueVisitor ? 1 : 0 },
-                botClicks: { increment: isBot ? 1 : 0 },
-            },
-            create: {
-                linkId,
-                workspaceId,
-                date: today,
-                totalClicks: isBot ? 0 : 1,
-                uniqueClicks: isUniqueVisitor ? 1 : 0,
-                botClicks: isBot ? 1 : 0,
-            },
-        }),
-        prisma.link.update({
-            where: { id: linkId },
-            data: { clicks: { increment: isBot ? 0 : 1 } },
-        }),
-    ]);
+    await prisma.$transaction(async tx => {
+      // Stable worker job ID prevents retries from recording clicks twice.
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${sourceId},0))`;
+      if(await tx.clickEvent.findUnique({where:{id:sourceId},select:{id:true}}))return;
+      const link=await tx.link.findFirst({where:{id:linkId,workspaceId},select:{platform:true,url:true}});
+      if(!link)return;
+      await tx.clickEvent.create({data:{id:sourceId,linkId,workspaceId,visitorKey,userAgent,referrer,country,deviceType,isBot,isUniqueVisitor}});
+      await tx.dailyLinkAnalytics.upsert({where:{linkId_date:{linkId,date:today}},
+        update:{totalClicks:{increment:isBot?0:1},uniqueClicks:{increment:isUniqueVisitor?1:0},botClicks:{increment:isBot?1:0}},
+        create:{linkId,workspaceId,date:today,totalClicks:isBot?0:1,uniqueClicks:isUniqueVisitor?1:0,botClicks:isBot?1:0}});
+      await tx.link.update({where:{id:linkId},data:{clicks:{increment:isBot?0:1}}});
+      if(!isBot)await enqueueWorkspaceWebhook(tx,workspaceId,'link.clicked',{linkId,platform:link.platform,url:link.url,country,referrer,deviceType,isUniqueVisitor},sourceId);
+    });
 }
 
 export async function recomputeDailyAnalyticsForDate(date: Date): Promise<{ rows: number }> {
