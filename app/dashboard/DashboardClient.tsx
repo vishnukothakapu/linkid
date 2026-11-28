@@ -50,7 +50,7 @@ export default function DashboardClient({
     initialBackgroundImage?: string | null;
     qrCode?: React.ReactNode;
     enableEmailCapture?: boolean;
-    subscribers?: { id: string; email: string; createdAt: Date }[];
+    subscribers?: { id: string; email: string; status?: string; confirmedAt?: Date | null; createdAt: Date }[];
     initialName?: string | null;
     initialBio?: string | null;
     initialImage?: string | null;
@@ -574,8 +574,15 @@ async function deleteLink(id: string) {
                             {isEmailCaptureEnabled && (
                                 <div className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
-                                        <p className="text-sm font-medium">Total Subscribers: {subscribers.length}</p>
-                                        {subscribers.length > 0 && (
+                                        <p className="text-sm font-medium">
+                                            Total Subscribers: {subscribers.filter(s => s.status === "CONFIRMED" || !s.status).length}
+                                            {subscribers.filter(s => s.status === "PENDING").length > 0 && (
+                                                <span className="text-xs text-muted-foreground ml-1.5 font-normal">
+                                                    ({subscribers.filter(s => s.status === "PENDING").length} pending confirmation)
+                                                </span>
+                                            )}
+                                        </p>
+                                        {subscribers.some(s => s.status === "CONFIRMED" || !s.status) && (
                                             <button 
                                                 onClick={exportSubscribersCsv}
                                                 className="text-xs font-medium px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors"
@@ -590,9 +597,21 @@ async function deleteLink(id: string) {
                                         ) : (
                                             <ul className="divide-y text-sm">
                                                 {subscribers.map(sub => (
-                                                    <li key={sub.id} className="p-2 px-4 flex justify-between">
-                                                        <span>{sub.email}</span>
-                                                        <span className="text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString("en-US", { timeZone: "UTC" })}</span>
+                                                    <li key={sub.id} className="p-2 px-4 flex justify-between items-center">
+                                                        <div className="flex items-center gap-2">
+                                                            <span>{sub.email}</span>
+                                                            {sub.status === "PENDING" && (
+                                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                                                                    Pending
+                                                                </span>
+                                                            )}
+                                                            {sub.status === "UNSUBSCRIBED" && (
+                                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                                                                    Unsubscribed
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-muted-foreground text-xs">{new Date(sub.createdAt).toLocaleDateString("en-US", { timeZone: "UTC" })}</span>
                                                     </li>
                                                 ))}
                                             </ul>

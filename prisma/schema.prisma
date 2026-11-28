@@ -340,13 +340,42 @@ model InvalidatedSession {
   @@map("invalidatedSession")
 }
 
+enum SubscriberStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+enum SubscriberTokenType {
+  CONFIRMATION
+  UNSUBSCRIBE
+}
+
 model Subscriber {
-  id          String   @id @default(uuid())
-  email       String
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id             String            @id @default(uuid())
+  email          String
+  status         SubscriberStatus  @default(PENDING)
+  confirmedAt    DateTime?
+  unsubscribedAt DateTime?
+  workspaceId    String
+  workspace      Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tokens         SubscriberToken[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now()) @updatedAt
 
   @@unique([email, workspaceId])
-  @@index([workspaceId])
+  @@index([workspaceId, status])
+}
+
+model SubscriberToken {
+  id           String              @id @default(uuid())
+  subscriberId String
+  tokenHash    String              @unique
+  type         SubscriberTokenType
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime            @default(now())
+  subscriber   Subscriber          @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@index([subscriberId, type])
 }
