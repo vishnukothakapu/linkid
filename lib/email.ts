@@ -161,3 +161,64 @@ export async function sendVerificationEmail(
     throw error;
   }
 }
+
+export async function sendSubscriberConfirmationEmail({
+  to,
+  confirmationUrl,
+  unsubscribeUrl,
+  workspaceUsername,
+}: {
+  to: string;
+  confirmationUrl: string;
+  unsubscribeUrl?: string;
+  workspaceUsername?: string;
+}): Promise<void> {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || "noreply@linkid.app";
+  const profileName = workspaceUsername ? `@${workspaceUsername}` : "LinkID profile";
+
+  if (!transporter) {
+    const msg = "SMTP is not configured for subscriber confirmation email delivery";
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(msg);
+      console.warn(`📧 SUBSCRIBER CONFIRMATION URL: ${confirmationUrl}`);
+    }
+    throw new Error(msg);
+  }
+
+  try {
+    await transporter.sendMail({
+      from,
+      to,
+      subject: `Confirm your subscription to ${profileName}`,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #fafafa; border-radius: 12px;">
+          <h2 style="margin: 0 0 8px; color: #7c3aed; font-size: 20px;">Confirm Subscription 📬</h2>
+          <p style="margin: 0 0 24px; color: #374151; font-size: 14px; line-height: 1.6;">
+            Please confirm that you want to receive updates from <strong>${profileName}</strong>. This link expires in <strong>48 hours</strong>.
+          </p>
+          <a href="${confirmationUrl}" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+            Confirm Subscription
+          </a>
+          ${
+            unsubscribeUrl
+              ? `<p style="margin: 24px 0 0; color: #6b7280; font-size: 12px; line-height: 1.5;">
+                  If you didn't request this or wish to unsubscribe, you can <a href="${unsubscribeUrl}" style="color: #6b7280; text-decoration: underline;">unsubscribe here</a>.
+                </p>`
+              : ""
+          }
+        </div>
+      `,
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.warn(`⚠️ DEV FALLBACK: Failed to send subscriber confirmation email to ${to}`);
+      console.warn(`📧 CONFIRM URL: ${confirmationUrl}`);
+      console.warn("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.error("SMTP Error:", (error as Error).message);
+      return;
+    }
+    throw error;
+  }
+}

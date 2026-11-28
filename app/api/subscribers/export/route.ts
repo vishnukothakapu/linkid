@@ -17,21 +17,27 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
         }
 
+        // Restrict exports to confirmed consent only
         const subscribers = await prisma.subscriber.findMany({
-            where: { workspaceId: workspace.id },
-            orderBy: { createdAt: "desc" },
+            where: {
+                workspaceId: workspace.id,
+                status: "CONFIRMED",
+            },
+            orderBy: { confirmedAt: "desc" },
         });
 
-        const formatCsvField = (field: string) => {
-            const str = String(field);
+        const formatCsvField = (field: string | null | undefined) => {
+            const str = field ? String(field) : "";
             const needsPrefix = /^[=+\-@]/.test(str);
             const prefixed = needsPrefix ? `'${str}` : str;
             return `"${prefixed.replace(/"/g, '""')}"`;
         };
 
-        const csvRows = ["id,email,createdAt"];
+        const csvRows = ["id,email,status,confirmedAt,createdAt"];
         for (const sub of subscribers) {
-            csvRows.push(`${formatCsvField(sub.id)},${formatCsvField(sub.email)},${formatCsvField(sub.createdAt.toISOString())}`);
+            csvRows.push(
+                `${formatCsvField(sub.id)},${formatCsvField(sub.email)},${formatCsvField(sub.status)},${formatCsvField(sub.confirmedAt ? sub.confirmedAt.toISOString() : "")},${formatCsvField(sub.createdAt.toISOString())}`
+            );
         }
         
         const csvString = csvRows.join("\n");

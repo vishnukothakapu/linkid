@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getForwardedIp } from "@/lib/analyticsUtils";
+import { createPendingSubscription } from "@/lib/subscriberConsent";
 
 const SUBSCRIBE_LIMIT = 10;
 const SUBSCRIBE_WINDOW_MS = 60 * 60 * 1000;
@@ -41,21 +42,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email capture is not enabled for this profile" }, { status: 403 });
     }
 
-    // Upsert or create subscriber
-    await prisma.subscriber.create({
-      data: {
-        email,
-        workspaceId: workspace.id,
-      },
-    }).catch(err => {
-        // If unique constraint fails, it means already subscribed
-        if (err.code === 'P2002') {
-            return;
-        }
-        throw err;
+    // Create pending subscription with hashed one-use token and retryable outbox email
+    const result = await createPendingSubscription(prisma, {
+      email,
+      workspaceId: workspace.id,
+      workspaceUsername: username,
+      baseUrl: req.nextUrl?.origin,
     });
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    if (result.status === "RESEND_COOLDOWN") {
+      return NextResponse.json(
+        {
+          success: true,
+          status: "pending",
+          message: "A confirmation email was recently sent. Please check your inbox.",
+        },
+        { status: 200, headers: { "Retry-After": String(result.retryAfterSeconds) } }
+      );
+    }
+
+    if (result.status === "RATE_LIMITED") {
+      return NextResponse.json({ error: result.error }, { status: 429 });
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        status: result.status.toLowerCase(),
+        message:
+          result.status === "ALREADY_CONFIRMED"
+            ? "You are already subscribed to this profile."
+            : "Please check your inbox to confirm your subscription.",
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Subscribe error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

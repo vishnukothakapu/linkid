@@ -1,6 +1,7 @@
 import "../lib/prisma";
 import { claimNextJob, processJobWithHandler, type JobPayload } from "../lib/jobs";
 import { processAnalyticsJob, type AnalyticsJobPayload } from "../lib/analytics";
+import { sendSubscriberConfirmationEmail } from "../lib/email";
 
 import { validateWebhookUrl } from "../lib/ssrf";
 
@@ -10,7 +11,16 @@ const handlers: Record<string, (payload: JobPayload) => Promise<void>> = {
     await processAnalyticsJob(data);
   },
   "send-email": async (payload) => {
-    console.log("[worker] send-email", payload);
+    const data = payload as any;
+    if (data?.type === "subscriber-confirmation" || data?.confirmationUrl) {
+      await sendSubscriberConfirmationEmail(data);
+    } else {
+      console.log("[worker] send-email", payload);
+    }
+  },
+  "subscriber-confirmation": async (payload) => {
+    const data = payload as any;
+    await sendSubscriberConfirmationEmail(data);
   },
   "recalculate-analytics": async (payload) => {
     console.log("[worker] recalc analytics", payload);
